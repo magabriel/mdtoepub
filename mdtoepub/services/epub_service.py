@@ -21,6 +21,7 @@ from ..models.component import Component, ComponentType, COMPONENT_TYPE_LABELS
 from .markdown_service import MarkdownService
 from .file_service import FileService
 from .yaml_service import YamlService
+from .theme_service import ThemeService
 
 
 class EpubService:
@@ -661,11 +662,11 @@ class EpubService:
         return chapter
 
     def _load_stylesheet(self) -> Optional[str]:
-        themes_dir = Path(__file__).parent.parent / "themes"
-        theme_dir = themes_dir / self.project.theme_id
-
-        if not theme_dir.exists():
+        theme_path = ThemeService.get_theme_path(self.project.theme_id)
+        if not theme_path:
             return None
+
+        theme_dir = Path(theme_path)
 
         theme_yaml_path = theme_dir / "theme.yaml"
         theme_config = {}

@@ -10,8 +10,19 @@ Pero Sousa habia decidido no dejar que se perdiera del todo.
 
 Empezaria a escribir. No un informe, no un articulo academico. Algo distinto. Algo que recogiera no solo los hechos, sino el asombro de haberlos descubierto.
 
-— ◆ —
-{.fin-capitulo}
+El mundo estaba cambiando. Nuevos metodos de <span class="sans">clasificacion documental</span> y tecnicas de <span class="sans">reproduccion fotografica</span> permitirian a las generaciones futuras acceder a materiales que hasta entonces solo habian estado al alcance de unos pocos eruditos. El oficio de archivero, ese <span class="muted">centinela silencioso de la memoria</span>, comenzaba a ser reconocido como una pieza esencial en la preservacion del patrimonio.
+
+—
+
+Las ultimas palabras del diario de Almeida, escritas la noche antes de su desaparicion, resumian con sencillez la paradoja de toda investigacion historica:
+
+> *Hemos encontrado lo que nadie busco, pero no sabemos lo que encontramos.*
 
 ❦
 {.ornament}
+
+<small class="muted">Oporto — Coimbra — Lisboa — Evora — Sintra, 1897-1901</small>
+{.center}
+
+- ◆ -
+{.fin-capitulo}

@@ -1,0 +1,646 @@
+/* MDToEPUB - Textbook Theme - Base Styles */
+
+body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1em;
+    line-height: 1.7;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #1a3a5c;
+    margin-top: 1.8em;
+    margin-bottom: 0.6em;
+    page-break-after: avoid;
+}
+
+h1 {
+    font-size: 2em;
+    text-align: left;
+    color: #1a3a5c;
+    border-bottom: 4px solid #2c7be5;
+    padding-bottom: 0.3em;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+}
+
+h2 {
+    font-size: 1.5em;
+    border-left: 5px solid #2c7be5;
+    padding-left: 0.6em;
+    font-weight: 700;
+    color: #1a3a5c;
+}
+
+h3 {
+    font-size: 1.25em;
+    color: #2c5282;
+    font-weight: 700;
+    border-bottom: 1px solid #d4e4f7;
+    padding-bottom: 0.2em;
+}
+
+h4 {
+    font-size: 1.1em;
+    color: #2c5282;
+    font-weight: 600;
+    font-style: italic;
+}
+
+p {
+    margin: 0 0 1em 0;
+    text-indent: 0;
+}
+
+blockquote {
+    margin: 1.5em 0;
+    padding: 1em 1.5em;
+    border-left: 4px solid #2c7be5;
+    background: #f0f6ff;
+    font-style: italic;
+    color: #444;
+    border-radius: 0 4px 4px 0;
+}
+
+code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 0.88em;
+    background-color: #eef2f7;
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: #c7254e;
+}
+
+pre {
+    background-color: #f5f7fa;
+    padding: 1.2em;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.5;
+    border: 1px solid #e0e6ed;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5em auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(to right, transparent, #2c7be5, transparent);
+    margin: 2.5em 0;
+}
+
+a {
+    color: #2c7be5;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ── Lists ── */
+
+ul, ol {
+    margin: 1em 0;
+    padding-left: 1.8em;
+}
+
+li {
+    margin: 0.4em 0;
+}
+
+ul ul, ol ol, ul ol, ol ul {
+    margin: 0.3em 0;
+}
+
+/* ── Definition lists ── */
+
+dl {
+    margin: 1.2em 0;
+    background: #fafbfc;
+    border: 1px solid #e0e6ed;
+    border-radius: 6px;
+    padding: 1em 1.5em;
+}
+
+dt {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 700;
+    margin-top: 0.8em;
+    color: #1a3a5c;
+    font-size: 0.95em;
+}
+
+dd {
+    margin-left: 1.5em;
+    margin-bottom: 0.5em;
+    color: #555;
+}
+
+/* ── Tables ── */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2em 0;
+    font-size: 0.9em;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+th, td {
+    border: 1px solid #d4e4f7;
+    padding: 0.6em 0.8em;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background-color: #2c7be5;
+    font-weight: 700;
+    color: #fff;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 0.9em;
+    letter-spacing: 0.02em;
+}
+
+tr:nth-child(even) td {
+    background-color: #f8faff;
+}
+
+caption {
+    caption-side: bottom;
+    font-style: italic;
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 0.5em;
+}
+
+/* ── Inline elements ── */
+
+strong, b {
+    font-weight: 700;
+    color: #1a3a5c;
+}
+
+em, i {
+    font-style: italic;
+}
+
+small {
+    font-size: 0.85em;
+    color: #999;
+}
+
+sub {
+    font-size: 0.75em;
+    vertical-align: sub;
+}
+
+sup {
+    font-size: 0.75em;
+    vertical-align: super;
+}
+
+/* @doc Texto resaltado */
+mark {
+    background-color: #fff3cd;
+    padding: 0.1em 0.3em;
+    color: #856404;
+    border-radius: 2px;
+}
+
+/* @doc Texto eliminado */
+del {
+    text-decoration: line-through;
+    color: #ccc;
+}
+
+/* @doc Texto insertado */
+ins {
+    text-decoration: none;
+    border-bottom: 2px solid #38a169;
+    color: #333;
+}
+
+/* @doc Abreviatura */
+abbr {
+    border-bottom: 1px dotted #aaa;
+    cursor: help;
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+}
+
+address {
+    font-style: italic;
+    color: #666;
+    margin: 1em 0;
+}
+
+/* Component header (auto-title number + title) */
+h1.component-header {
+    text-align: left;
+    margin-bottom: 2em;
+    page-break-after: avoid;
+    font-size: 1em;
+    font-weight: 400;
+    border: none;
+    padding: 0;
+}
+
+h1.component-header .header-number {
+    display: block;
+    font-size: 0.85em;
+    font-weight: 700;
+    color: #2c7be5;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 0.3em;
+}
+
+h1.component-header .header-subtitle {
+    display: block;
+    font-size: 1.1em;
+    font-style: italic;
+    color: #666;
+    margin-bottom: 0.3em;
+}
+
+.component-header .header-title {
+    display: block;
+    font-size: 1.8em;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 800;
+    color: #1a3a5c;
+    border-bottom: 4px solid #2c7be5;
+    padding-bottom: 0.3em;
+    letter-spacing: -0.01em;
+}
+
+/* Component generic styles */
+.component-title {
+    text-align: center;
+    padding-top: 30%;
+}
+
+.component-dedication {
+    text-align: center;
+    font-style: italic;
+    padding-top: 20%;
+}
+
+.component-cover {
+    text-align: center;
+    font-style: italic;
+    padding-top: 30%;
+}
+
+/* Figure with caption */
+figure {
+    margin: 1.5em 0;
+    text-align: center;
+    page-break-inside: avoid;
+    background: #fafbfc;
+    border: 1px solid #e0e6ed;
+    border-radius: 6px;
+    padding: 1em;
+}
+
+figcaption {
+    font-style: italic;
+    font-size: 0.85em;
+    margin-top: 0.5em;
+    color: #666;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* Drop cap */
+.drop-cap {
+    font-size: 3.8em;
+    float: left;
+    line-height: 0.8;
+    margin-right: 0.1em;
+    font-family: Georgia, serif;
+    font-weight: 700;
+    color: #2c7be5;
+}
+
+/* ── Callout boxes ── */
+
+/* @doc Caja de consejo o sugerencia */
+.tip {
+    background: #e8f5e9;
+    border-left: 5px solid #38a169;
+    padding: 0.8em 1.2em;
+    margin: 1.2em 0;
+    border-radius: 0 6px 6px 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 0.95em;
+    color: #2f855a;
+}
+
+/* @doc Caja de informacion importante */
+.note {
+    background: #ebf5ff;
+    border-left: 5px solid #3182ce;
+    padding: 0.8em 1.2em;
+    margin: 1.2em 0;
+    border-radius: 0 6px 6px 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 0.95em;
+    color: #2b6cb0;
+}
+
+/* @doc Caja de advertencia */
+.warning {
+    background: #fffaf0;
+    border-left: 5px solid #dd6b20;
+    padding: 0.8em 1.2em;
+    margin: 1.2em 0;
+    border-radius: 0 6px 6px 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 0.95em;
+    color: #c05621;
+}
+
+/* @doc Caja de ejemplo */
+.example {
+    background: #faf5ff;
+    border-left: 5px solid #805ad5;
+    padding: 0.8em 1.2em;
+    margin: 1.2em 0;
+    border-radius: 0 6px 6px 0;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 0.95em;
+    color: #553c9a;
+}
+
+/* @doc Caja de definicion */
+.definition {
+    background: #f0f4f8;
+    border: 2px solid #2c7be5;
+    padding: 1em 1.2em;
+    margin: 1.2em 0;
+    border-radius: 6px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.definition strong {
+    color: #1a3a5c;
+    display: block;
+    margin-bottom: 0.3em;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* @doc Caja de ejercicio o practica */
+.exercise {
+    background: #fff;
+    border: 2px dashed #2c7be5;
+    padding: 1em 1.2em;
+    margin: 1.2em 0;
+    border-radius: 6px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.exercise strong {
+    color: #1a3a5c;
+    display: block;
+    margin-bottom: 0.3em;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* @doc Caja de conclusion o resumen */
+.key-takeaway {
+    background: linear-gradient(135deg, #ebf8ff, #e0edff);
+    border: 2px solid #2c7be5;
+    padding: 1em 1.2em;
+    margin: 1.5em 0;
+    border-radius: 6px;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 0.95em;
+    color: #1a3a5c;
+}
+
+.key-takeaway strong {
+    display: block;
+    margin-bottom: 0.3em;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* ── Utility classes ── */
+
+/* @doc Alineacion centrada */
+.center {
+    text-align: center;
+}
+
+/* @doc Alineacion derecha */
+.right {
+    text-align: right;
+}
+
+/* @doc Texto muy pequeno */
+.tiny {
+    font-size: 0.7em;
+}
+
+/* @doc Texto pequeno */
+.small {
+    font-size: 0.85em;
+}
+
+/* @doc Texto grande */
+.big {
+    font-size: 1.3em;
+}
+
+/* @doc Texto muy grande */
+.huge {
+    font-size: 2em;
+}
+
+/* @doc Sin sangria de parrafo */
+.no-indent {
+    text-indent: 0;
+}
+
+/* @doc Interlineado compacto */
+.compact {
+    line-height: 1.3;
+}
+
+/* @doc Fuente sans-serif */
+.sans {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* @doc Versalitas */
+.small-caps {
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+}
+
+/* @doc Texto atenuado */
+.muted {
+    color: #aaa;
+}
+
+/* @doc Salto de pagina antes del elemento */
+.page-break {
+    page-break-before: always;
+}
+
+/* @doc Evitar salto de pagina dentro del elemento */
+.avoid-break {
+    page-break-inside: avoid;
+}
+
+/* @doc Cita en epigrafe */
+.epigraph {
+    text-align: right;
+    font-style: italic;
+    font-size: 0.9em;
+    color: #777;
+    margin: 1.5em 2em;
+}
+
+/* @doc Ornamento decorativo centrado */
+.ornament {
+    display: block;
+    margin: 1.5em auto;
+    max-width: 30%;
+    opacity: 0.4;
+}
+
+/* @doc Separador decorativo entre capitulos */
+.chapter-ornament {
+    text-align: center;
+    margin-bottom: 2em;
+    color: #2c7be5;
+    font-size: 1em;
+}
+
+/* @doc Separador entre parrafos */
+.paragraph-separator {
+    text-align: center;
+    margin: 2em 0;
+    color: #2c7be5;
+    opacity: 0.5;
+}
+
+/* @doc Primer parrafo destacado */
+.lead {
+    font-size: 1.15em;
+    color: #444;
+    font-weight: 500;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* @doc Decoracion de final de capitulo */
+.fin-capitulo {
+    text-align: center;
+    margin: 2.5em 0;
+    font-size: 1em;
+    color: #2c7be5;
+    opacity: 0.6;
+    letter-spacing: 0.5em;
+}
+
+/* @doc Cita destacada centrada */
+.pull-quote {
+    text-align: center;
+    font-size: 1.2em;
+    font-style: italic;
+    color: #1a3a5c;
+    margin: 1.5em 2em;
+    line-height: 1.5;
+    font-weight: 500;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    border-top: 2px solid #d4e4f7;
+    border-bottom: 2px solid #d4e4f7;
+    padding: 1em 0;
+}
+
+/* @doc Lista sin viñetas */
+.list-unstyled {
+    list-style: none;
+    padding-left: 0;
+}
+
+/* @doc Imagen flotante a la izquierda */
+.float-left {
+    float: left;
+    margin: 0.3em 1em 0.5em 0;
+    max-width: 40%;
+}
+
+/* @doc Imagen flotante a la derecha */
+.float-right {
+    float: right;
+    margin: 0.3em 0 0.5em 1em;
+    max-width: 40%;
+}
+
+/* @doc Sangria francesa */
+.hanging-indent {
+    padding-left: 1.5em;
+    text-indent: -1.5em;
+}
+
+/* @doc Lista horizontal */
+.list-inline {
+    list-style: none;
+    padding-left: 0;
+}
+
+.list-inline li {
+    display: inline;
+    margin: 0 0.5em;
+}
+
+/* @doc Texto en mayusculas */
+.all-caps {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* @doc Capitulo en pagina impar */
+.page-break-right {
+    page-break-before: right;
+}
+
+/* @doc Margen izquierdo */
+.indent-left {
+    margin-left: 2em;
+}
+
+/* @doc Margen derecho */
+.indent-right {
+    margin-right: 2em;
+}

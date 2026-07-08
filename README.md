@@ -120,7 +120,24 @@ User-level settings via Configuration → Global:
 
 ## Themes
 
-Themes are CSS-based and located in `mdtoepub/themes/`. The built-in theme is `classic`.
+Themes are CSS-based and control the visual appearance of the generated EPUB.
+
+### Theme types
+
+- **Built-in themes** — shipped with the application in `mdtoepub/themes/`. Read-only.
+- **Custom themes** — user-created, stored in `~/.config/mdtoepub/themes/`. Fully manageable.
+
+### Theme manager
+
+Use **Configuración → Temas** to open the theme manager, where you can:
+
+- **Activar tema** — apply a built-in or custom theme to the current project
+- **Crear tema en blanco** — create a new empty custom theme
+- **Clonar tema** — duplicate any existing theme (built-in or custom) as a new custom theme
+- **Editar CSS** — modify the CSS files of a custom theme
+- **Renombrar / Eliminar** — manage your custom themes
+
+### Theme structure
 
 Each theme provides:
 

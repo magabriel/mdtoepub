@@ -26,6 +26,7 @@ from .services.markdown_service import MarkdownService
 from .services.image_service import ImageService
 from .services.style_doc_service import StyleDocService
 from .services.spell_service import SpellCheckService
+from .services.theme_service import ThemeService
 
 
 FRONTMATTER_DOCS = {
@@ -140,11 +141,6 @@ class MDToEPUBApp(Gtk.Application):
         recent_item.set_submenu(self._recent_menu)
         archivo_menu.append(recent_item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
-        if self._dev_mode:
-            item = Gtk.MenuItem(label="Cargar libro de ejemplo")
-            item.connect("activate", self._on_load_sample_book)
-            archivo_menu.append(item)
-            archivo_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label="Importar libro...")
         item.connect("activate", self._on_import_book)
         archivo_menu.append(item)
@@ -224,6 +220,22 @@ class MDToEPUBApp(Gtk.Application):
         item.connect("activate", self._on_about)
         config_menu.append(item)
         menubar.append(config)
+
+        # Ayuda
+        ayuda = Gtk.MenuItem(label="Ayuda")
+        ayuda_menu = Gtk.Menu()
+        ayuda.set_submenu(ayuda_menu)
+        libros_ejemplo = Gtk.MenuItem(label="Libros de ejemplo")
+        libros_menu = Gtk.Menu()
+        libros_ejemplo.set_submenu(libros_menu)
+        item = Gtk.MenuItem(label="Novela clásica")
+        item.connect("activate", self._on_load_sample_book, "sample_book")
+        libros_menu.append(item)
+        item = Gtk.MenuItem(label="Libro de texto")
+        item.connect("activate", self._on_load_sample_book, "sample_book_textbook")
+        libros_menu.append(item)
+        ayuda_menu.append(libros_ejemplo)
+        menubar.append(ayuda)
 
         container.pack_start(menubar, False, False, 0)
 
@@ -486,12 +498,12 @@ hr { border: none; border-top: 1px solid #ccc; }
         status_box.pack_end(self.project_label, False, False, 0)
 
     def _get_theme_dir(self) -> str:
-        return os.path.join(
-            os.path.dirname(__file__), "themes", self.project.theme_id
-        )
+        return ThemeService.get_theme_path(self.project.theme_id) or ""
 
     def _load_theme_config(self) -> dict:
         theme_dir = self._get_theme_dir()
+        if not theme_dir:
+            return {}
         theme_yaml = os.path.join(theme_dir, "theme.yaml")
         if os.path.exists(theme_yaml):
             return YamlService.load(theme_yaml)
@@ -503,6 +515,8 @@ hr { border: none; border-top: 1px solid #ccc; }
             return css
 
         theme_dir = self._get_theme_dir()
+        if not theme_dir:
+            return css
 
         # Level 1: Theme base
         style_path = os.path.join(theme_dir, "style.css")
@@ -536,6 +550,8 @@ hr { border: none; border-top: 1px solid #ccc; }
     def _ensure_style_doc_svc(self):
         if not hasattr(self, "_style_doc_svc") or self._style_doc_svc is None:
             theme_dir = self._get_theme_dir()
+            if not theme_dir:
+                theme_dir = str(ThemeService.BUILTIN_DIR / "classic")
             self._style_doc_svc = StyleDocService(theme_dir)
         return self._style_doc_svc
 
@@ -1027,14 +1043,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_app.attach(label, 0, row, 1, 1)
 
-        themes_dir = os.path.join(os.path.dirname(__file__), "themes")
-        available_themes = []
-        if os.path.exists(themes_dir):
-            for d in sorted(os.listdir(themes_dir)):
-                theme_yaml = os.path.join(themes_dir, d, "theme.yaml")
-                if os.path.exists(theme_yaml):
-                    data = YamlService.load(theme_yaml)
-                    available_themes.append((d, data.get("name", d)))
+        themes_list = ThemeService.list_themes()
+        available_themes = [(t.id, t.name) for t in themes_list]
 
         combo_theme = Gtk.ComboBoxText()
         theme_index = 0
@@ -1935,10 +1945,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self._toolbar_save_btn.set_sensitive(not enabled)
         self._update_window_title()
 
-    def _on_load_sample_book(self, widget):
+    def _on_load_sample_book(self, widget, book_dir="sample_book"):
         if not self._confirm_discard_project():
             return
-        sample_dir = os.path.join(os.path.dirname(__file__), "data", "sample_book")
+        sample_dir = os.path.join(os.path.dirname(__file__), "data", book_dir)
         yaml_path = os.path.join(sample_dir, "project.yaml")
         if not os.path.exists(yaml_path):
             self._show_error("No se encontro el libro de ejemplo")
@@ -1988,14 +1998,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self._show_info("Abre un proyecto primero")
             return
 
-        themes_dir = os.path.join(os.path.dirname(__file__), "themes")
-        available = []
-        if os.path.exists(themes_dir):
-            for d in sorted(os.listdir(themes_dir)):
-                tyaml = os.path.join(themes_dir, d, "theme.yaml")
-                if os.path.exists(tyaml):
-                    data = YamlService.load(tyaml)
-                    available.append((d, data.get("name", d)))
+        themes = ThemeService.list_themes()
 
         dialog = Gtk.Dialog(
             title="Gestor de temas",
@@ -2003,7 +2006,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             modal=True,
         )
         dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
-        dialog.set_default_size(550, 400)
+        dialog.set_default_size(650, 500)
 
         content = dialog.get_content_area()
         content.set_spacing(8)
@@ -2012,10 +2015,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         content.set_margin_start(12)
         content.set_margin_end(12)
 
-        store = Gtk.ListStore(str, str, str)
-        for tid, tname in available:
-            is_active = "Si" if tid == self.project.theme_id else ""
-            store.append([tname, tid, is_active])
+        store = Gtk.ListStore(str, str, str, str)
+        for theme in themes:
+            is_active = "Si" if theme.id == self.project.theme_id else ""
+            type_label = "Integrado" if theme.is_builtin else "Personalizado"
+            store.append([theme.name, theme.id, is_active, type_label])
 
         tree = Gtk.TreeView(model=store)
         tree.set_headers_visible(True)
@@ -2023,6 +2027,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         r_name = Gtk.CellRendererText()
         c_name = Gtk.TreeViewColumn("Tema", r_name, text=0)
         c_name.set_resizable(True)
+        c_name.set_expand(True)
         tree.append_column(c_name)
 
         r_id = Gtk.CellRendererText()
@@ -2034,21 +2039,59 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         c_active = Gtk.TreeViewColumn("Activo", r_active, text=2)
         tree.append_column(c_active)
 
+        r_type = Gtk.CellRendererText()
+        c_type = Gtk.TreeViewColumn("Tipo", r_type, text=3)
+        tree.append_column(c_type)
+
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_vexpand(True)
         scrolled.add(tree)
         content.pack_start(scrolled, True, True, 0)
 
         btn_box = Gtk.Box(spacing=6)
+
         btn_activate = Gtk.Button(label="Activar tema")
         btn_activate.connect("clicked", lambda b: self._on_activate_theme(tree, store, dialog))
         btn_box.pack_start(btn_activate, False, False, 0)
 
-        btn_edit_css = Gtk.Button(label="Editar CSS del tema")
-        btn_edit_css.connect("clicked", lambda b: self._on_edit_theme_css(tree, store))
-        btn_box.pack_start(btn_edit_css, False, False, 0)
+        btn_create = Gtk.Button(label="Crear tema en blanco")
+        btn_create.connect("clicked", lambda b: self._on_create_blank_theme(tree, store))
+        btn_box.pack_start(btn_create, False, False, 0)
+
+        btn_clone = Gtk.Button(label="Clonar tema")
+        btn_clone.connect("clicked", lambda b: self._on_clone_theme(tree, store))
+        btn_box.pack_start(btn_clone, False, False, 0)
+
+        btn_view_css = Gtk.Button(label="Visualizar CSS")
+        btn_view_css.connect("clicked", lambda b: self._on_view_theme_css(tree, store))
+        btn_box.pack_start(btn_view_css, False, False, 0)
+
+        btn_rename = Gtk.Button(label="Renombrar")
+        btn_rename.connect("clicked", lambda b: self._on_rename_theme(tree, store))
+        btn_box.pack_start(btn_rename, False, False, 0)
+
+        btn_delete = Gtk.Button(label="Eliminar")
+        btn_delete.connect("clicked", lambda b: self._on_delete_theme(tree, store, dialog))
+        btn_box.pack_start(btn_delete, False, False, 0)
 
         content.pack_start(btn_box, False, False, 0)
+
+        def on_selection_changed(sel):
+            model, iter_ = sel.get_selected()
+            if iter_ is not None:
+                type_label = model.get_value(iter_, 3)
+                is_custom = type_label == "Personalizado"
+                btn_view_css.set_label("Editar CSS" if is_custom else "Visualizar CSS")
+                btn_rename.set_sensitive(is_custom)
+                btn_delete.set_sensitive(is_custom)
+            else:
+                btn_view_css.set_label("Visualizar CSS")
+                btn_rename.set_sensitive(False)
+                btn_delete.set_sensitive(False)
+
+        tree.get_selection().connect("changed", on_selection_changed)
+        on_selection_changed(tree.get_selection())
+
         dialog.show_all()
         dialog.connect("response", lambda d, r: d.destroy())
 
@@ -2065,13 +2108,159 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self._update_status(f"Tema activado: {model.get_value(iter_, 0)}")
             dialog.destroy()
 
-    def _on_edit_theme_css(self, tree, store):
+    def _on_create_blank_theme(self, tree, store):
+        dialog = Gtk.Dialog(
+            title="Crear tema en blanco",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Crear", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_size(400, 200)
+
+        content = dialog.get_content_area()
+        content.set_spacing(8)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        grid = Gtk.Grid(row_spacing=6, column_spacing=6)
+        row = 0
+
+        label = Gtk.Label(label="Nombre:")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        entry_name = Gtk.Entry()
+        grid.attach(entry_name, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Descripcion:")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        entry_desc = Gtk.Entry()
+        grid.attach(entry_desc, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Autor:")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        entry_author = Gtk.Entry()
+        grid.attach(entry_author, 1, row, 1, 1)
+
+        content.pack_start(grid, False, False, 0)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                name = entry_name.get_text().strip()
+                if not name:
+                    self._show_info("El nombre es obligatorio")
+                    return
+                theme = ThemeService.create_blank(
+                    name=name,
+                    description=entry_desc.get_text().strip(),
+                    author=entry_author.get_text().strip(),
+                )
+                if theme:
+                    self._refresh_theme_store(store)
+                    self._update_status(f"Tema creado: {name}")
+                else:
+                    self._show_info("No se pudo crear el tema (el ID ya existe)")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_clone_theme(self, tree, store):
+        sel = tree.get_selection()
+        model, iter_ = sel.get_selected()
+        if iter_ is None:
+            self._show_info("Selecciona un tema para clonar")
+            return
+
+        source_id = model.get_value(iter_, 1)
+        source_name = model.get_value(iter_, 0)
+
+        dialog = Gtk.Dialog(
+            title=f"Clonar tema: {source_name}",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Clonar", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_size(400, 250)
+
+        content = dialog.get_content_area()
+        content.set_spacing(8)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        grid = Gtk.Grid(row_spacing=6, column_spacing=6)
+        row = 0
+
+        label = Gtk.Label(label="Nombre:")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        entry_name = Gtk.Entry()
+        entry_name.set_text(f"{source_name} (copia)")
+        entry_name.select_region(0, -1)
+        grid.attach(entry_name, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Descripcion:")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        entry_desc = Gtk.Entry()
+        grid.attach(entry_desc, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Autor:")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        entry_author = Gtk.Entry()
+        grid.attach(entry_author, 1, row, 1, 1)
+
+        content.pack_start(grid, False, False, 0)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                name = entry_name.get_text().strip()
+                if not name:
+                    self._show_info("El nombre es obligatorio")
+                    return
+                theme = ThemeService.clone_theme(
+                    source_id=source_id,
+                    new_name=name,
+                    description=entry_desc.get_text().strip(),
+                    author=entry_author.get_text().strip(),
+                )
+                if theme:
+                    self._refresh_theme_store(store)
+                    self._update_status(f"Tema clonado: {name}")
+                else:
+                    self._show_info("No se pudo clonar el tema (el ID ya existe)")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_view_theme_css(self, tree, store):
         sel = tree.get_selection()
         model, iter_ = sel.get_selected()
         if iter_ is None:
             return
+        type_label = model.get_value(iter_, 3)
+        is_read_only = type_label == "Integrado"
+
         theme_id = model.get_value(iter_, 1)
-        theme_dir = os.path.join(os.path.dirname(__file__), "themes", theme_id)
+        theme_name = model.get_value(iter_, 0)
+        theme = ThemeService.get_theme(theme_id)
+        if not theme:
+            return
+
+        theme_dir = theme.path
 
         theme_config = {}
         tyaml = os.path.join(theme_dir, "theme.yaml")
@@ -2080,14 +2269,18 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         css_files = {"style.css": "Base"}
         for comp_type, css_file in theme_config.get("styles", {}).items():
-            css_files[css_file] = f"Componente: {comp_type}"
+            if css_file not in css_files:
+                css_files[css_file] = f"Componente: {comp_type}"
 
+        mode_title = "Visualizar" if is_read_only else "Editar"
         editor_dialog = Gtk.Dialog(
-            title=f"CSS del tema: {model.get_value(iter_, 0)}",
+            title=f"{mode_title} CSS: {theme_name}",
             transient_for=self.window,
             modal=True,
         )
         editor_dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        if not is_read_only:
+            editor_dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
         editor_dialog.set_default_size(700, 500)
 
         editor_content = editor_dialog.get_content_area()
@@ -2112,6 +2305,13 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         text_view = GtkSource.View.new_with_buffer(buf)
         text_view.set_monospace(True)
         text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        text_view.set_hexpand(True)
+        text_view.set_vexpand(True)
+        text_view.set_editable(not is_read_only)
+        if is_read_only:
+            text_view.set_cursor_visible(False)
+
+        current_file_idx = [0]
 
         def load_css_file(idx):
             fname = css_list[idx][0]
@@ -2121,6 +2321,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 with open(fpath) as f:
                     text = f.read()
             buf.set_text(text)
+            current_file_idx[0] = idx
 
         load_css_file(0)
 
@@ -2132,8 +2333,115 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         scrolled.add(text_view)
         editor_content.pack_start(scrolled, True, True, 0)
 
+        def on_editor_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT and not is_read_only:
+                fname = css_list[current_file_idx[0]][0]
+                fpath = os.path.join(theme_dir, fname)
+                with open(fpath, "w", encoding="utf-8") as f:
+                    f.write(buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True))
+                self._update_status(f"CSS guardado: {fname}")
+                if self.project and self.project.theme_id == theme_id:
+                    self._update_preview()
+                    self._update_help_panel()
+            d.destroy()
+
+        editor_dialog.connect("response", on_editor_response)
         editor_dialog.show_all()
-        editor_dialog.connect("response", lambda d, r: d.destroy())
+
+    def _on_rename_theme(self, tree, store):
+        sel = tree.get_selection()
+        model, iter_ = sel.get_selected()
+        if iter_ is None:
+            return
+        type_label = model.get_value(iter_, 3)
+        if type_label == "Integrado":
+            self._show_info("Los temas integrados no se pueden renombrar")
+            return
+
+        theme_id = model.get_value(iter_, 1)
+        current_name = model.get_value(iter_, 0)
+
+        dialog = Gtk.Dialog(
+            title="Renombrar tema",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Renombrar", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_size(350, 120)
+
+        content = dialog.get_content_area()
+        content.set_spacing(8)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        entry = Gtk.Entry()
+        entry.set_text(current_name)
+        entry.select_region(0, -1)
+        content.pack_start(entry, False, False, 0)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                new_name = entry.get_text().strip()
+                if new_name:
+                    ThemeService.rename_theme(theme_id, new_name)
+                    self._refresh_theme_store(store)
+                    self._update_status(f"Tema renombrado: {new_name}")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_delete_theme(self, tree, store, parent_dialog):
+        sel = tree.get_selection()
+        model, iter_ = sel.get_selected()
+        if iter_ is None:
+            return
+        type_label = model.get_value(iter_, 3)
+        if type_label == "Integrado":
+            self._show_info("Los temas integrados no se pueden eliminar")
+            return
+
+        theme_id = model.get_value(iter_, 1)
+        theme_name = model.get_value(iter_, 0)
+
+        if theme_id == self.project.theme_id:
+            self._show_info(
+                f"El tema '{theme_name}' esta en uso.\n"
+                "Cambia a otro tema antes de eliminarlo."
+            )
+            return
+
+        confirm = Gtk.MessageDialog(
+            transient_for=parent_dialog,
+            modal=True,
+            message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.YES_NO,
+            text=f"Eliminar tema: {theme_name}",
+        )
+        confirm.format_secondary_text(
+            "Esta accion no se puede deshacer.\n"
+            "Todos los archivos del tema se eliminaran permanentemente."
+        )
+        resp = confirm.run()
+        confirm.destroy()
+
+        if resp == Gtk.ResponseType.YES:
+            if ThemeService.delete_theme(theme_id):
+                self._refresh_theme_store(store)
+                self._update_status(f"Tema eliminado: {theme_name}")
+            else:
+                self._show_info("No se pudo eliminar el tema")
+
+    def _refresh_theme_store(self, store):
+        store.clear()
+        themes = ThemeService.list_themes()
+        for theme in themes:
+            is_active = "Si" if theme.id == self.project.theme_id else ""
+            type_label = "Integrado" if theme.is_builtin else "Personalizado"
+            store.append([theme.name, theme.id, is_active, type_label])
 
     def _on_about(self, widget):
         dialog = Gtk.AboutDialog(

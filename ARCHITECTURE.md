@@ -14,9 +14,9 @@ MDToEPUB is a monolithic GTK3 application with a service-oriented architecture. 
 │    └── Preview system (_update_preview)         │
 ├─────────────────────────────────────────────────┤
 │                  services/                       │
-│  MarkdownService   EpubService   FileService     │
-│  YamlService       ImageService  SpellCheckService│
-│  StyleDocService                                 │
+│  MarkdownService   EpubService   FileService       │
+│  YamlService       ImageService  SpellCheckService  │
+│  StyleDocService   ThemeService                    │
 ├─────────────────────────────────────────────────┤
 │                  models/                         │
 │  Project    Component    ComponentType    Theme   │
@@ -39,7 +39,8 @@ mdtoepub/
 │   ├── yaml_service.py      # YAML load/save/frontmatter parsing
 │   ├── image_service.py     # Image validation and optimization
 │   ├── spell_service.py     # Multi-language spell-check
-│   └── style_doc_service.py # CSS @doc comment extraction
+│   ├── style_doc_service.py # CSS @doc comment extraction
+│   └── theme_service.py     # Theme discovery, CRUD, clone
 ├── themes/
 │   └── classic/             # Built-in CSS theme
 ├── data/
@@ -98,12 +99,6 @@ Each component represents a section of the book.
 `models/component.py:10`
 
 20 component types organized in three groups: **Front** (cover, title, license, etc.), **Preliminary** (toc, foreword, preface, etc.), **Body** (part, chapter, conclusion, etc.), and **Back** (appendix, glossary).
-
-### Theme
-
-`models/theme.py:5`
-
-Describes a theme directory with its metadata and CSS file mapping.
 
 ## Service layer
 
@@ -301,7 +296,18 @@ All per-type CSS files use `:not(.component-header)` to avoid styling auto-heade
 
 ## Theme system
 
-Themes live in `mdtoepub/themes/<id>/` and consist of:
+### Theme types
+
+There are two types of themes:
+
+| Type | Location | Editable |
+|------|----------|----------|
+| Built-in (integrados) | `mdtoepub/themes/<id>/` | Read-only |
+| Custom (personalizados) | `~/.config/mdtoepub/themes/<id>/` | Full CRUD |
+
+### Theme directory structure
+
+Each theme consists of:
 
 ```
 theme.yaml         — metadata + component-to-CSS mapping
@@ -314,13 +320,70 @@ The `theme.yaml` maps each component type to its CSS file:
 ```yaml
 id: "classic"
 name: "Clásico"
+description: "Tema clásico para libros de narrativa"
+author: ""
+version: "1.0"
+source_theme_id: null        # set when cloned from another theme
+base_style: style.css
 styles:
   chapter: chapter.css
   cover: cover.css
   ...
+fonts:
+  serif: "Georgia, serif"
+  sans: "Helvetica, sans-serif"
 ```
 
 CSS files can contain `@doc` comments for auto-documentation in the help panels.
+
+### Theme model
+
+`models/theme.py:7`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `id` | str | `""` | Unique identifier (slug) |
+| `name` | str | `""` | Display name |
+| `description` | str | `""` | Short description |
+| `is_builtin` | bool | `True` | Whether it ships with the app |
+| `source_theme_id` | Optional[str] | `None` | Original theme if cloned |
+| `author` | str | `""` | Theme author |
+| `version` | str | `"1.0"` | Theme version |
+| `base_style` | str | `"style.css"` | Default CSS file |
+| `styles` | Dict[str, str] | `{}` | Per-component-type CSS mapping |
+| `path` | Optional[str] | `None` | Absolute filesystem path |
+
+### ThemeService
+
+`services/theme_service.py:37`
+
+Manages theme discovery and lifecycle:
+
+- **Discovery**: scans both built-in and custom directories, merges results
+- **Create blank**: generates a minimal `theme.yaml` + `style.css` with all component types mapped
+- **Clone**: copies entire theme directory, updates metadata with `source_theme_id`
+- **Delete**: removes custom theme directory (built-in protected)
+- **Rename**: updates `name` in `theme.yaml` (built-in protected)
+
+Key methods:
+- `list_themes()` — returns all available themes
+- `get_theme(theme_id)` — single theme lookup
+- `get_theme_path(theme_id)` — resolve filesystem path
+- `create_blank(name, ...)` — new empty theme
+- `clone_theme(source_id, new_name, ...)` — copy existing theme
+- `delete_theme(theme_id)` — remove custom theme
+- `rename_theme(theme_id, new_name)` — rename custom theme
+
+### Theme manager UI
+
+The theme manager dialog (`_on_theme_manager` in `main.py`) provides:
+- List of all themes with type indicator (Integrado / Personalizado)
+- **Activar tema**: applies the selected theme to the current project
+- **Crear tema en blanco**: creates a new empty custom theme
+- **Clonar tema**: clones any theme (built-in or custom) to a new custom theme
+- **Editar CSS**: opens CSS editor (only for custom themes)
+- **Renombrar**: renames a custom theme
+- **Eliminar**: removes a custom theme (protected if currently active)
 
 ## Spell-check system
 
@@ -379,7 +442,7 @@ EpubService.generate()
 
 ## Extension points
 
-- **Themes**: Add a new directory under `themes/` with `theme.yaml` and CSS files.
+- **Themes**: Add a new directory under `mdtoepub/themes/` with `theme.yaml` and CSS files (built-in). Users can also create custom themes via the theme manager UI, stored in `~/.config/mdtoepub/themes/`.
 - **CSS classes**: Document utility classes with `/* @doc */` comments for automatic help panel inclusion.
 - **Component types**: Extend `ComponentType` enum and add corresponding CSS and labels.
 - **Markdown extensions**: Add extensions to `MarkdownService.extensions`.
