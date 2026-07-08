@@ -201,15 +201,16 @@ drop_cap_enabled: true
 drop_cap_types:
 - chapter
 - preface
+edition: 1ª edicion
 epub_version: epub3
-export_filename: ''
+export_filename: el-vestigio-de-los-siglos
+isbn: 978-989-555-123-4
 language: es
 name: libro_ejemplo
+publication_date: '2024'
+publisher: Ediciones del Atlantico
 spell_lang: es_ES
 spell_words: []
-edition: 1ª edicion
-publication_date: "2024"
-isbn: 978-989-555-123-4
-publisher: Ediciones del Atlantico
 theme_id: classic
 title: El Vestigio de los Siglos
+subtitle: Una novela de archivos y memoria

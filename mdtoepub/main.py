@@ -963,6 +963,16 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_book.attach(entry_title, 1, row, 1, 1)
         row += 1
 
+        label = Gtk.Label(label="Subtitulo:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_subtitle = Gtk.Entry()
+        entry_subtitle.set_text(self.project.subtitle)
+        entry_subtitle.set_hexpand(True)
+        entry_subtitle.set_placeholder_text("Subtitulo del libro")
+        grid_book.attach(entry_subtitle, 1, row, 1, 1)
+        row += 1
+
         label = Gtk.Label(label="Archivo EPUB:")
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
@@ -1193,6 +1203,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 self.project.publication_date = entry_fecha.get_text().strip()
                 self.project.isbn = entry_isbn.get_text().strip()
                 self.project.publisher = entry_editorial.get_text().strip()
+                self.project.subtitle = entry_subtitle.get_text().strip()
                 lang_idx = combo_lang.get_active()
                 if lang_idx >= 0 and lang_idx < len(langs):
                     self.project.spell_lang = langs[lang_idx]
@@ -1528,6 +1539,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 new_project.publication_date = self.project.publication_date
                 new_project.isbn = self.project.isbn
                 new_project.publisher = self.project.publisher
+                new_project.subtitle = self.project.subtitle
 
                 old_components_dir = os.path.join(self.project.path, "components")
                 new_components_dir = os.path.join(new_project.path, "components")

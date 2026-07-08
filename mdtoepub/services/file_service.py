@@ -109,6 +109,7 @@ class FileService:
             "publication_date": "",
             "isbn": "",
             "publisher": "",
+            "subtitle": "",
             "components": [],
             "parts": [],
         }
@@ -143,6 +144,7 @@ class FileService:
             publication_date=data.get("publication_date", ""),
             isbn=data.get("isbn", ""),
             publisher=data.get("publisher", ""),
+            subtitle=data.get("subtitle", ""),
         )
 
         for comp_data in data.get("components", []):
@@ -192,6 +194,7 @@ class FileService:
             "publication_date": project.publication_date,
             "isbn": project.isbn,
             "publisher": project.publisher,
+            "subtitle": project.subtitle,
             "components": [
                 {
                     "id": c.id,
