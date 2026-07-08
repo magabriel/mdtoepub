@@ -2051,9 +2051,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         btn_clone.connect("clicked", lambda b: self._on_clone_theme(tree, store))
         btn_box.pack_start(btn_clone, False, False, 0)
 
-        btn_edit_css = Gtk.Button(label="Editar CSS")
-        btn_edit_css.connect("clicked", lambda b: self._on_edit_custom_theme_css(tree, store))
-        btn_box.pack_start(btn_edit_css, False, False, 0)
+        btn_view_css = Gtk.Button(label="Visualizar CSS")
+        btn_view_css.connect("clicked", lambda b: self._on_view_theme_css(tree, store))
+        btn_box.pack_start(btn_view_css, False, False, 0)
 
         btn_rename = Gtk.Button(label="Renombrar")
         btn_rename.connect("clicked", lambda b: self._on_rename_theme(tree, store))
@@ -2070,11 +2070,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if iter_ is not None:
                 type_label = model.get_value(iter_, 3)
                 is_custom = type_label == "Personalizado"
-                btn_edit_css.set_sensitive(is_custom)
+                btn_view_css.set_label("Editar CSS" if is_custom else "Visualizar CSS")
                 btn_rename.set_sensitive(is_custom)
                 btn_delete.set_sensitive(is_custom)
             else:
-                btn_edit_css.set_sensitive(False)
+                btn_view_css.set_label("Visualizar CSS")
                 btn_rename.set_sensitive(False)
                 btn_delete.set_sensitive(False)
 
@@ -2235,18 +2235,13 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         dialog.connect("response", on_response)
         dialog.show_all()
 
-    def _on_edit_custom_theme_css(self, tree, store):
+    def _on_view_theme_css(self, tree, store):
         sel = tree.get_selection()
         model, iter_ = sel.get_selected()
         if iter_ is None:
             return
         type_label = model.get_value(iter_, 3)
-        if type_label == "Integrado":
-            self._show_info(
-                "Los temas integrados no se pueden modificar.\n"
-                "Usa 'Clonar tema' para crear una copia personalizada."
-            )
-            return
+        is_read_only = type_label == "Integrado"
 
         theme_id = model.get_value(iter_, 1)
         theme_name = model.get_value(iter_, 0)
@@ -2266,13 +2261,15 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if css_file not in css_files:
                 css_files[css_file] = f"Componente: {comp_type}"
 
+        mode_title = "Visualizar" if is_read_only else "Editar"
         editor_dialog = Gtk.Dialog(
-            title=f"CSS del tema: {theme_name}",
+            title=f"{mode_title} CSS: {theme_name}",
             transient_for=self.window,
             modal=True,
         )
-        editor_dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        editor_dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+        editor_dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        if not is_read_only:
+            editor_dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
         editor_dialog.set_default_size(700, 500)
 
         editor_content = editor_dialog.get_content_area()
@@ -2299,6 +2296,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         text_view.set_hexpand(True)
         text_view.set_vexpand(True)
+        text_view.set_editable(not is_read_only)
+        if is_read_only:
+            text_view.set_cursor_visible(False)
 
         current_file_idx = [0]
 
@@ -2323,7 +2323,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         editor_content.pack_start(scrolled, True, True, 0)
 
         def on_editor_response(d, response):
-            if response == Gtk.ResponseType.ACCEPT:
+            if response == Gtk.ResponseType.ACCEPT and not is_read_only:
                 fname = css_list[current_file_idx[0]][0]
                 fpath = os.path.join(theme_dir, fname)
                 with open(fpath, "w", encoding="utf-8") as f:
