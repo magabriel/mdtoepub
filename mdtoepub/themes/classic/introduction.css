@@ -1,0 +1,33 @@
+.component-introduction {
+    page-break-before: always;
+}
+
+.component-introduction h1:not(.component-header) {
+    font-size: 1.8em;
+    text-align: center;
+    margin-bottom: 1.5em;
+    page-break-after: avoid;
+}
+
+.component-introduction h2 {
+    font-size: 1.3em;
+    margin-top: 1.5em;
+    page-break-after: avoid;
+}
+
+.component-introduction p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+}
+
+.component-introduction p:first-of-type {
+    text-indent: 0;
+    font-variant: small-caps;
+}
+
+.component-introduction blockquote {
+    margin: 1em 2em;
+    font-style: italic;
+    border-left: 2px solid #999;
+    padding-left: 1em;
+}

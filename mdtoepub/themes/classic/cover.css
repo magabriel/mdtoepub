@@ -1,0 +1,41 @@
+.component-cover {
+    page-break-before: always;
+}
+
+.component-cover h1:not(.component-header) {
+    font-size: 1.8em;
+    text-align: center;
+    margin-bottom: 1em;
+    page-break-after: avoid;
+}
+
+.component-cover h2 {
+    font-size: 1.3em;
+    margin-top: 1.5em;
+    page-break-after: avoid;
+}
+
+.component-cover p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+}
+
+.component-cover p:first-of-type {
+    text-indent: 0;
+}
+
+.component-cover .author {
+    text-align: right;
+    font-style: italic;
+    margin-top: 2em;
+    text-indent: 0;
+    font-size: 0.95em;
+    color: #555;
+}
+
+.component-cover .location-date {
+    text-align: right;
+    font-size: 0.9em;
+    color: #888;
+    text-indent: 0;
+}

@@ -1,0 +1,71 @@
+.component-appendix {
+    page-break-before: always;
+}
+
+.component-appendix h1:not(.component-header) {
+    font-size: 1.8em;
+    text-align: center;
+    margin-bottom: 1.5em;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.3em;
+    page-break-after: avoid;
+}
+
+.component-appendix h2 {
+    font-size: 1.3em;
+    margin-top: 1.5em;
+    page-break-after: avoid;
+}
+
+.component-appendix h3 {
+    font-size: 1.1em;
+    page-break-after: avoid;
+}
+
+.component-appendix p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+}
+
+.component-appendix p:first-of-type {
+    text-indent: 0;
+}
+
+.component-appendix pre {
+    font-size: 0.9em;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 1em;
+    border-radius: 4px;
+}
+
+.component-appendix code {
+    font-size: 0.9em;
+}
+
+.component-appendix table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+
+.component-appendix th, .component-appendix td {
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    text-align: left;
+}
+
+.component-appendix th {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+.component-appendix ul, .component-appendix ol {
+    margin: 0.5em 0;
+    padding-left: 2em;
+}
+
+.component-appendix li {
+    margin: 0.3em 0;
+}

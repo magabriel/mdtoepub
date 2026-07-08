@@ -1,0 +1,69 @@
+.component-toc {
+    page-break-before: always;
+    page-break-after: always;
+}
+
+.component-toc h1:not(.component-header) {
+    font-size: 1em;
+    text-align: center;
+    margin-bottom: 1.5em;
+    border-bottom: none;
+    page-break-after: avoid;
+}
+
+.component-toc .toc-list {
+    list-style: none;
+    list-style-type: none;
+    counter-reset: none;
+}
+
+/* -- Part heading (with chapters) -- */
+.component-toc .toc-part-heading {
+    font-size: 1.2em;
+    margin-top: 1em;
+    margin-bottom: 0.3em;
+    font-style: normal;
+}
+
+.component-toc .toc-part-heading a {
+    text-decoration: none;
+}
+
+/* Standalone part (no chapters) */
+.component-toc .toc-part-standalone {
+    font-size: 1.1em;
+    margin: 0.3em 0;
+}
+
+/* Component-level entries (same style for all types) */
+.component-toc .toc-entry {
+    margin: 0.15em 0;
+}
+
+/* Entries nested inside a part */
+.component-toc .toc-part .toc-entry {
+    padding-left: 1.5em;
+}
+
+/* Sub-headings inside a part: add part indentation on top of level indent */
+.component-toc .toc-part .toc-sub {
+    padding-left: 1.5em;
+}
+
+/* Sub-headings within a component (H2, H3, ...) */
+.component-toc .toc-sub {
+    margin: 0.1em 0;
+    font-size: 0.85em;
+    font-style: italic;
+    color: #555;
+}
+
+.component-toc p {
+    text-indent: 0;
+    font-size: 1em;
+}
+
+.component-toc hr {
+    width: 30%;
+    margin: 1.5em auto;
+}

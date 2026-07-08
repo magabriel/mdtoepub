@@ -1,0 +1,3152 @@
+#!/usr/bin/env python3
+import sys
+import os
+import shutil
+from pathlib import Path
+
+if sys.platform == "linux":
+    system_paths = ["/usr/lib/python3/dist-packages"]
+    for path in system_paths:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+
+import re
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("WebKit2", "4.1")
+gi.require_version("GtkSource", "4")
+from gi.repository import Gtk, Gio, GLib, Gdk, GdkPixbuf, Pango, WebKit2, GtkSource
+
+from .models.project import Project
+from .models.component import Component, ComponentType, COMPONENT_TYPE_LABELS
+from .services.file_service import FileService
+from .services.epub_service import EpubService
+from .services.yaml_service import YamlService
+from .services.markdown_service import MarkdownService
+from .services.image_service import ImageService
+from .services.style_doc_service import StyleDocService
+from .services.spell_service import SpellCheckService
+
+
+FRONTMATTER_DOCS = {
+    "toc": [
+        ("toc_include", "Lista de tipos de componente a incluir en el índice (ej: ['chapter', 'appendix'])"),
+        ("toc_deep", "Profundidad maxima de encabezados en el índice (1-6, por defecto 2)"),
+    ],
+    "chapter": [
+        ("show_title", "false para ocultar el titulo del capitulo"),
+    ],
+}
+
+FRONTMATTER_COMMON = [
+    ("show_title", "false para ocultar el titulo del componente (por defecto true)"),
+    ("split_title", "false para desactivar la particion automatica del titulo en subtitulo + titulo al encontrar ' - ', ' -- ' o ' --- ' (por defecto true)"),
+]
+
+def _component_icon(comp: Component) -> str:
+    mapping = {
+        ComponentType.ACKNOWLEDGEMENT: "emblem-people",
+        ComponentType.AFTERWORD: "text-x-preview",
+        ComponentType.APPENDIX: "emblem-documents",
+        ComponentType.AUTHOR: "avatar-default",
+        ComponentType.CHAPTER: "text-x-generic",
+        ComponentType.CONCLUSION: "text-x-preview",
+        ComponentType.COVER: "image-x-generic",
+        ComponentType.DEDICATION: "emblem-favorite",
+        ComponentType.EDITION: "text-x-preview",
+        ComponentType.EPILOGUE: "text-x-preview",
+        ComponentType.FOREWORD: "text-x-preview",
+        ComponentType.GLOSSARY: "accessories-dictionary",
+        ComponentType.INTRODUCTION: "text-x-preview",
+        ComponentType.LICENSE: "application-certificate",
+        ComponentType.LOF: "x-office-document",
+        ComponentType.LOT: "x-office-document",
+        ComponentType.PART: "folder",
+        ComponentType.PREFACE: "text-x-preview",
+        ComponentType.PROLOGUE: "text-x-preview",
+        ComponentType.TITLE: "text-x-generic",
+        ComponentType.TOC: "x-office-document",
+    }
+    return mapping.get(comp.type, "text-x-generic")
+
+
+def _component_label(comp: Component) -> str:
+    span = COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value)
+    return f"{comp.get_display_name()} ({span} — {comp.type.value})"
+
+
+class MDToEPUBApp(Gtk.Application):
+    def __init__(self):
+        super().__init__(
+            application_id="com.github.mdtoepub",
+            flags=Gio.ApplicationFlags.FLAGS_NONE,
+        )
+        self.project = None
+        self.window = None
+        self.project_store = None
+        self.current_component = None
+        self.current_part = None
+        self.md_service = MarkdownService()
+        self.webview = None
+        self.selected_folder = ""
+        self._drag_paths = []
+        self._drag_component_ids = []
+        self._last_epub_path = None
+        self._recent_projects = []
+        self._read_only = False
+        self._dev_mode = os.environ.get("MDTOEPUB_DEV") == "1"
+        self._toolbar_save_btn = None
+
+    def do_activate(self):
+        self.window = Gtk.ApplicationWindow(application=self)
+        self.window.set_title("MDToEPUB")
+        self.window.set_default_size(1200, 800)
+
+        main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+
+        self._setup_ui(main_box)
+        self._setup_statusbar(main_box)
+
+        self.window.add(main_box)
+        self.window.show_all()
+        self._load_recent_projects()
+
+    def _setup_menubar(self, container):
+        menubar = Gtk.MenuBar()
+
+        # Archivo
+        archivo = Gtk.MenuItem(label="Archivo")
+        archivo_menu = Gtk.Menu()
+        archivo.set_submenu(archivo_menu)
+        item = Gtk.MenuItem(label="Nuevo proyecto")
+        item.connect("activate", self._on_new_project)
+        archivo_menu.append(item)
+        item = Gtk.MenuItem(label="Abrir proyecto")
+        item.connect("activate", self._on_open_project)
+        archivo_menu.append(item)
+        item = Gtk.MenuItem(label="Guardar")
+        item.connect("activate", self._on_save_project)
+        archivo_menu.append(item)
+        item = Gtk.MenuItem(label="Guardar como")
+        item.connect("activate", self._on_save_project_as)
+        archivo_menu.append(item)
+        archivo_menu.append(Gtk.SeparatorMenuItem())
+        item = Gtk.MenuItem(label="Cerrar proyecto")
+        item.connect("activate", self._on_close_project)
+        archivo_menu.append(item)
+        archivo_menu.append(Gtk.SeparatorMenuItem())
+        self._recent_menu = Gtk.Menu()
+        recent_item = Gtk.MenuItem(label="Proyectos recientes")
+        recent_item.set_submenu(self._recent_menu)
+        archivo_menu.append(recent_item)
+        archivo_menu.append(Gtk.SeparatorMenuItem())
+        if self._dev_mode:
+            item = Gtk.MenuItem(label="Cargar libro de ejemplo")
+            item.connect("activate", self._on_load_sample_book)
+            archivo_menu.append(item)
+            archivo_menu.append(Gtk.SeparatorMenuItem())
+        item = Gtk.MenuItem(label="Importar libro...")
+        item.connect("activate", self._on_import_book)
+        archivo_menu.append(item)
+        archivo_menu.append(Gtk.SeparatorMenuItem())
+        item = Gtk.MenuItem(label="Salir")
+        item.connect("activate", lambda w: self.window.destroy())
+        archivo_menu.append(item)
+        menubar.append(archivo)
+
+        # Componente
+        componente = Gtk.MenuItem(label="Componente")
+        componente_menu = Gtk.Menu()
+        componente.set_submenu(componente_menu)
+        item = Gtk.MenuItem(label="Anadir componente")
+        item.connect("activate", self._on_add_component)
+        componente_menu.append(item)
+        componente_menu.append(Gtk.SeparatorMenuItem())
+        item = Gtk.MenuItem(label="Renombrar componente")
+        item.connect("activate", self._on_menu_rename_component)
+        componente_menu.append(item)
+        item = Gtk.MenuItem(label="Eliminar componente")
+        item.connect("activate", self._on_menu_delete_component)
+        componente_menu.append(item)
+        menubar.append(componente)
+
+        # Ver
+        ver = Gtk.MenuItem(label="Ver")
+        ver_menu = Gtk.Menu()
+        ver.set_submenu(ver_menu)
+        item = Gtk.MenuItem(label="Editor")
+        item.connect("activate", lambda w: self._focus_editor())
+        ver_menu.append(item)
+        item = Gtk.MenuItem(label="Preview")
+        item.connect("activate", lambda w: self._focus_preview())
+        ver_menu.append(item)
+        menubar.append(ver)
+
+        # Estilos
+        estilos = Gtk.MenuItem(label="Estilos")
+        estilos_menu = Gtk.Menu()
+        estilos.set_submenu(estilos_menu)
+        item = Gtk.MenuItem(label="Editar estilos del libro")
+        item.connect("activate", self._on_edit_book_css)
+        estilos_menu.append(item)
+        item = Gtk.MenuItem(label="Gestionar estilos por tipo")
+        item.connect("activate", self._on_manage_type_css)
+        estilos_menu.append(item)
+        menubar.append(estilos)
+
+        # Exportar
+        exportar = Gtk.MenuItem(label="Exportar")
+        exportar_menu = Gtk.Menu()
+        exportar.set_submenu(exportar_menu)
+        item = Gtk.MenuItem(label="Exportar EPUB")
+        item.connect("activate", self._on_export_epub)
+        exportar_menu.append(item)
+        item = Gtk.MenuItem(label="Abrir EPUB")
+        item.connect("activate", self._on_open_epub)
+        exportar_menu.append(item)
+        menubar.append(exportar)
+
+        # Configuracion
+        config = Gtk.MenuItem(label="Configuracion")
+        config_menu = Gtk.Menu()
+        config.set_submenu(config_menu)
+        item = Gtk.MenuItem(label="Proyecto")
+        item.connect("activate", self._on_project_config)
+        config_menu.append(item)
+        item = Gtk.MenuItem(label="Global")
+        item.connect("activate", lambda w: self._on_global_config(None, None))
+        config_menu.append(item)
+        item = Gtk.MenuItem(label="Temas")
+        item.connect("activate", self._on_theme_manager)
+        config_menu.append(item)
+        config_menu.append(Gtk.SeparatorMenuItem())
+        item = Gtk.MenuItem(label="Acerca de")
+        item.connect("activate", self._on_about)
+        config_menu.append(item)
+        menubar.append(config)
+
+        container.pack_start(menubar, False, False, 0)
+
+    def _setup_toolbar(self, container):
+        toolbar = Gtk.Toolbar()
+        toolbar.get_style_context().add_class("primary-toolbar")
+
+        new_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-new-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        new_btn.set_label("Nuevo")
+        new_btn.set_tooltip_text("Nuevo proyecto")
+        new_btn.connect("clicked", self._on_new_project)
+        toolbar.insert(new_btn, -1)
+
+        open_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("folder-open-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        open_btn.set_label("Abrir")
+        open_btn.set_tooltip_text("Abrir proyecto")
+        open_btn.connect("clicked", self._on_open_project)
+        toolbar.insert(open_btn, -1)
+
+        self._toolbar_save_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-save-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        self._toolbar_save_btn.set_label("Guardar")
+        self._toolbar_save_btn.set_tooltip_text("Guardar proyecto")
+        self._toolbar_save_btn.connect("clicked", self._on_save_project)
+        toolbar.insert(self._toolbar_save_btn, -1)
+
+        sep1 = Gtk.SeparatorToolItem()
+        toolbar.insert(sep1, -1)
+
+        project_config_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("preferences-system-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        project_config_btn.set_label("Configurar")
+        project_config_btn.set_tooltip_text("Configuracion del proyecto")
+        project_config_btn.connect("clicked", self._on_project_config)
+        toolbar.insert(project_config_btn, -1)
+
+        sep2 = Gtk.SeparatorToolItem()
+        toolbar.insert(sep2, -1)
+
+        export_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-send-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        export_btn.set_label("Exportar EPUB")
+        export_btn.set_tooltip_text("Exportar a EPUB")
+        export_btn.get_style_context().add_class("suggested-action")
+        export_btn.connect("clicked", self._on_export_epub)
+        toolbar.insert(export_btn, -1)
+
+        open_epub_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-open-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        open_epub_btn.set_label("Abrir EPUB")
+        open_epub_btn.set_tooltip_text("Abrir EPUB generado")
+        open_epub_btn.connect("clicked", self._on_open_epub)
+        toolbar.insert(open_epub_btn, -1)
+
+        container.pack_start(toolbar, False, False, 0)
+
+    def _setup_ui(self, container):
+        self._setup_menubar(container)
+        self._setup_toolbar(container)
+        paned = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL)
+        paned.set_vexpand(True)
+        container.pack_start(paned, True, True, 0)
+
+        left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        left_box.set_size_request(250, -1)
+        left_box.set_vexpand(True)
+        paned.pack1(left_box, True, True)
+
+        browser_header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        browser_header.set_margin_top(6)
+        browser_header.set_margin_bottom(6)
+        browser_header.set_margin_start(6)
+        browser_header.set_margin_end(6)
+        left_box.pack_start(browser_header, False, False, 0)
+
+        browser_label = Gtk.Label(label="Navegador del Proyecto")
+        browser_label.set_hexpand(True)
+        browser_label.set_xalign(0)
+        browser_label.get_style_context().add_class("heading")
+        browser_header.pack_start(browser_label, True, True, 0)
+
+        self.project_store = Gtk.TreeStore(str, object)
+        self.project_tree = Gtk.TreeView(model=self.project_store)
+        self.project_tree.set_headers_visible(False)
+        self.project_tree.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
+
+        pixbuf_renderer = Gtk.CellRendererPixbuf()
+        pixbuf_renderer.set_property("stock-size", Gtk.IconSize.MENU)
+        column = Gtk.TreeViewColumn("Icono")
+        column.pack_start(pixbuf_renderer, False)
+
+        def icon_data_func(column, cell, model, iter_, data):
+            obj = model.get_value(iter_, 1)
+            if isinstance(obj, Project):
+                icon_name = "folder"
+            elif isinstance(obj, Component) and obj.type == ComponentType.PART:
+                icon_name = "folder"
+            else:
+                icon_name = _component_icon(obj)
+            theme = Gtk.IconTheme.get_default()
+            info = theme.lookup_icon(icon_name, 16, 0)
+            if info:
+                cell.set_property("icon-name", icon_name)
+            else:
+                cell.set_property("icon-name", "text-x-generic")
+
+        column.set_cell_data_func(pixbuf_renderer, icon_data_func)
+
+        text_renderer = Gtk.CellRendererText()
+        column.pack_start(text_renderer, True)
+        column.add_attribute(text_renderer, "text", 0)
+        self.project_tree.append_column(column)
+        self.project_tree.connect("cursor-changed", self._on_tree_cursor_changed)
+        self.project_tree.connect("button-press-event", self._on_tree_button_press)
+
+        targets = [Gtk.TargetEntry.new("MOVE_ROW", Gtk.TargetFlags.SAME_APP, 1)]
+        self.project_tree.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, targets, Gdk.DragAction.MOVE)
+        self.project_tree.drag_dest_set(Gtk.DestDefaults.ALL, targets, Gdk.DragAction.MOVE)
+        self.project_tree.connect("drag-begin", self._on_drag_begin)
+        self.project_tree.connect_after("drag-motion", self._on_drag_motion)
+        self.project_tree.connect("drag-data-get", self._on_drag_data_get)
+        self.project_tree.connect("drag-data-received", self._on_drag_data_received)
+
+        tree_scrolled = Gtk.ScrolledWindow()
+        tree_scrolled.set_vexpand(True)
+        tree_scrolled.add(self.project_tree)
+        left_box.pack_start(tree_scrolled, True, True, 0)
+
+        right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        right_box.set_vexpand(True)
+        paned.pack2(right_box, True, True)
+
+        # Register custom language before any GtkSource language is looked up
+        lang_dir = os.path.join(os.path.dirname(__file__), "lang-specs")
+        if os.path.isdir(lang_dir):
+            lm = GtkSource.LanguageManager.get_default()
+            sp = list(lm.get_search_path())
+            sp.insert(0, lang_dir)
+            lm.set_search_path(sp)
+        help_lang = GtkSource.LanguageManager.get_default().get_language("mdtoepub-help")
+
+        editor_scrolled = Gtk.ScrolledWindow()
+        editor_scrolled.set_vexpand(True)
+        self.text_view = GtkSource.View.new_with_buffer(
+            GtkSource.Buffer.new_with_language(
+                GtkSource.LanguageManager.get_default().get_language("markdown")
+            )
+        )
+        self.text_view.set_editable(True)
+        self.text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        self.text_view.set_monospace(True)
+        editor_scrolled.add(self.text_view)
+
+        # Spell-check setup
+        self.spell_service = SpellCheckService()
+        self._spell_timer_id = 0
+        self._misspelled_words = []
+        self._session_ignored_words = set()
+
+        buf = self.text_view.get_buffer()
+        self._spell_tag = buf.create_tag("misspelled",
+                                         underline=Pango.Underline.ERROR)
+
+        def _on_buffer_changed(*_a):
+            if self._spell_timer_id:
+                GLib.source_remove(self._spell_timer_id)
+            self._spell_timer_id = GLib.timeout_add(600, self._run_spell_check)
+
+        buf.connect("changed", _on_buffer_changed)
+
+        self.text_view.connect("populate-popup", self._on_spell_popup)
+
+        self.webview = WebKit2.WebView()
+        self.webview.set_vexpand(True)
+
+        help_scrolled = Gtk.ScrolledWindow()
+        help_scrolled.set_vexpand(True)
+        help_buf = GtkSource.Buffer.new_with_language(help_lang)
+        self.help_textview = GtkSource.View.new_with_buffer(help_buf)
+        self.help_textview.set_editable(False)
+        self.help_textview.set_cursor_visible(False)
+        self.help_textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        help_scrolled.add(self.help_textview)
+
+        global_scrolled = Gtk.ScrolledWindow()
+        global_scrolled.set_vexpand(True)
+        global_buf = GtkSource.Buffer.new_with_language(help_lang)
+        self.global_textview = GtkSource.View.new_with_buffer(global_buf)
+        self.global_textview.set_editable(False)
+        self.global_textview.set_cursor_visible(False)
+        self.global_textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        global_scrolled.add(self.global_textview)
+
+        front_scrolled = Gtk.ScrolledWindow()
+        front_scrolled.set_vexpand(True)
+        front_buf = GtkSource.Buffer.new_with_language(help_lang)
+        self.front_textview = GtkSource.View.new_with_buffer(front_buf)
+        self.front_textview.set_editable(False)
+        self.front_textview.set_cursor_visible(False)
+        self.front_textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        front_scrolled.add(self.front_textview)
+
+        # Inner notebook: Contenido (Editor + Vista previa)
+        self.content_notebook = Gtk.Notebook()
+        self.content_notebook.append_page(editor_scrolled, Gtk.Label(label="Editor"))
+        self.content_notebook.append_page(self.webview, Gtk.Label(label="Vista previa"))
+
+        # Inner notebook: Tema (Tipo de componente + Global)
+        self.theme_notebook = Gtk.Notebook()
+        self.theme_notebook.append_page(help_scrolled, Gtk.Label(label="Tipo de componente"))
+        self.theme_notebook.append_page(global_scrolled, Gtk.Label(label="Global"))
+
+        # StackSidebar + Stack for section navigation
+        self.main_stack = Gtk.Stack()
+        self.main_stack.set_vexpand(True)
+        self.main_stack.add_titled(self.content_notebook, "content", "Contenido")
+        self.main_stack.add_titled(self.theme_notebook, "theme", "Tema")
+        self.main_stack.add_titled(front_scrolled, "help", "Ayuda")
+
+        sidebar = Gtk.StackSidebar()
+        sidebar.set_stack(self.main_stack)
+
+        side_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        side_box.pack_start(sidebar, False, False, 0)
+        side_box.pack_start(self.main_stack, True, True, 0)
+        right_box.pack_start(side_box, True, True, 0)
+
+        self.default_html = """<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+body { font-family: Georgia, serif; margin: 2em; color: #333; line-height: 1.6; }
+h1 { font-size: 1.8em; border-bottom: 2px solid #ccc; }
+h2 { font-size: 1.4em; }
+p { margin: 0.5em 0; }
+pre { background: #f4f4f4; padding: 1em; border-radius: 4px; }
+code { background: #f4f4f4; padding: 0.1em 0.3em; border-radius: 3px; }
+img { max-width: 90%; display: block; margin: 1em auto; }
+figure { margin: 1.5em 0; text-align: center; }
+figcaption { font-style: italic; font-size: 0.9em; margin-top: 0.5em; color: #555; }
+blockquote { border-left: 3px solid #ccc; margin: 1em 0; padding-left: 1em; color: #555; }
+hr { border: none; border-top: 1px solid #ccc; }
+</style></head><body>
+<p style="color:#999;text-align:center;margin-top:4em;">Vista previa del contenido Markdown</p>
+</body></html>"""
+        self.webview.load_html(self.default_html, self._get_base_uri())
+
+        self.text_view.get_buffer().connect("changed", self._on_text_changed)
+
+    def _setup_statusbar(self, container):
+        status_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+        status_box.set_margin_top(4)
+        status_box.set_margin_bottom(4)
+        status_box.set_margin_start(8)
+        status_box.set_margin_end(8)
+        container.pack_start(status_box, False, False, 0)
+
+        self.status_label = Gtk.Label(label="Listo")
+        self.status_label.set_xalign(0)
+        self.status_label.set_hexpand(True)
+        status_box.pack_start(self.status_label, True, True, 0)
+
+        self.project_label = Gtk.Label(label="")
+        self.project_label.set_xalign(1)
+        status_box.pack_end(self.project_label, False, False, 0)
+
+    def _get_theme_dir(self) -> str:
+        return os.path.join(
+            os.path.dirname(__file__), "themes", self.project.theme_id
+        )
+
+    def _load_theme_config(self) -> dict:
+        theme_dir = self._get_theme_dir()
+        theme_yaml = os.path.join(theme_dir, "theme.yaml")
+        if os.path.exists(theme_yaml):
+            return YamlService.load(theme_yaml)
+        return {}
+
+    def _load_theme_css(self, component_type=None) -> str:
+        css = ""
+        if not self.project or not self.project.theme_id:
+            return css
+
+        theme_dir = self._get_theme_dir()
+
+        # Level 1: Theme base
+        style_path = os.path.join(theme_dir, "style.css")
+        if os.path.exists(style_path):
+            with open(style_path, "r") as f:
+                css = f.read()
+
+        # Level 1: Theme component CSS
+        if component_type is not None:
+            theme_config = self._load_theme_config()
+            component_styles = theme_config.get("styles", {})
+            comp_style_file = component_styles.get(component_type.value)
+            if comp_style_file:
+                comp_style_path = os.path.join(theme_dir, comp_style_file)
+                if os.path.exists(comp_style_path):
+                    with open(comp_style_path, "r") as f:
+                        css += "\n" + f.read()
+
+        # Level 2: Book-level custom CSS
+        if self.project.custom_css:
+            css += "\n" + self.project.custom_css
+
+        # Level 3: Type-level CSS override
+        if component_type is not None:
+            type_css = self.project.type_css_overrides.get(component_type.value)
+            if type_css:
+                css += "\n" + type_css
+
+        return css
+
+    def _ensure_style_doc_svc(self):
+        if not hasattr(self, "_style_doc_svc") or self._style_doc_svc is None:
+            theme_dir = self._get_theme_dir()
+            self._style_doc_svc = StyleDocService(theme_dir)
+        return self._style_doc_svc
+
+    def _update_help_panel(self, component_type=None):
+        theme_config = self._load_theme_config()
+        svc = self._ensure_style_doc_svc()
+
+        # Ayuda tab (component-specific + user overrides)
+        help_buf = self.help_textview.get_buffer()
+        if not self.project or component_type is None:
+            help_buf.set_text("Selecciona un componente para ver su ayuda.")
+        else:
+            comp_label = COMPONENT_TYPE_LABELS.get(component_type, component_type.value)
+
+            # Theme component docs
+            theme_docs = svc.get_docs_for_type(component_type, theme_config)
+
+            # User type-level CSS docs
+            type_css = self.project.type_css_overrides.get(component_type.value, "")
+            user_type_docs = svc.get_docs_from_css(type_css) if type_css else []
+
+            lines = [
+                f"Tipo: {comp_label}",
+                "",
+            ]
+            if theme_docs:
+                lines.append("Clases de formato del tema:")
+                lines.append("")
+                for doc in theme_docs:
+                    lines.append(f"  {doc['markdown_hint']}  —  {doc['description']}")
+                    lines.append("")
+            if user_type_docs:
+                lines.append("Clases definidas por el usuario (tipo):")
+                lines.append("")
+                for doc in user_type_docs:
+                    lines.append(f"  {doc['markdown_hint']}  —  {doc['description']}")
+                    lines.append("")
+            if not theme_docs and not user_type_docs:
+                lines.append("No hay clases de formato documentadas para este tipo.")
+                lines.append("")
+            lines.append("— Usa {.clase} en markdown para aplicar una clase CSS.")
+            lines.append("— Usa #, ##, ### para encabezados.")
+            help_buf.set_text("\n".join(lines))
+
+        # Temas tab (global classes from style.css + book CSS)
+        global_buf = self.global_textview.get_buffer()
+        theme_global_docs = svc.get_docs("style.css") if self.project else []
+
+        # User book-level CSS docs
+        user_book_docs = svc.get_docs_from_css(self.project.custom_css) if self.project and self.project.custom_css else []
+
+        lines = []
+        if theme_global_docs:
+            lines.append("Clases globales disponibles en todos los componentes:")
+            lines.append("")
+            for doc in theme_global_docs:
+                lines.append(f"  {doc['markdown_hint']}  —  {doc['description']}")
+                lines.append("")
+        if user_book_docs:
+            lines.append("Clases definidas por el usuario (libro):")
+            lines.append("")
+            for doc in user_book_docs:
+                lines.append(f"  {doc['markdown_hint']}  —  {doc['description']}")
+                lines.append("")
+        if not theme_global_docs and not user_book_docs:
+            lines.append("No hay clases globales documentadas.")
+        lines.append("— Usa {.clase} en markdown para aplicar una clase CSS.")
+        global_buf.set_text("\n".join(lines))
+
+        # Frontmatter tab (per-component frontmatter variables)
+        front_buf = self.front_textview.get_buffer()
+        if not self.project or component_type is None:
+            front_buf.set_text("Selecciona un componente para ver los metadatos.")
+        else:
+            comp_label = COMPONENT_TYPE_LABELS.get(component_type, component_type.value)
+            type_key = component_type.value
+            fm_lines = [
+                f"Metadatos para {comp_label}:",
+                "",
+            ]
+            type_vars = FRONTMATTER_DOCS.get(type_key, [])
+            type_names = {v[0] for v in type_vars}
+            common_vars = [v for v in FRONTMATTER_COMMON if v[0] not in type_names]
+            vars_list = type_vars + common_vars
+            for var_name, description in vars_list:
+                fm_lines.append(f"  {var_name}")
+                fm_lines.append(f"    {description}")
+                fm_lines.append("")
+            fm_lines.append("Los metadatos se añaden al principio del componente")
+            fm_lines.append("(entre las lineas --- al inicio del archivo).")
+            front_buf.set_text("\n".join(fm_lines))
+
+    def _update_spell_lang(self):
+        """Update the default spell-check language from the current project."""
+        if self.project:
+            self.spell_service.default_lang = self.project.spell_lang
+        self._run_spell_check()
+
+    def _run_spell_check(self):
+        self._spell_timer_id = 0
+        buf = self.text_view.get_buffer()
+        if not self.project or not self.project.path:
+            return False
+
+        text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+        if not text:
+            return False
+
+        # Remove old misspelled tags
+        start = buf.get_start_iter()
+        end = buf.get_end_iter()
+        buf.remove_tag(self._spell_tag, start, end)
+
+        # Run check
+        project_words = set(self.project.spell_words) if self.project else set()
+        all_ignored = project_words | self._session_ignored_words
+        self._misspelled_words = self.spell_service.check_text(text, all_ignored)
+
+        # Apply tags
+        for w_start, w_end, word, lang in self._misspelled_words:
+            try:
+                it1 = buf.get_iter_at_offset(w_start)
+                it2 = buf.get_iter_at_offset(w_end)
+                buf.apply_tag(self._spell_tag, it1, it2)
+            except Exception:
+                pass
+
+        return False
+
+    def _on_spell_popup(self, textview, popup):
+        buf = textview.get_buffer()
+        cursor = buf.get_iter_at_mark(buf.get_insert())
+        offset = cursor.get_offset()
+
+        # Find if cursor is on a misspelled word
+        for w_start, w_end, word, lang in self._misspelled_words:
+            if w_start <= offset <= w_end:
+                suggestions = self.spell_service.get_suggestions(word, lang)
+                if suggestions:
+                    sep = Gtk.SeparatorMenuItem()
+                    sep.show()
+                    popup.append(sep)
+
+                    item = Gtk.MenuItem(label="Sugerencias ortográficas")
+                    item.set_sensitive(False)
+                    item.show()
+                    popup.append(item)
+
+                    for sug in suggestions[:10]:
+                        def _replace(menu_item, s=sug, ws=w_start, we=w_end):
+                            it1 = buf.get_iter_at_offset(ws)
+                            it2 = buf.get_iter_at_offset(we)
+                            buf.delete(it1, it2)
+                            it = buf.get_iter_at_offset(ws)
+                            buf.insert(it, s)
+                        sug_item = Gtk.MenuItem(label=sug)
+                        sug_item.connect("activate", _replace)
+                        sug_item.show()
+                        popup.append(sug_item)
+
+                # Dictionary options
+                sep2 = Gtk.SeparatorMenuItem()
+                sep2.show()
+                popup.append(sep2)
+
+                def _ignore_word(*_a, w=word, ws=w_start, we=w_end):
+                    self._session_ignored_words.add(w.lower())
+                    it1 = buf.get_iter_at_offset(ws)
+                    it2 = buf.get_iter_at_offset(we)
+                    buf.remove_tag(self._spell_tag, it1, it2)
+                    self._run_spell_check()
+
+                item_ignore = Gtk.MenuItem(label="Ignorar palabra")
+                item_ignore.connect("activate", _ignore_word)
+                item_ignore.show()
+                popup.append(item_ignore)
+
+                def _add_book_word(*_a, w=word, ws=w_start, we=w_end):
+                    if self.project:
+                        self.project.spell_words.append(w.lower())
+                        FileService.save_project(self.project)
+                    it1 = buf.get_iter_at_offset(ws)
+                    it2 = buf.get_iter_at_offset(we)
+                    buf.remove_tag(self._spell_tag, it1, it2)
+                    self._update_preview()
+
+                item_book = Gtk.MenuItem(label="Añadir al diccionario del libro")
+                item_book.connect("activate", _add_book_word)
+                item_book.show()
+                popup.append(item_book)
+
+                def _add_global_word(*_a, w=word, ws=w_start, we=w_end):
+                    self.spell_service.add_global_word(w)
+                    if self.project:
+                        self.project.spell_words.append(w.lower())
+                    it1 = buf.get_iter_at_offset(ws)
+                    it2 = buf.get_iter_at_offset(we)
+                    buf.remove_tag(self._spell_tag, it1, it2)
+                    self._update_preview()
+
+                item_global = Gtk.MenuItem(label="Añadir al diccionario global")
+                item_global.connect("activate", _add_global_word)
+                item_global.show()
+                popup.append(item_global)
+                break
+
+    def _get_base_uri(self) -> str:
+        if self.project and self.project.path:
+            return f"file://{self.project.path}/"
+        return "file:///"
+
+    def _build_preview_html(self, html_content: str, component_type=None, component=None) -> str:
+        css = self._load_theme_css(component_type)
+        # Level 2: Book-level CSS
+        if self.project and self.project.custom_css:
+            css += "\n" + self.project.custom_css
+        # Level 3: Type-level CSS
+        if (self.project and component_type is not None
+                and component_type.value in self.project.type_css_overrides):
+            css += "\n" + self.project.type_css_overrides[component_type.value]
+        # Level 4: Per-component CSS
+        if component and component.custom_css:
+            css += "\n" + component.custom_css
+        # Level 5: Pygments code syntax CSS
+        css += "\n" + MarkdownService.get_code_css()
+        return f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>{css}</style>
+</head><body>
+{html_content}
+</body></html>"""
+
+    def _focus_editor(self):
+        self.main_stack.set_visible_child(self.content_notebook)
+        self.content_notebook.set_current_page(0)
+
+    def _focus_preview(self):
+        self.main_stack.set_visible_child(self.content_notebook)
+        self.content_notebook.set_current_page(1)
+
+    def _update_preview(self):
+        if not self.webview:
+            return
+
+        text = self._get_editor_text()
+        if text.strip():
+            component = self.current_component
+            component_id = ""
+            if component:
+                component_type = component.type
+                component_id = component.id
+            elif self.current_part:
+                component_type = ComponentType.CHAPTER
+            else:
+                component_type = ComponentType.CHAPTER
+
+            editor_fm, md_text = YamlService.parse_frontmatter(text)
+
+            # Apply header and drop cap when project is loaded
+            if self.project and component:
+                from .services.epub_service import EpubService as _EpubService
+                epub_svc = _EpubService(self.project)
+
+                # Special handling for COVER with only one image
+                if (component.type == ComponentType.COVER
+                        and _EpubService._is_cover_only_image(md_text)):
+                    img_info = _EpubService._extract_cover_image(md_text)
+                    if img_info:
+                        alt, src = img_info
+                        preview_html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+body {{ margin:0; padding:0; height:100vh; display:flex; align-items:center; justify-content:center; }}
+img {{ max-width:100%; max-height:100%; object-fit:contain; }}
+</style>
+</head><body>
+<img src="{src}" alt="{alt}"/>
+</body></html>"""
+                        self.webview.load_html(preview_html, self._get_base_uri())
+                        return
+                chapter_number = None
+                if component.type == ComponentType.CHAPTER:
+                    count = 0
+                    for c in self.project.get_ordered_components():
+                        if c.type == ComponentType.CHAPTER:
+                            count += 1
+                        if c.id == component.id:
+                            chapter_number = count
+                            break
+
+                h1_match = re.search(r'^# (.+)$', md_text, re.MULTILINE)
+                default_title = h1_match.group(1).strip() if h1_match else ""
+                num_part, title_part, _ = epub_svc._get_component_header(
+                    component, chapter_number
+                )
+                replaces = self.project.auto_chapter_title in ("chapter_number", "number")
+                if default_title and not title_part and not replaces:
+                    title_part = default_title
+                if default_title and title_part and default_title != component.title:
+                    title_part = default_title
+
+                subtitle_part = ""
+                if title_part:
+                    subtitle_part, title_part = _EpubService._split_title(
+                        title_part, editor_fm
+                    )
+
+                header_html = epub_svc._build_header_html(num_part, subtitle_part, title_part)
+                if header_html:
+                    if h1_match:
+                        md_text = md_text[:h1_match.start()] + md_text[h1_match.end():]
+                        md_text = md_text.strip()
+                    md_text = header_html + md_text
+                elif not default_title and component.frontmatter.get("show_title", True):
+                    md_text = f"# {component.get_display_name()}\n\n{md_text}"
+
+                html = self.md_service.render(md_text, component_type, component_id)
+
+                if (self.project.drop_cap_enabled
+                        and component_type.value in self.project.drop_cap_types):
+                    html = epub_svc._apply_drop_cap(html)
+            else:
+                html = self.md_service.render(md_text, component_type, component_id)
+
+            full_html = self._build_preview_html(html, component_type, component)
+            self.webview.load_html(full_html, self._get_base_uri())
+        else:
+            self.webview.load_html(self.default_html, self._get_base_uri())
+
+    def _get_editor_text(self) -> str:
+        buffer = self.text_view.get_buffer()
+        start = buffer.get_start_iter()
+        end = buffer.get_end_iter()
+        return buffer.get_text(start, end, True)
+
+    def _save_current_component(self):
+        if self._read_only:
+            return
+        text = self._get_editor_text()
+        frontmatter, markdown_content = YamlService.parse_frontmatter(text)
+        if self.current_part:
+            self.current_part.frontmatter = frontmatter
+            FileService.save_component(self.project.path, self.current_part, text)
+        elif self.current_component:
+            self.current_component.frontmatter = frontmatter
+            FileService.save_component(self.project.path, self.current_component, text)
+
+    def _load_component_content(self, component: Component) -> str:
+        content = FileService.load_component(self.project.path, component)
+        if component.frontmatter and not content.startswith("---"):
+            content = YamlService.join_content(component.frontmatter, content)
+        return content
+
+    # --- Dialogos de configuracion ---
+
+    def _on_project_config(self, button):
+        if not self.project:
+            self._show_info("No hay proyecto abierto")
+            return
+
+        dialog = Gtk.Dialog(
+            title="Configuracion del Proyecto",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_size(520, 420)
+
+        content = dialog.get_content_area()
+        content.set_spacing(12)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        notebook = Gtk.Notebook()
+        content.add(notebook)
+
+        # ── Tab 1: Book info ──
+        grid_book = Gtk.Grid()
+        grid_book.set_row_spacing(8)
+        grid_book.set_column_spacing(12)
+        grid_book.set_column_homogeneous(False)
+        grid_book.set_margin_top(12)
+        grid_book.set_margin_bottom(12)
+        grid_book.set_margin_start(12)
+        grid_book.set_margin_end(12)
+        grid_book.set_vexpand(False)
+        notebook.append_page(grid_book, Gtk.Label(label="Libro"))
+
+        row = 0
+
+        label = Gtk.Label(label="Titulo:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_title = Gtk.Entry()
+        entry_title.set_text(self.project.title)
+        entry_title.set_hexpand(True)
+        grid_book.attach(entry_title, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Archivo EPUB:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_export = Gtk.Entry()
+        from .services.file_service import slugify
+        def _update_export_filename(*_a):
+            current = entry_export.get_text().strip()
+            old_slug = slugify(entry_title.get_text().strip())
+            if current and current != old_slug:
+                return
+            entry_export.set_text(slugify(entry_title.get_text().strip()))
+        entry_title.connect("changed", _update_export_filename)
+        if self.project.export_filename:
+            entry_export.set_text(self.project.export_filename)
+        else:
+            entry_export.set_text(slugify(self.project.title or self.project.name))
+        entry_export.set_hexpand(True)
+        entry_export.set_placeholder_text(".epub")
+        grid_book.attach(entry_export, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Autor:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_author = Gtk.Entry()
+        entry_author.set_text(self.project.author)
+        entry_author.set_hexpand(True)
+        grid_book.attach(entry_author, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Idioma:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_lang = Gtk.Entry()
+        entry_lang.set_text(self.project.language)
+        entry_lang.set_hexpand(True)
+        entry_lang.set_placeholder_text("es")
+        grid_book.attach(entry_lang, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Version EPUB:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        combo_epub = Gtk.ComboBoxText()
+        combo_epub.append_text("epub2")
+        combo_epub.append_text("epub3")
+        if self.project.epub_version == "epub2":
+            combo_epub.set_active(0)
+        else:
+            combo_epub.set_active(1)
+        grid_book.attach(combo_epub, 1, row, 1, 1)
+        row += 1
+
+        # ── Tab 2: Appearance ──
+        grid_app = Gtk.Grid()
+        grid_app.set_row_spacing(8)
+        grid_app.set_column_spacing(12)
+        grid_app.set_column_homogeneous(False)
+        grid_app.set_margin_top(12)
+        grid_app.set_margin_bottom(12)
+        grid_app.set_margin_start(12)
+        grid_app.set_margin_end(12)
+        notebook.append_page(grid_app, Gtk.Label(label="Apariencia"))
+
+        row = 0
+
+        label = Gtk.Label(label="Titulo auto de componentes:")
+        label.set_xalign(1)
+        grid_app.attach(label, 0, row, 1, 1)
+        combo_auto_title = Gtk.ComboBoxText()
+        combo_auto_title.append_text("No")
+        combo_auto_title.append_text("Capitulo <n>")
+        combo_auto_title.append_text("<n>")
+        combo_auto_title.append_text("Capitulo <n> + titulo")
+        combo_auto_title.append_text("<n> + titulo")
+        auto_title_values = ["none", "chapter_number", "number", "chapter_number_with_title", "number_with_title"]
+        auto_title_index = 0
+        for i, v in enumerate(auto_title_values):
+            if v == self.project.auto_chapter_title:
+                auto_title_index = i
+                break
+        combo_auto_title.set_active(auto_title_index)
+        grid_app.attach(combo_auto_title, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Tema:")
+        label.set_xalign(1)
+        grid_app.attach(label, 0, row, 1, 1)
+
+        themes_dir = os.path.join(os.path.dirname(__file__), "themes")
+        available_themes = []
+        if os.path.exists(themes_dir):
+            for d in sorted(os.listdir(themes_dir)):
+                theme_yaml = os.path.join(themes_dir, d, "theme.yaml")
+                if os.path.exists(theme_yaml):
+                    data = YamlService.load(theme_yaml)
+                    available_themes.append((d, data.get("name", d)))
+
+        combo_theme = Gtk.ComboBoxText()
+        theme_index = 0
+        for i, (tid, tname) in enumerate(available_themes):
+            combo_theme.append_text(tname)
+            if tid == self.project.theme_id:
+                theme_index = i
+        combo_theme.set_active(theme_index)
+        grid_app.attach(combo_theme, 1, row, 1, 1)
+        row += 1
+
+        sep = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        grid_app.attach(sep, 0, row, 2, 1)
+        row += 1
+
+        label = Gtk.Label(label="Letra capitular:")
+        label.set_xalign(1)
+        label.set_valign(Gtk.Align.START)
+        grid_app.attach(label, 0, row, 1, 1)
+
+        right_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        grid_app.attach(right_vbox, 1, row, 1, 1)
+        row += 1
+
+        check_drop_cap = Gtk.CheckButton(label="Activar")
+        check_drop_cap.set_active(self.project.drop_cap_enabled)
+        right_vbox.pack_start(check_drop_cap, False, False, 0)
+
+        label_cap_types = Gtk.Label(label="Tipos con capitular:", xalign=0)
+        right_vbox.pack_start(label_cap_types, False, False, 0)
+
+        type_list = Gtk.ListBox()
+        type_list.set_selection_mode(Gtk.SelectionMode.NONE)
+        type_list.set_vexpand(True)
+        type_list.set_hexpand(True)
+
+        from .models.component import ComponentType, COMPONENT_TYPE_LABELS
+        skip_types = {ComponentType.PART, ComponentType.TOC, ComponentType.COVER,
+                      ComponentType.TITLE, ComponentType.LICENSE}
+        self._drop_cap_checkbuttons = {}
+        for ct in ComponentType:
+            if ct in skip_types:
+                continue
+            label_text = COMPONENT_TYPE_LABELS.get(ct, ct.value)
+            cb = Gtk.CheckButton(label=label_text)
+            cb.set_active(ct.value in self.project.drop_cap_types)
+            self._drop_cap_checkbuttons[ct.value] = cb
+            type_list.add(cb)
+
+        sw = Gtk.ScrolledWindow()
+        sw.set_min_content_height(200)
+        sw.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        sw.add(type_list)
+        right_vbox.pack_start(sw, True, True, 0)
+
+        # Separator
+        sep2 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        grid_app.attach(sep2, 0, row, 2, 1)
+        row += 1
+
+        # ── Spell check language ──
+        label_lang = Gtk.Label(label="Corrector ortografico:")
+        label_lang.set_xalign(1)
+        grid_app.attach(label_lang, 0, row, 1, 1)
+
+        combo_lang = Gtk.ComboBoxText()
+        langs = self.spell_service.get_language_list()
+        lang_index = 0
+        for i, l in enumerate(langs):
+            combo_lang.append_text(l)
+            if l == self.project.spell_lang:
+                lang_index = i
+        combo_lang.set_active(lang_index)
+        combo_lang.set_hexpand(True)
+        grid_app.attach(combo_lang, 1, row, 1, 1)
+        row += 1
+
+        def on_config_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                self.project.title = entry_title.get_text().strip()
+                self.project.author = entry_author.get_text().strip()
+                self.project.language = entry_lang.get_text().strip() or "es"
+                epub_idx = combo_epub.get_active()
+                self.project.epub_version = ["epub2", "epub3"][epub_idx]
+                auto_idx = combo_auto_title.get_active()
+                if 0 <= auto_idx < len(auto_title_values):
+                    self.project.auto_chapter_title = auto_title_values[auto_idx]
+                theme_idx = combo_theme.get_active()
+                if theme_idx >= 0 and theme_idx < len(available_themes):
+                    self.project.theme_id = available_themes[theme_idx][0]
+                self.project.drop_cap_enabled = check_drop_cap.get_active()
+                self.project.drop_cap_types = [
+                    t for t, cb in self._drop_cap_checkbuttons.items() if cb.get_active()
+                ] or ["chapter"]
+                self.project.export_filename = entry_export.get_text().strip()
+                lang_idx = combo_lang.get_active()
+                if lang_idx >= 0 and lang_idx < len(langs):
+                    self.project.spell_lang = langs[lang_idx]
+                FileService.save_project(self.project)
+                self._update_spell_lang()
+                self._update_window_title()
+                self._update_status("Configuracion del proyecto guardada")
+                self._update_preview()
+            d.destroy()
+
+        dialog.connect("response", on_config_response)
+        dialog.show_all()
+
+    def _on_global_config(self, action, param):
+        config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
+        config_file = os.path.join(config_dir, "config.yaml")
+
+        os.makedirs(config_dir, exist_ok=True)
+        config = YamlService.load(config_file)
+
+        if not config:
+            config = {
+                "editor": {"font_size": 12, "tab_size": 4, "auto_save_interval": 30},
+                "preview": {"zoom": 100},
+                "general": {"window_width": 1200, "window_height": 800},
+                "epub_reader_path": "",
+            }
+
+        dialog = Gtk.Dialog(
+            title="Configuracion Global",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_size(500, -1)
+
+        content = dialog.get_content_area()
+        content.set_spacing(12)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        notebook = Gtk.Notebook()
+        notebook.set_vexpand(True)
+        content.add(notebook)
+
+        editor_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        editor_page.set_margin_top(8)
+        editor_page.set_margin_bottom(8)
+        editor_page.set_margin_start(8)
+        editor_page.set_margin_end(8)
+        notebook.append_page(editor_page, Gtk.Label(label="Editor"))
+
+        grid = Gtk.Grid()
+        grid.set_row_spacing(8)
+        grid.set_column_spacing(12)
+        grid.set_hexpand(True)
+        editor_page.pack_start(grid, False, False, 0)
+
+        row = 0
+        label = Gtk.Label(label="Tamano fuente:")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        spin_font_size = Gtk.SpinButton()
+        spin_font_size.set_range(8, 48)
+        spin_font_size.set_value(config.get("editor", {}).get("font_size", 12))
+        grid.attach(spin_font_size, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Tamano tab:")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        spin_tab = Gtk.SpinButton()
+        spin_tab.set_range(2, 8)
+        spin_tab.set_value(config.get("editor", {}).get("tab_size", 4))
+        grid.attach(spin_tab, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Auto-guardado (s):")
+        label.set_xalign(1)
+        grid.attach(label, 0, row, 1, 1)
+        spin_auto = Gtk.SpinButton()
+        spin_auto.set_range(10, 300)
+        spin_auto.set_value(config.get("editor", {}).get("auto_save_interval", 30))
+        grid.attach(spin_auto, 1, row, 1, 1)
+
+        general_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        general_page.set_margin_top(8)
+        general_page.set_margin_bottom(8)
+        general_page.set_margin_start(8)
+        general_page.set_margin_end(8)
+        notebook.append_page(general_page, Gtk.Label(label="General"))
+
+        grid_general = Gtk.Grid()
+        grid_general.set_row_spacing(8)
+        grid_general.set_column_spacing(12)
+        grid_general.set_hexpand(True)
+        general_page.pack_start(grid_general, False, False, 0)
+
+        reader_row = 0
+        reader_label = Gtk.Label(label="Lector EPUB:")
+        reader_label.set_xalign(1)
+        grid_general.attach(reader_label, 0, reader_row, 1, 1)
+
+        reader_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        entry_reader = Gtk.Entry()
+        entry_reader.set_hexpand(True)
+        entry_reader.set_placeholder_text("Dejar vacio para usar el visor del sistema")
+        entry_reader.set_text(config.get("epub_reader_path", ""))
+        reader_box.pack_start(entry_reader, True, True, 0)
+
+        def on_reader_browse(btn):
+            fc = Gtk.FileChooserDialog(
+                title="Seleccionar lector EPUB",
+                transient_for=dialog,
+                action=Gtk.FileChooserAction.OPEN,
+            )
+            fc.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+            fc.add_button("Seleccionar", Gtk.ResponseType.ACCEPT)
+            def on_fc_response(d, response):
+                if response == Gtk.ResponseType.ACCEPT:
+                    entry_reader.set_text(d.get_filename())
+                d.destroy()
+            fc.connect("response", on_fc_response)
+            fc.show_all()
+
+        browse_btn = Gtk.Button(label="Examinar...")
+        browse_btn.connect("clicked", on_reader_browse)
+        reader_box.pack_start(browse_btn, False, False, 0)
+
+        grid_general.attach(reader_box, 1, reader_row, 1, 1)
+
+        def on_global_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                config["editor"]["font_size"] = int(spin_font_size.get_value())
+                config["editor"]["tab_size"] = int(spin_tab.get_value())
+                config["editor"]["auto_save_interval"] = int(spin_auto.get_value())
+                config["epub_reader_path"] = entry_reader.get_text().strip()
+                YamlService.save(config, config_file)
+                self._show_info("Configuracion global guardada")
+            d.destroy()
+
+        dialog.connect("response", on_global_response)
+        dialog.show_all()
+
+    # --- Acciones de proyecto ---
+
+    def _confirm_discard_project(self):
+        if self.project is None:
+            return True
+        return self._confirm("Se cerrará el proyecto actual. ¿Continuar?")
+
+    def _on_new_project(self, button):
+        if not self._confirm_discard_project():
+            return
+        dialog = Gtk.Dialog(
+            title="Nuevo Proyecto",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Crear", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_size(500, -1)
+
+        content = dialog.get_content_area()
+        content.set_spacing(12)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        folder_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        folder_label = Gtk.Label(label="Carpeta:")
+        folder_label.set_size_request(80, -1)
+        folder_box.pack_start(folder_label, False, False, 0)
+
+        self.folder_chooser_btn = Gtk.Button(label=GLib.get_home_dir())
+        self.folder_chooser_btn.set_hexpand(True)
+        self.selected_folder = GLib.get_home_dir()
+
+        def on_folder_clicked(btn):
+            fc_dialog = Gtk.FileChooserNative(
+                title="Seleccionar carpeta",
+                transient_for=dialog,
+                action=Gtk.FileChooserAction.SELECT_FOLDER,
+                accept_label="_Seleccionar",
+                cancel_label="_Cancelar",
+            )
+
+            if fc_dialog.run() == Gtk.ResponseType.ACCEPT:
+                path = fc_dialog.get_filename()
+                if path:
+                    self.selected_folder = path
+                    btn.set_label(path)
+            fc_dialog.destroy()
+
+        self.folder_chooser_btn.connect("clicked", on_folder_clicked)
+        folder_box.pack_start(self.folder_chooser_btn, True, True, 0)
+        content.add(folder_box)
+
+        name_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        name_label = Gtk.Label(label="Nombre:")
+        name_label.set_size_request(80, -1)
+        name_box.pack_start(name_label, False, False, 0)
+        entry_name = Gtk.Entry()
+        entry_name.set_hexpand(True)
+        entry_name.set_placeholder_text("mi_libro")
+        name_box.pack_start(entry_name, True, True, 0)
+        content.add(name_box)
+
+        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        title_label = Gtk.Label(label="Titulo:")
+        title_label.set_size_request(80, -1)
+        title_box.pack_start(title_label, False, False, 0)
+        entry_title = Gtk.Entry()
+        entry_title.set_hexpand(True)
+        entry_title.set_placeholder_text("Mi Gran Libro")
+        title_box.pack_start(entry_title, True, True, 0)
+        content.add(title_box)
+
+        author_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        author_label = Gtk.Label(label="Autor:")
+        author_label.set_size_request(80, -1)
+        author_box.pack_start(author_label, False, False, 0)
+        entry_author = Gtk.Entry()
+        entry_author.set_hexpand(True)
+        entry_author.set_placeholder_text("Autor Ejemplo")
+        author_box.pack_start(entry_author, True, True, 0)
+        content.add(author_box)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                name = entry_name.get_text().strip()
+                title = entry_title.get_text().strip()
+                author = entry_author.get_text().strip()
+
+                if not name:
+                    self._show_error("El nombre del proyecto es obligatorio")
+                    d.destroy()
+                    return
+
+                project_path = FileService.create_project_structure(self.selected_folder, name)
+                project_path.title = title
+                project_path.author = author
+                FileService.save_project(project_path)
+
+                self.project = project_path
+                self._update_spell_lang()
+                self.current_component = None
+                self._set_read_only_mode(False)
+                self._add_recent_project(project_path.path)
+                self._refresh_project_tree()
+                self._update_status(f"Proyecto creado: {name}")
+
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_open_project(self, button):
+        if not self._confirm_discard_project():
+            return
+        dialog = Gtk.FileChooserNative(
+            title="Abrir Proyecto",
+            transient_for=self.window,
+            action=Gtk.FileChooserAction.SELECT_FOLDER,
+            accept_label="_Abrir",
+            cancel_label="_Cancelar",
+        )
+
+        if dialog.run() == Gtk.ResponseType.ACCEPT:
+            path = dialog.get_filename()
+            if path:
+                yaml_file = os.path.join(path, "project.yaml")
+                if os.path.exists(yaml_file):
+                    project = FileService.load_project(path)
+                    if project:
+                        self.project = project
+                        self._update_spell_lang()
+                        self.current_component = None
+                        self._set_read_only_mode(False)
+                        self._add_recent_project(project.path)
+                        self._refresh_project_tree()
+                        self.text_view.get_buffer().set_text("")
+                        self._update_status(f"Proyecto abierto: {project.name}")
+                    else:
+                        self._show_error("Error al cargar el proyecto")
+                else:
+                    self._show_error("No se encontro project.yaml en esta carpeta")
+        dialog.destroy()
+
+    def _on_save_project(self, button):
+        if not self.project:
+            self._show_info("No hay proyecto abierto")
+            return
+
+        if self._read_only:
+            return
+
+        if self.current_component:
+            self._save_current_component()
+
+        FileService.save_project(self.project)
+        self._update_status("Proyecto guardado")
+
+    def _on_save_project_as(self, button):
+        if not self.project:
+            self._show_info("No hay proyecto abierto")
+            return
+        if self._read_only:
+            return
+
+        dialog = Gtk.FileChooserNative(
+            title="Guardar Proyecto Como",
+            transient_for=self.window,
+            action=Gtk.FileChooserAction.SELECT_FOLDER,
+            accept_label="_Guardar",
+            cancel_label="_Cancelar",
+        )
+
+        if dialog.run() == Gtk.ResponseType.ACCEPT:
+            path = dialog.get_filename()
+            if path:
+                new_project = FileService.create_project_structure(path, self.project.name)
+                new_project.title = self.project.title
+                new_project.author = self.project.author
+                new_project.language = self.project.language
+                new_project.theme_id = self.project.theme_id
+                new_project.epub_version = self.project.epub_version
+
+                old_components_dir = os.path.join(self.project.path, "components")
+                new_components_dir = os.path.join(new_project.path, "components")
+
+                if os.path.exists(old_components_dir):
+                    for item in os.listdir(old_components_dir):
+                        src = os.path.join(old_components_dir, item)
+                        dst = os.path.join(new_components_dir, item)
+                        if os.path.isfile(src):
+                            shutil.copy2(src, dst)
+
+                for comp in self.project.components:
+                    new_comp = Component(
+                        id=comp.id,
+                        type=comp.type,
+                        title=comp.title,
+                        filename=comp.filename,
+                        order=comp.order,
+                        part_id=comp.part_id,
+                        frontmatter=comp.frontmatter.copy(),
+                    )
+                    new_project.components.append(new_comp)
+
+                FileService.save_project(new_project)
+                self.project = new_project
+                self._add_recent_project(new_project.path)
+                self._refresh_project_tree()
+                self._update_status(f"Proyecto guardado en: {new_project.path}")
+        dialog.destroy()
+
+    def _on_add_component(self, button, part=None):
+        if not self.project:
+            self._show_info("Primero crea o abre un proyecto")
+            return
+        if self._read_only:
+            self._show_info("No se puede modificar un proyecto de solo lectura")
+            return
+
+        dialog = Gtk.Dialog(
+            title="Anadir Componente",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Anadir", Gtk.ResponseType.ACCEPT)
+
+        content_area = dialog.get_content_area()
+        content_area.set_spacing(12)
+        content_area.set_margin_top(12)
+        content_area.set_margin_bottom(12)
+        content_area.set_margin_start(12)
+        content_area.set_margin_end(12)
+
+        type_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        type_label = Gtk.Label(label="Tipo:")
+        type_label.set_size_request(80, -1)
+        type_box.pack_start(type_label, False, False, 0)
+
+        combo_type = Gtk.ComboBoxText()
+        for ct in ComponentType:
+            combo_type.append_text(COMPONENT_TYPE_LABELS[ct])
+        combo_type.set_active(0)
+        type_box.pack_start(combo_type, True, True, 0)
+        content_area.add(type_box)
+
+        comp_title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        comp_title_label = Gtk.Label(label="Titulo:")
+        comp_title_label.set_size_request(80, -1)
+        comp_title_box.pack_start(comp_title_label, False, False, 0)
+        entry_title = Gtk.Entry()
+        entry_title.set_hexpand(True)
+        entry_title.set_placeholder_text("Titulo del componente")
+        comp_title_box.pack_start(entry_title, True, True, 0)
+        content_area.add(comp_title_box)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                type_index = combo_type.get_active()
+                if type_index < 0:
+                    type_index = 0
+                component_type = list(ComponentType)[type_index]
+                title = entry_title.get_text().strip()
+
+                component = Component(type=component_type, title=title)
+                component.filename = FileService.generate_filename(
+                    component_type.value, title
+                )
+                if part is not None:
+                    component.part_id = part.id
+
+                self.project.add_component(component)
+                initial_content = f"# {title}\n\n" if title else ""
+                FileService.save_component(self.project.path, component, initial_content)
+                FileService.save_project(self.project)
+                self._refresh_project_tree()
+                self._update_status(f"Componente anadido: {component.get_display_name()}")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_add_part(self, button):
+        if not self.project:
+            self._show_info("Primero crea o abre un proyecto")
+            return
+        if self._read_only:
+            self._show_info("No se puede modificar un proyecto de solo lectura")
+            return
+
+        dialog = Gtk.Dialog(
+            title="Anadir Parte",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Anadir", Gtk.ResponseType.ACCEPT)
+
+        content_area = dialog.get_content_area()
+        content_area.set_spacing(12)
+        content_area.set_margin_top(12)
+        content_area.set_margin_bottom(12)
+        content_area.set_margin_start(12)
+        content_area.set_margin_end(12)
+
+        part_title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        part_title_label = Gtk.Label(label="Titulo:")
+        part_title_label.set_size_request(80, -1)
+        part_title_box.pack_start(part_title_label, False, False, 0)
+        entry_title = Gtk.Entry()
+        entry_title.set_hexpand(True)
+        entry_title.set_placeholder_text("Parte I: Inicios")
+        part_title_box.pack_start(entry_title, True, True, 0)
+        content_area.add(part_title_box)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                title = entry_title.get_text().strip()
+                if not title:
+                    self._show_error("El titulo de la parte es obligatorio")
+                    d.destroy()
+                    return
+                import uuid
+                component_id = str(uuid.uuid4())
+                part = Component(
+                    id=component_id,
+                    type=ComponentType.PART,
+                    title=title,
+                    filename=FileService.generate_filename("part", title),
+                )
+                self.project.add_component(part)
+                initial_content = f"# {title}\n\n"
+                FileService.save_component(self.project.path, part, initial_content)
+                FileService.save_project(self.project)
+                self._refresh_project_tree()
+                self._update_status(f"Parte anadida: {title}")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_export_epub(self, button):
+        if not self.project:
+            self._show_info("No hay proyecto abierto")
+            return
+
+        # Save current component before export so files on disk are up to date
+        self._save_current_component()
+
+        # Determine output filename
+        from .services.file_service import slugify
+        epub_name = self.project.export_filename or slugify(
+            self.project.title or self.project.name
+        )
+        if not epub_name.endswith(".epub"):
+            epub_name += ".epub"
+
+        if self._read_only:
+            output_dir = "/tmp/mdtoepub_export"
+            epub_path = os.path.join(output_dir, epub_name)
+        else:
+            output_dir = os.path.join(self.project.path, "output")
+            epub_path = os.path.join(output_dir, epub_name)
+
+        os.makedirs(output_dir, exist_ok=True)
+        if os.path.exists(epub_path):
+            if not self._confirm(f"El archivo ya existe:\n{epub_path}\n\n¿Sobrescribirlo?"):
+                return
+        epub_service = EpubService(self.project)
+        result = epub_service.generate(epub_path, self.project.epub_version)
+        if result:
+            self._last_epub_path = result
+            self._update_status(f"EPUB exportado: {result}")
+            self._show_info(f"EPUB generado correctamente:\n{result}")
+        else:
+            self._show_error("Error al generar el EPUB")
+
+    def _on_import_book(self, button):
+        if not self.project:
+            self._show_info("No hay proyecto abierto")
+            return
+        if self._read_only:
+            self._show_info("No se puede importar en el libro de ejemplo")
+            return
+
+        dialog = Gtk.FileChooserNative(
+            title="Importar libro Markdown",
+            transient_for=self.window,
+            action=Gtk.FileChooserAction.OPEN,
+            accept_label="_Importar",
+            cancel_label="_Cancelar",
+        )
+
+        f_filter = Gtk.FileFilter()
+        f_filter.set_name("Archivos Markdown (*.md)")
+        f_filter.add_pattern("*.md")
+        dialog.add_filter(f_filter)
+        f_filter = Gtk.FileFilter()
+        f_filter.set_name("Todos los archivos")
+        f_filter.add_pattern("*")
+        dialog.add_filter(f_filter)
+
+        if dialog.run() == Gtk.ResponseType.ACCEPT:
+            file_path = dialog.get_filename()
+            dialog.destroy()
+
+            try:
+                with open(file_path, "r", encoding="utf-8") as f:
+                    content = f.read()
+            except Exception as e:
+                self._show_error(f"Error al leer el archivo: {e}")
+                return
+
+            if not content.strip():
+                self._show_info("El archivo esta vacio")
+                return
+
+            # Preview the import structure
+            from .services.file_service import FileService as FS
+            parsed = FS.parse_imported_markdown(content)
+            total_chars = sum(len(md) for _, _, md in parsed)
+            desc_lines = [f"Se van a importar {len(parsed)} componentes:"]
+            for ctype, title, md in parsed:
+                title_str = f' — "{title}"' if title else ""
+                desc_lines.append(f"  - {ctype}{title_str} ({len(md)} chars)")
+            desc_lines.append("")
+            desc_lines.append(f"Total: {total_chars} caracteres en {len(parsed)} componentes.")
+            desc_lines.append("")
+            desc_lines.append("Los nuevos componentes se anyadiran a los existentes.")
+
+            confirm = Gtk.MessageDialog(
+                parent=self.window,
+                modal=True,
+                type=Gtk.MessageType.QUESTION,
+                buttons=Gtk.ButtonsType.YES_NO,
+                text="Confirmar importacion",
+            )
+            confirm.format_secondary_text("\n".join(desc_lines))
+
+            if confirm.run() == Gtk.ResponseType.YES:
+                confirm.destroy()
+                count = FS.import_book(self.project.path, self.project, content, file_path)
+                self._update_status(f"Importados {count} componentes")
+                self._refresh_project_tree()
+                self._update_preview()
+                self._show_info(f"Se importaron {count} componentes correctamente.")
+            else:
+                confirm.destroy()
+        else:
+            dialog.destroy()
+
+    def _on_open_epub(self, button):
+        if not self._last_epub_path or not os.path.exists(self._last_epub_path):
+            self._show_info("No hay EPUB generado. Exportalo primero.")
+            return
+        try:
+            import subprocess
+            config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
+            config_file = os.path.join(config_dir, "config.yaml")
+            config = YamlService.load(config_file) or {}
+            reader_path = config.get("epub_reader_path", "").strip()
+            if reader_path and os.path.exists(reader_path):
+                subprocess.Popen([reader_path, self._last_epub_path])
+            else:
+                subprocess.Popen(["xdg-open", self._last_epub_path])
+        except Exception as e:
+            self._show_error(f"No se pudo abrir el EPUB: {e}")
+
+    def _refresh_project_tree(self):
+        self.project_store.clear()
+        if not self.project:
+            return
+
+        project_iter = self.project_store.append(None, [self.project.name, self.project])
+        part_iters = {}
+
+        for comp in self.project.get_ordered_components():
+            if comp.type == ComponentType.PART:
+                part_iters[comp.id] = self.project_store.append(project_iter, [comp.title, comp])
+                continue
+            part = self.project.get_part(comp.part_id) if comp.part_id else None
+            if part and comp.type == ComponentType.CHAPTER:
+                if part.id not in part_iters:
+                    part_iters[part.id] = self.project_store.append(project_iter, [part.title, part])
+                self.project_store.append(part_iters[part.id], [_component_label(comp), comp])
+            else:
+                self.project_store.append(project_iter, [_component_label(comp), comp])
+
+        self.project_tree.expand_all()
+
+    def _on_tree_cursor_changed(self, tree):
+        path, column = tree.get_cursor()
+        if path is None:
+            return
+
+        iter = self.project_store.get_iter(path)
+        obj = self.project_store.get_value(iter, 1)
+
+        if isinstance(obj, Component):
+            self._save_current_component()
+            self.current_component = obj
+            self.current_part = None
+            content = self._load_component_content(obj)
+            buffer = self.text_view.get_buffer()
+            buffer.set_text(content)
+            self._update_status(f"Editando: {obj.get_display_name()}")
+            self._update_help_panel(obj.type)
+        elif isinstance(obj, Component) and obj.type == ComponentType.PART:
+            self._save_current_component()
+            self.current_part = obj
+            self.current_component = None
+            content = FileService.load_component(self.project.path, obj)
+            if not content:
+                content = f"# {obj.title}\n\n"
+            buffer = self.text_view.get_buffer()
+            buffer.set_text(content)
+            self._update_status(f"Editando parte: {obj.title}")
+            self._update_help_panel(None)
+
+    def _on_tree_button_press(self, tree, event):
+        if event.button != 3:
+            return False
+        path_info = tree.get_path_at_pos(int(event.x), int(event.y))
+        if path_info is None:
+            return False
+        path, column, cell_x, cell_y = path_info
+        if self._read_only:
+            return False
+
+        selection = tree.get_selection()
+        if not selection.path_is_selected(path):
+            selection.unselect_all()
+            selection.select_path(path)
+            tree.set_cursor(path)
+
+        sel_count = selection.count_selected_rows()
+        if sel_count > 1:
+            comps = self._get_selected_components(selection)
+            if len(comps) == sel_count:
+                menu = Gtk.Menu()
+                item_delete = Gtk.MenuItem(label=f"Eliminar {len(comps)} componentes")
+                item_delete.connect("activate", self._on_delete_multiple_components, comps)
+                menu.append(item_delete)
+                menu.show_all()
+                menu.popup_at_pointer(event)
+                return True
+
+        iter_ = self.project_store.get_iter(path)
+        obj = self.project_store.get_value(iter_, 1)
+
+        menu = Gtk.Menu()
+        if isinstance(obj, Component) and obj.type == ComponentType.PART:
+            item_add = Gtk.MenuItem(label="Anadir componente a esta parte")
+            item_add.connect("activate", self._on_add_component, obj)
+            menu.append(item_add)
+            menu.append(Gtk.SeparatorMenuItem())
+            item_rename = Gtk.MenuItem(label="Renombrar parte")
+            item_rename.connect("activate", self._on_rename_part, obj, iter_)
+            menu.append(item_rename)
+            item_delete = Gtk.MenuItem(label="Eliminar parte")
+            item_delete.connect("activate", self._on_delete_part, obj)
+            menu.append(item_delete)
+        elif isinstance(obj, Project):
+            item_add_comp = Gtk.MenuItem(label="Anadir componente")
+            item_add_comp.connect("activate", self._on_add_component)
+            menu.append(item_add_comp)
+            menu.append(Gtk.SeparatorMenuItem())
+            item_import_img = Gtk.MenuItem(label="Importar imagen")
+            item_import_img.connect("activate", self._on_import_image)
+            menu.append(item_import_img)
+            item_manage_img = Gtk.MenuItem(label="Gestionar imagenes")
+            item_manage_img.connect("activate", self._on_manage_images)
+            menu.append(item_manage_img)
+            menu.append(Gtk.SeparatorMenuItem())
+            item_css = Gtk.MenuItem(label="Editar estilos del libro")
+            item_css.connect("activate", self._on_edit_book_css)
+            menu.append(item_css)
+        elif isinstance(obj, Component):
+            item_duplicate = Gtk.MenuItem(label="Duplicar componente")
+            item_duplicate.connect("activate", self._on_duplicate_component, obj)
+            menu.append(item_duplicate)
+            menu.append(Gtk.SeparatorMenuItem())
+            item_rename = Gtk.MenuItem(label="Renombrar componente")
+            item_rename.connect("activate", self._on_rename_component, obj, iter_)
+            menu.append(item_rename)
+            item_change_type = Gtk.MenuItem(label="Cambiar tipo")
+            change_type_menu = Gtk.Menu()
+            for ct in ComponentType:
+                ct_item = Gtk.MenuItem(label=COMPONENT_TYPE_LABELS[ct])
+                ct_item.connect("activate", self._on_change_component_type, obj, ct)
+                change_type_menu.append(ct_item)
+            item_change_type.set_submenu(change_type_menu)
+            menu.append(item_change_type)
+            # Move to part submenu (if there are parts)
+            parts = self.project.get_parts()
+            if parts:
+                item_move = Gtk.MenuItem(label="Mover a parte")
+                move_menu = Gtk.Menu()
+                for p in parts:
+                    p_item = Gtk.MenuItem(label=p.title)
+                    p_item.connect("activate", self._on_move_to_part, obj, p)
+                    move_menu.append(p_item)
+                item_move.set_submenu(move_menu)
+                menu.append(item_move)
+            if obj.part_id:
+                item_detach = Gtk.MenuItem(label="Sacar de la parte")
+                item_detach.connect("activate", self._on_detach_from_part, obj)
+                menu.append(item_detach)
+            menu.append(Gtk.SeparatorMenuItem())
+            item_type_css = Gtk.MenuItem(label="Editar estilos del tipo")
+            item_type_css.connect("activate", self._on_edit_type_css, obj)
+            menu.append(item_type_css)
+            item_comp_css = Gtk.MenuItem(label="Editar estilos del componente")
+            item_comp_css.connect("activate", self._on_edit_component_css, obj)
+            menu.append(item_comp_css)
+            menu.append(Gtk.SeparatorMenuItem())
+            item_delete = Gtk.MenuItem(label="Eliminar componente")
+            item_delete.connect("activate", self._on_delete_component, obj)
+            menu.append(item_delete)
+        else:
+            return False
+
+        menu.show_all()
+        menu.popup_at_pointer(event)
+        return True
+
+    def _on_close_project(self, widget):
+        if self.project is None:
+            return
+        if not self._confirm("¿Cerrar el proyecto actual?"):
+            return
+        if self.current_component and not self._read_only:
+            self._save_current_component()
+        self.project = None
+        self.project_store.clear()
+        self.current_component = None
+        self.text_view.get_buffer().set_text("")
+        self.webview.load_html(self.default_html, self._get_base_uri())
+        self._set_read_only_mode(False)
+        self._update_status("Proyecto cerrado")
+
+    def _update_window_title(self):
+        base = "MDToEPUB"
+        if self.project and self.project.title:
+            base = f"MDToEPUB — {self.project.title}"
+        if self._read_only and "[SOLO LECTURA]" not in base:
+            base += " [SOLO LECTURA]"
+        self.window.set_title(base)
+
+    def _set_read_only_mode(self, enabled: bool):
+        self._read_only = enabled
+        if self._toolbar_save_btn:
+            self._toolbar_save_btn.set_sensitive(not enabled)
+        self._update_window_title()
+
+    def _on_load_sample_book(self, widget):
+        if not self._confirm_discard_project():
+            return
+        sample_dir = os.path.join(os.path.dirname(__file__), "data", "sample_book")
+        yaml_path = os.path.join(sample_dir, "project.yaml")
+        if not os.path.exists(yaml_path):
+            self._show_error("No se encontro el libro de ejemplo")
+            return
+        project = FileService.load_project(sample_dir)
+        if project:
+            self.project = project
+            self.project.path = sample_dir
+            self._update_spell_lang()
+            self._refresh_project_tree()
+            self.current_component = None
+            self.text_view.get_buffer().set_text("")
+            self._set_read_only_mode(True)
+            self._update_status(f"Libro de ejemplo cargado: {project.name} [SOLO LECTURA]")
+        else:
+            self._show_error("Error al cargar el libro de ejemplo")
+
+    def _on_menu_rename_component(self, widget):
+        if not self.current_component:
+            self._show_info("Selecciona un componente primero")
+            return
+        path, _ = self.project_tree.get_cursor()
+        if path is None:
+            return
+        iter_ = self.project_store.get_iter(path)
+        self._on_rename_component(None, self.current_component, iter_)
+
+    def _on_menu_delete_component(self, widget):
+        selection = self.project_tree.get_selection()
+        model, paths = selection.get_selected_rows()
+        comps = []
+        for path in paths:
+            iter_ = model.get_iter(path)
+            obj = model.get_value(iter_, 1)
+            if isinstance(obj, Component):
+                comps.append(obj)
+        if not comps:
+            self._show_info("Selecciona uno o varios componentes primero")
+            return
+        if len(comps) == 1:
+            self._on_delete_component(None, comps[0])
+        else:
+            self._on_delete_multiple_components(None, comps)
+
+    def _on_theme_manager(self, widget):
+        if not self.project:
+            self._show_info("Abre un proyecto primero")
+            return
+
+        themes_dir = os.path.join(os.path.dirname(__file__), "themes")
+        available = []
+        if os.path.exists(themes_dir):
+            for d in sorted(os.listdir(themes_dir)):
+                tyaml = os.path.join(themes_dir, d, "theme.yaml")
+                if os.path.exists(tyaml):
+                    data = YamlService.load(tyaml)
+                    available.append((d, data.get("name", d)))
+
+        dialog = Gtk.Dialog(
+            title="Gestor de temas",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        dialog.set_default_size(550, 400)
+
+        content = dialog.get_content_area()
+        content.set_spacing(8)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        store = Gtk.ListStore(str, str, str)
+        for tid, tname in available:
+            is_active = "Si" if tid == self.project.theme_id else ""
+            store.append([tname, tid, is_active])
+
+        tree = Gtk.TreeView(model=store)
+        tree.set_headers_visible(True)
+
+        r_name = Gtk.CellRendererText()
+        c_name = Gtk.TreeViewColumn("Tema", r_name, text=0)
+        c_name.set_resizable(True)
+        tree.append_column(c_name)
+
+        r_id = Gtk.CellRendererText()
+        c_id = Gtk.TreeViewColumn("ID", r_id, text=1)
+        c_id.set_resizable(True)
+        tree.append_column(c_id)
+
+        r_active = Gtk.CellRendererText()
+        c_active = Gtk.TreeViewColumn("Activo", r_active, text=2)
+        tree.append_column(c_active)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        scrolled.add(tree)
+        content.pack_start(scrolled, True, True, 0)
+
+        btn_box = Gtk.Box(spacing=6)
+        btn_activate = Gtk.Button(label="Activar tema")
+        btn_activate.connect("clicked", lambda b: self._on_activate_theme(tree, store, dialog))
+        btn_box.pack_start(btn_activate, False, False, 0)
+
+        btn_edit_css = Gtk.Button(label="Editar CSS del tema")
+        btn_edit_css.connect("clicked", lambda b: self._on_edit_theme_css(tree, store))
+        btn_box.pack_start(btn_edit_css, False, False, 0)
+
+        content.pack_start(btn_box, False, False, 0)
+        dialog.show_all()
+        dialog.connect("response", lambda d, r: d.destroy())
+
+    def _on_activate_theme(self, tree, store, dialog):
+        sel = tree.get_selection()
+        model, iter_ = sel.get_selected()
+        if iter_ is None:
+            return
+        theme_id = model.get_value(iter_, 1)
+        if theme_id:
+            self.project.theme_id = theme_id
+            FileService.save_project(self.project)
+            self._update_preview()
+            self._update_status(f"Tema activado: {model.get_value(iter_, 0)}")
+            dialog.destroy()
+
+    def _on_edit_theme_css(self, tree, store):
+        sel = tree.get_selection()
+        model, iter_ = sel.get_selected()
+        if iter_ is None:
+            return
+        theme_id = model.get_value(iter_, 1)
+        theme_dir = os.path.join(os.path.dirname(__file__), "themes", theme_id)
+
+        theme_config = {}
+        tyaml = os.path.join(theme_dir, "theme.yaml")
+        if os.path.exists(tyaml):
+            theme_config = YamlService.load(tyaml)
+
+        css_files = {"style.css": "Base"}
+        for comp_type, css_file in theme_config.get("styles", {}).items():
+            css_files[css_file] = f"Componente: {comp_type}"
+
+        editor_dialog = Gtk.Dialog(
+            title=f"CSS del tema: {model.get_value(iter_, 0)}",
+            transient_for=self.window,
+            modal=True,
+        )
+        editor_dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        editor_dialog.set_default_size(700, 500)
+
+        editor_content = editor_dialog.get_content_area()
+        editor_content.set_spacing(8)
+        editor_content.set_margin_top(12)
+        editor_content.set_margin_bottom(12)
+        editor_content.set_margin_start(12)
+        editor_content.set_margin_end(12)
+
+        combo_css = Gtk.ComboBoxText()
+        css_list = sorted(css_files.items())
+        for fname, label in css_list:
+            combo_css.append_text(f"{label} ({fname})")
+        combo_css.set_active(0)
+        editor_content.pack_start(combo_css, False, False, 0)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        buf = GtkSource.Buffer.new_with_language(
+            GtkSource.LanguageManager.get_default().get_language("css")
+        )
+        text_view = GtkSource.View.new_with_buffer(buf)
+        text_view.set_monospace(True)
+        text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+
+        def load_css_file(idx):
+            fname = css_list[idx][0]
+            fpath = os.path.join(theme_dir, fname)
+            text = ""
+            if os.path.exists(fpath):
+                with open(fpath) as f:
+                    text = f.read()
+            buf.set_text(text)
+
+        load_css_file(0)
+
+        def on_combo_changed(cb):
+            load_css_file(cb.get_active())
+
+        combo_css.connect("changed", on_combo_changed)
+
+        scrolled.add(text_view)
+        editor_content.pack_start(scrolled, True, True, 0)
+
+        editor_dialog.show_all()
+        editor_dialog.connect("response", lambda d, r: d.destroy())
+
+    def _on_about(self, widget):
+        dialog = Gtk.AboutDialog(
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.set_program_name("MDToEPUB")
+        dialog.set_version("1.0")
+        dialog.set_comments("Editor de EPUB a partir de Markdown")
+        dialog.set_license_type(Gtk.License.GPL_3_0)
+        dialog.connect("response", lambda d, r: d.destroy())
+        dialog.show_all()
+
+    def _on_edit_custom_css(self, menu_item):
+        if not self.project:
+            return
+
+        custom_css_path = os.path.join(self.project.path, "styles", "custom.css")
+        content = ""
+        if os.path.exists(custom_css_path):
+            with open(custom_css_path, "r") as f:
+                content = f.read()
+
+        dialog = Gtk.Dialog(
+            title="CSS personalizado",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_size(600, 500)
+
+        content_area = dialog.get_content_area()
+        content_area.set_spacing(8)
+        content_area.set_margin_top(12)
+        content_area.set_margin_bottom(12)
+        content_area.set_margin_start(12)
+        content_area.set_margin_end(12)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        text_view = Gtk.TextView()
+        text_view.set_monospace(True)
+        text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        buffer_ = text_view.get_buffer()
+        buffer_.set_text(content)
+        scrolled.add(text_view)
+        content_area.pack_start(scrolled, True, True, 0)
+
+        dialog.show_all()
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                start = buffer_.get_start_iter()
+                end = buffer_.get_end_iter()
+                new_content = buffer_.get_text(start, end, True)
+                os.makedirs(os.path.dirname(custom_css_path), exist_ok=True)
+                with open(custom_css_path, "w") as f:
+                    f.write(new_content)
+                self._update_status("CSS personalizado guardado")
+                self._update_preview()
+            d.destroy()
+
+        dialog.connect("response", on_response)
+
+    def _on_import_image(self, menu_item):
+        if not self.project:
+            return
+
+        dialog = Gtk.FileChooserDialog(
+            title="Seleccionar imagen",
+            transient_for=self.window,
+            action=Gtk.FileChooserAction.OPEN,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Importar", Gtk.ResponseType.ACCEPT)
+
+        img_filter = Gtk.FileFilter()
+        img_filter.set_name("Imagenes (JPEG, PNG, GIF)")
+        for ext in ImageService.get_supported_formats():
+            img_filter.add_pattern(f"*{ext}")
+            img_filter.add_pattern(f"*{ext.upper()}")
+        dialog.add_filter(img_filter)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                src_path = d.get_filename()
+                if src_path:
+                    category_dialog = Gtk.Dialog(
+                        title="Tipo de imagen",
+                        transient_for=self.window,
+                        modal=True,
+                    )
+                    category_dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+                    category_dialog.add_button("Importar", Gtk.ResponseType.ACCEPT)
+
+                    cat_content = category_dialog.get_content_area()
+                    cat_content.set_spacing(12)
+                    cat_content.set_margin_top(12)
+                    cat_content.set_margin_bottom(12)
+                    cat_content.set_margin_start(12)
+                    cat_content.set_margin_end(12)
+
+                    cat_label = Gtk.Label(label="Selecciona el tipo de imagen:")
+                    cat_content.add(cat_label)
+
+                    combo_cat = Gtk.ComboBoxText()
+                    combo_cat.append_text("Ilustrativa (figuras, diagramas)")
+                    combo_cat.append_text("Decorativa (separadores, adornos)")
+                    combo_cat.set_active(0)
+                    cat_content.add(combo_cat)
+
+                    category_dialog.show_all()
+
+                    def on_cat_response(cd, cat_response):
+                        if cat_response == Gtk.ResponseType.ACCEPT:
+                            category = "illustrations" if combo_cat.get_active() == 0 else "decorative"
+                            images_dir = os.path.join(self.project.path, "images")
+                            result = ImageService.copy_to_project(src_path, images_dir, category)
+                            if result:
+                                self._update_status(f"Imagen importada: {os.path.basename(src_path)}")
+                            else:
+                                self._show_error("Error al importar la imagen")
+                        cd.destroy()
+
+                    category_dialog.connect("response", on_cat_response)
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_manage_images(self, menu_item):
+        if not self.project:
+            return
+
+        images_dir = Path(self.project.path) / "images"
+        if not images_dir.exists():
+            self._show_info("No hay imagenes en el proyecto")
+            return
+
+        dialog = Gtk.Dialog(
+            title="Gestionar imagenes",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        dialog.set_default_size(820, 520)
+
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        hbox.set_margin_top(12)
+        hbox.set_margin_bottom(12)
+        hbox.set_margin_start(12)
+        hbox.set_margin_end(12)
+        dialog.get_content_area().pack_start(hbox, True, True, 0)
+
+        # --- Left: tree + buttons ---
+        left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        hbox.pack_start(left_box, True, True, 0)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        left_box.pack_start(scrolled, True, True, 0)
+
+        IMG_COL_NAME = 0
+        IMG_COL_CAT = 1
+        IMG_COL_SIZE = 2
+        IMG_COL_PATH = 3
+
+        store = Gtk.ListStore(str, str, str, str)
+        tree_view = Gtk.TreeView(model=store)
+        tree_view.set_headers_visible(True)
+        tree_view.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
+
+        r_name = Gtk.CellRendererText()
+        col_name = Gtk.TreeViewColumn("Nombre", r_name, text=IMG_COL_NAME)
+        col_name.set_resizable(True)
+        col_name.set_expand(True)
+        tree_view.append_column(col_name)
+
+        r_cat = Gtk.CellRendererText()
+        col_cat = Gtk.TreeViewColumn("Categoria", r_cat, text=IMG_COL_CAT)
+        col_cat.set_resizable(True)
+        tree_view.append_column(col_cat)
+
+        r_size = Gtk.CellRendererText()
+        col_size = Gtk.TreeViewColumn("Tamano", r_size, text=IMG_COL_SIZE)
+        col_size.set_resizable(True)
+        tree_view.append_column(col_size)
+
+        def populate_store():
+            store.clear()
+            for cat_name, cat_label in [("illustrations", "Ilustrativa"), ("decorative", "Decorativa")]:
+                cat_dir = images_dir / cat_name
+                if cat_dir.exists():
+                    for f in sorted(cat_dir.iterdir()):
+                        if not f.is_file() or f.suffix.lower() not in ImageService.get_supported_formats():
+                            continue
+                        size = f.stat().st_size
+                        size_str = f"{size / 1024:.1f} KB"
+                        store.append([f.name, cat_label, size_str, str(f)])
+
+        populate_store()
+
+        scrolled.add(tree_view)
+
+        # Button row below tree
+        btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        left_box.pack_start(btn_box, False, False, 0)
+
+        btn_delete = Gtk.Button(label="Eliminar")
+        btn_box.pack_start(btn_delete, False, False, 0)
+
+        btn_rename = Gtk.Button(label="Renombrar")
+        btn_box.pack_start(btn_rename, False, False, 0)
+
+        # --- Right: preview ---
+        right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        right_box.set_size_request(280, -1)
+        hbox.pack_start(right_box, False, False, 0)
+
+        preview_img = Gtk.Image()
+        preview_frame = Gtk.Frame(label="Vista previa")
+        preview_frame.set_size_request(260, 300)
+        preview_frame.add(preview_img)
+        right_box.pack_start(preview_frame, True, True, 0)
+
+        def update_preview():
+            sel = tree_view.get_selection()
+            model, paths = sel.get_selected_rows()
+            if len(paths) != 1:
+                preview_img.clear()
+                return
+            iter_ = model.get_iter(paths[0])
+            fpath = model.get_value(iter_, IMG_COL_PATH)
+            try:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(fpath, 240, 260)
+                preview_img.set_from_pixbuf(pixbuf)
+            except Exception:
+                preview_img.clear()
+
+        tree_view.get_selection().connect("changed", lambda *a: update_preview())
+
+        # --- Delete ---
+        def on_delete(_btn):
+            sel = tree_view.get_selection()
+            model, paths = sel.get_selected_rows()
+            if not paths:
+                self._show_info("Selecciona una o varias imagenes")
+                return
+            names = []
+            for p in paths:
+                iter_ = model.get_iter(p)
+                names.append(model.get_value(iter_, IMG_COL_NAME))
+            confirm = Gtk.MessageDialog(
+                transient_for=dialog, modal=True,
+                message_type=Gtk.MessageType.QUESTION,
+                buttons=Gtk.ButtonsType.YES_NO,
+                text=f"Eliminar {len(names)} imagenes",
+            )
+            confirm.format_secondary_text("\n".join(f"  - {n}" for n in names))
+            if confirm.run() == Gtk.ResponseType.YES:
+                confirm.destroy()
+                for p in reversed(sorted(paths)):
+                    iter_ = model.get_iter(p)
+                    fpath = model.get_value(iter_, IMG_COL_PATH)
+                    ImageService.delete_image(fpath)
+                populate_store()
+                update_preview()
+            else:
+                confirm.destroy()
+
+        btn_delete.connect("clicked", on_delete)
+
+        # --- Rename ---
+        def on_rename(_btn):
+            sel = tree_view.get_selection()
+            model, paths = sel.get_selected_rows()
+            if len(paths) != 1:
+                self._show_info("Selecciona una sola imagen para renombrar")
+                return
+            iter_ = model.get_iter(paths[0])
+            old_name = model.get_value(iter_, IMG_COL_NAME)
+            fpath = model.get_value(iter_, IMG_COL_PATH)
+            cat_label = model.get_value(iter_, IMG_COL_CAT)
+            cat_name = "illustrations" if cat_label == "Ilustrativa" else "decorative"
+
+            rename_dialog = Gtk.Dialog(
+                title="Renombrar imagen",
+                transient_for=dialog, modal=True,
+            )
+            rename_dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+            rename_dialog.add_button("Renombrar", Gtk.ResponseType.ACCEPT)
+
+            r_content = rename_dialog.get_content_area()
+            r_content.set_spacing(12)
+            r_content.set_margin_top(12)
+            r_content.set_margin_bottom(12)
+            r_content.set_margin_start(12)
+            r_content.set_margin_end(12)
+
+            r_content.add(Gtk.Label(label="Nuevo nombre:"))
+            entry = Gtk.Entry()
+            entry.set_text(old_name)
+            entry.set_hexpand(True)
+            entry.connect("activate", lambda *a: rename_dialog.response(Gtk.ResponseType.ACCEPT))
+            r_content.add(entry)
+
+            rename_dialog.show_all()
+
+            if rename_dialog.run() == Gtk.ResponseType.ACCEPT:
+                new_name = entry.get_text().strip()
+                rename_dialog.destroy()
+                if not new_name or new_name == old_name:
+                    return
+                old_path = f"images/{cat_name}/{old_name}"
+                new_path = f"images/{cat_name}/{new_name}"
+
+                # Check extension matches
+                src_suffix = Path(old_name).suffix.lower()
+                new_suffix = Path(new_name).suffix.lower()
+                if new_suffix != src_suffix:
+                    self._show_error("La extension debe ser la misma")
+                    return
+
+                result = ImageService.rename_image(fpath, new_name)
+                if result is None:
+                    self._show_error(f"No se pudo renombrar (¿ya existe '{new_name}'?)")
+                    return
+
+                # Update references in all component files
+                updated = FileService.rename_image_references(
+                    self.project.path, old_path, new_path, self.project
+                )
+
+                # Refresh editor if current component was affected
+                if self.current_component:
+                    content = FileService.load_component(self.project.path, self.current_component)
+                    if content:
+                        buf = self.text_view.get_buffer()
+                        buf.set_text(content)
+                        self._update_preview()
+
+                populate_store()
+                self._update_status(f"Imagen renombrada a '{new_name}' ({updated} componente(s) actualizados)")
+            else:
+                rename_dialog.destroy()
+
+        btn_rename.connect("clicked", on_rename)
+
+        dialog.show_all()
+        dialog.connect("response", lambda d, r: d.destroy())
+
+    def _on_rename_part(self, menu_item, part, iter_):
+        dialog = Gtk.Dialog(
+            title="Renombrar parte",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Renombrar", Gtk.ResponseType.ACCEPT)
+
+        content = dialog.get_content_area()
+        content.set_spacing(12)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        entry = Gtk.Entry()
+        entry.set_text(part.title)
+        entry.set_hexpand(True)
+        content.add(entry)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                new_title = entry.get_text().strip()
+                if new_title:
+                    part.title = new_title
+                    self.project_store.set_value(iter_, 0, new_title)
+                    FileService.save_project(self.project)
+                    self._update_status(f"Parte renombrada: {new_title}")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_delete_part(self, menu_item, part):
+        dialog = Gtk.MessageDialog(
+            transient_for=self.window,
+            modal=True,
+            message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.YES_NO,
+            text="Eliminar parte",
+        )
+        dialog.format_secondary_text(f"Se eliminara la parte \"{part.title}\" y sus componentes quedaran sin agrupar.")
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.YES:
+                for c in self.project.components:
+                    if c.part_id == part.id:
+                        c.part_id = None
+                self.project.remove_component(part.id)
+                FileService.save_project(self.project)
+                self._refresh_project_tree()
+                self._update_status(f"Parte eliminada: {part.title}")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_rename_component(self, menu_item, component, iter_):
+        dialog = Gtk.Dialog(
+            title="Renombrar componente",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Renombrar", Gtk.ResponseType.ACCEPT)
+
+        content = dialog.get_content_area()
+        content.set_spacing(12)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        content.set_margin_start(12)
+        content.set_margin_end(12)
+
+        entry = Gtk.Entry()
+        entry.set_text(component.title)
+        entry.set_hexpand(True)
+        content.add(entry)
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT:
+                new_title = entry.get_text().strip()
+                if new_title:
+                    component.title = new_title
+                    self.project_store.set_value(iter_, 0, component.get_display_name())
+                    FileService.save_project(self.project)
+                    self._update_status(f"Componente renombrado: {new_title}")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_duplicate_component(self, menu_item, component):
+        import uuid
+        new_comp = Component(
+            id=str(uuid.uuid4()),
+            type=component.type,
+            title=component.title,
+            filename=FileService.generate_filename(component.type.value, component.title),
+            order=component.order + 1,
+            part_id=component.part_id,
+            frontmatter=component.frontmatter.copy(),
+            custom_css=component.custom_css,
+        )
+        # Shift subsequent components' orders up
+        for c in self.project.components:
+            if c.order >= new_comp.order:
+                c.order += 1
+
+        content = FileService.load_component(self.project.path, component)
+        self.project.add_component(new_comp)
+        FileService.save_component(self.project.path, new_comp, content or "")
+        FileService.save_project(self.project)
+        self._refresh_project_tree()
+        self._update_status(f"Componente duplicado: {new_comp.get_display_name()}")
+
+    def _on_move_to_part(self, menu_item, component, part):
+        if component.part_id == part.id:
+            return
+        component.part_id = part.id
+        FileService.save_project(self.project)
+        self._refresh_project_tree()
+        self._update_status(f"{component.get_display_name()} movido a {part.title}")
+
+    def _on_detach_from_part(self, menu_item, component):
+        if not component.part_id:
+            return
+        if not self._confirm(f"Separar «{component.get_display_name()}» de su parte?"):
+            return
+        component.part_id = None
+        FileService.save_project(self.project)
+        self._refresh_project_tree()
+        self._update_status(f"{component.get_display_name()} separado de la parte")
+
+    def _on_delete_component(self, menu_item, component):
+        dialog = Gtk.MessageDialog(
+            transient_for=self.window,
+            modal=True,
+            message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.YES_NO,
+            text="Eliminar componente",
+        )
+        dialog.format_secondary_text(f"Se eliminara el componente \"{component.get_display_name()}\".")
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.YES:
+                if self.current_component and self.current_component.id == component.id:
+                    self.text_view.get_buffer().set_text("")
+                    self.webview.load_html(self.default_html, self._get_base_uri())
+                    self.current_component = None
+                self.project.remove_component(component.id)
+                FileService.save_project(self.project)
+                self._refresh_project_tree()
+                self._update_status(f"Componente eliminado: {component.get_display_name()}")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _get_selected_components(self, selection):
+        """Return all Component objects from the current tree selection."""
+        model, paths = selection.get_selected_rows()
+        comps = []
+        for path in paths:
+            iter_ = model.get_iter(path)
+            obj = model.get_value(iter_, 1)
+            if isinstance(obj, Component):
+                comps.append(obj)
+        return comps
+
+    def _on_delete_multiple_components(self, menu_item, components):
+        names = "\n".join(f"  - {c.get_display_name()}" for c in components)
+        dialog = Gtk.MessageDialog(
+            transient_for=self.window,
+            modal=True,
+            message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.YES_NO,
+            text=f"Eliminar {len(components)} componentes",
+        )
+        dialog.format_secondary_text(f"Se eliminaran los siguientes componentes:\n{names}")
+
+        def on_response(d, response):
+            if response == Gtk.ResponseType.YES:
+                ids = {c.id for c in components}
+                if self.current_component and self.current_component.id in ids:
+                    self.text_view.get_buffer().set_text("")
+                    self.webview.load_html(self.default_html, self._get_base_uri())
+                    self.current_component = None
+                for comp in components:
+                    self.project.remove_component(comp.id)
+                FileService.save_project(self.project)
+                self._refresh_project_tree()
+                self._update_status(f"Eliminados {len(components)} componentes")
+            d.destroy()
+
+        dialog.connect("response", on_response)
+        dialog.show_all()
+
+    def _on_change_component_type(self, menu_item, component, new_type):
+        component.type = new_type
+        if not component.title:
+            component.title = ""
+        FileService.save_project(self.project)
+        self._refresh_project_tree()
+        self._update_status(f"Tipo cambiado a: {COMPONENT_TYPE_LABELS[new_type]}")
+        self._update_preview()
+
+    def _edit_css_dialog(self, title: str, initial_css: str) -> str:
+        dialog = Gtk.Dialog(
+            title=title,
+            transient_for=self.window,
+            flags=0,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Guardar", Gtk.ResponseType.OK)
+        dialog.set_default_size(600, 500)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        buffer = GtkSource.Buffer.new_with_language(
+            GtkSource.LanguageManager.get_default().get_language("css")
+        )
+        buffer.set_text(initial_css)
+        textview = GtkSource.View.new_with_buffer(buffer)
+        textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        textview.set_monospace(True)
+        scrolled.add(textview)
+
+        box = dialog.get_content_area()
+        box.pack_start(scrolled, True, True, 0)
+        dialog.show_all()
+
+        result = dialog.run()
+        css = buffer.get_text(buffer.get_start_iter(), buffer.get_end_iter(), True)
+        dialog.destroy()
+        if result == Gtk.ResponseType.OK:
+            return css
+        return None
+
+    def _on_edit_book_css(self, widget):
+        if not self.project:
+            self._show_info("Abre un proyecto primero")
+            return
+        css = self._edit_css_dialog("Estilos del libro", self.project.custom_css)
+        if css is None:
+            return
+        self.project.custom_css = css
+        FileService.save_project(self.project)
+        self._update_preview()
+        self._update_help_panel(
+            self.current_component.type if self.current_component else None
+        )
+        self._update_status("Estilos del libro actualizados")
+
+    def _on_edit_type_css(self, widget, component):
+        if not self.project:
+            return
+        type_key = component.type.value
+        current = self.project.type_css_overrides.get(type_key, "")
+        label = COMPONENT_TYPE_LABELS.get(component.type, type_key)
+        css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
+        if css is None:
+            return
+        if css.strip():
+            self.project.type_css_overrides[type_key] = css
+        else:
+            self.project.type_css_overrides.pop(type_key, None)
+        FileService.save_project(self.project)
+        self._update_preview()
+        self._update_help_panel(component.type)
+        self._update_status(f"Estilos del tipo '{label}' actualizados")
+
+    def _on_edit_component_css(self, widget, component):
+        if not self.project:
+            return
+        css = self._edit_css_dialog(
+            f"Estilos del componente: {component.get_display_name()}",
+            component.custom_css,
+        )
+        if css is None:
+            return
+        component.custom_css = css
+        FileService.save_project(self.project)
+        self._update_preview()
+        self._update_help_panel(component.type)
+        self._update_status(f"Estilos del componente '{component.get_display_name()}' actualizados")
+
+    def _on_manage_type_css(self, widget):
+        if not self.project:
+            self._show_info("Abre un proyecto primero")
+            return
+
+        dialog = Gtk.Dialog(
+            title="Gestionar estilos por tipo",
+            transient_for=self.window,
+            flags=0,
+        )
+        dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        dialog.set_default_size(450, 400)
+
+        store = Gtk.ListStore(str, str, str)
+        for ct in ComponentType:
+            label = COMPONENT_TYPE_LABELS[ct]
+            has_css = ct.value in self.project.type_css_overrides
+            status = "Editado" if has_css else "Tema por defecto"
+            store.append([label, status, ct.value])
+
+        tree = Gtk.TreeView(model=store)
+        tree.set_headers_visible(True)
+        renderer_label = Gtk.CellRendererText()
+        col_label = Gtk.TreeViewColumn("Tipo", renderer_label, text=0)
+        col_label.set_resizable(True)
+        col_label.set_expand(True)
+        tree.append_column(col_label)
+        renderer_status = Gtk.CellRendererText()
+        col_status = Gtk.TreeViewColumn("Estado", renderer_status, text=1)
+        col_status.set_resizable(True)
+        tree.append_column(col_status)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        scrolled.add(tree)
+        box = dialog.get_content_area()
+        box.pack_start(scrolled, True, True, 0)
+
+        btn_box = Gtk.Box(spacing=6)
+        btn_edit = Gtk.Button(label="Editar")
+        btn_reset = Gtk.Button(label="Restablecer")
+        btn_box.pack_start(btn_edit, False, False, 0)
+        btn_box.pack_start(btn_reset, False, False, 0)
+        box.pack_start(btn_box, False, False, 0)
+
+        def _selected_type():
+            sel = tree.get_selection()
+            model, it = sel.get_selected()
+            if it is None:
+                return None
+            return model.get_value(it, 2)
+
+        def _on_edit(btn):
+            type_key = _selected_type()
+            if not type_key:
+                return
+            ct = ComponentType(type_key)
+            label = COMPONENT_TYPE_LABELS[ct]
+            current = self.project.type_css_overrides.get(type_key, "")
+            css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
+            if css is None:
+                return
+            if css.strip():
+                self.project.type_css_overrides[type_key] = css
+            else:
+                self.project.type_css_overrides.pop(type_key, None)
+            FileService.save_project(self.project)
+            self._update_preview()
+            if self.current_component:
+                self._update_help_panel(self.current_component.type)
+            self._update_status(f"Estilos del tipo '{label}' actualizados")
+            _refresh_list()
+
+        def _on_reset(btn):
+            type_key = _selected_type()
+            if not type_key:
+                return
+            ct = ComponentType(type_key)
+            label = COMPONENT_TYPE_LABELS[ct]
+            if type_key not in self.project.type_css_overrides:
+                return
+            if not self._confirm(f"Restablecer estilos del tipo «{label}»?\nSe perderán los cambios personalizados."):
+                return
+            del self.project.type_css_overrides[type_key]
+            FileService.save_project(self.project)
+            self._update_preview()
+            if self.current_component:
+                self._update_help_panel(self.current_component.type)
+            self._update_status(f"Estilos del tipo '{label}' restablecidos al tema")
+            _refresh_list()
+
+        def _refresh_list():
+            store.clear()
+            for ct in ComponentType:
+                label = COMPONENT_TYPE_LABELS[ct]
+                has_css = ct.value in self.project.type_css_overrides
+                status = "Editado" if has_css else "Tema por defecto"
+                store.append([label, status, ct.value])
+
+        tree.connect("row-activated", lambda t, path, col: _on_edit(None))
+        btn_edit.connect("clicked", _on_edit)
+        btn_reset.connect("clicked", _on_reset)
+
+        dialog.show_all()
+        dialog.run()
+        dialog.destroy()
+
+    def _on_drag_begin(self, treeview, context):
+        selection = treeview.get_selection()
+        _, paths = selection.get_selected_rows()
+        self._drag_component_ids = []
+        if paths:
+            for p in paths:
+                si = self.project_store.get_iter(p)
+                if si is not None:
+                    obj = self.project_store.get_value(si, 1)
+                    if isinstance(obj, Component):
+                        self._drag_component_ids.append(obj.id)
+
+    def _on_drag_motion(self, treeview, context, x, y, time):
+        dest = treeview.get_dest_row_at_pos(int(x), int(y))
+        if dest:
+            path, pos = dest
+            treeview.set_drag_dest_row(path, pos)
+        return False
+
+    def _on_drag_data_get(self, treeview, drag_context, data, info, time_):
+        if not self._drag_component_ids:
+            return
+        data.set(Gdk.atom_intern("MOVE_ROW", False), 8, b"x")
+
+    def _on_drag_data_received(self, treeview, context, x, y, selection_data, info, time_):
+        if not self.project or self._read_only:
+            context.finish(False, False, time_)
+            return
+
+        if not self._drag_component_ids:
+            context.finish(False, False, time_)
+            return
+
+        dest = treeview.get_dest_row_at_pos(int(x), int(y))
+        if not dest:
+            context.finish(False, False, time_)
+            return
+
+        dest_path, dest_pos = dest
+        source_ids = self._drag_component_ids
+
+        # Ignore drop on dragged item (no-op)
+        dest_iter = self.project_store.get_iter(dest_path)
+        if dest_iter is not None:
+            dest_obj = self.project_store.get_value(dest_iter, 1)
+            if isinstance(dest_obj, Component) and dest_obj.id in source_ids:
+                context.finish(True, False, time_)
+                return
+
+        # Build an ordered list of all component rows from the tree
+        rows = []
+        self._collect_tree_components(treeview, rows)
+        source_indices = [i for i, (cid, _) in enumerate(rows) if cid in source_ids]
+
+        if not source_indices:
+            context.finish(False, False, time_)
+            return
+
+        dest_row = self._find_dest_row(rows, dest_path, dest_pos)
+
+        if dest_row is None:
+            context.finish(False, False, time_)
+            return
+
+        # Extract dragged items and remove from list (in reverse order to preserve indices)
+        dragged = [rows[i] for i in source_indices]
+        for i in reversed(source_indices):
+            rows.pop(i)
+
+        # Adjust dest_row: items before it have been removed
+        removed_before = sum(1 for i in source_indices if i < dest_row)
+        adjusted_dest = dest_row - removed_before
+
+        # Determine insertion index in the modified rows list
+        if dest_pos in (Gtk.TreeViewDropPosition.BEFORE, Gtk.TreeViewDropPosition.INTO_OR_BEFORE):
+            insert_at = adjusted_dest
+        elif dest_pos in (Gtk.TreeViewDropPosition.AFTER, Gtk.TreeViewDropPosition.INTO_OR_AFTER):
+            insert_at = adjusted_dest + 1
+        else:
+            context.finish(False, False, time_)
+            return
+
+        insert_at = max(0, min(insert_at, len(rows)))
+        for item in reversed(dragged):
+            rows.insert(insert_at, item)
+
+        # Build final component list with correct order
+        new_components = []
+        for idx, (cid, is_part) in enumerate(rows):
+            comp = next((c for c in self.project.components if c.id == cid), None)
+            if comp is None:
+                continue
+            comp.order = idx
+            if not is_part:
+                comp_part = self._find_part_for_row(rows, idx)
+                comp.part_id = comp_part.id if comp_part else None
+            new_components.append(comp)
+
+        self.project.components = new_components
+        FileService.save_project(self.project)
+        self._refresh_project_tree()
+        self._update_status("Componente(s) reordenado(s)")
+        context.finish(True, False, time_)
+
+    def _collect_tree_components(self, treeview, result):
+        store = treeview.get_model()
+        root_iter = store.get_iter_first()
+        if root_iter is None:
+            return
+        child = store.iter_children(root_iter)
+        while child is not None:
+            obj = store.get_value(child, 1)
+            if isinstance(obj, Component):
+                if obj.type == ComponentType.PART:
+                    result.append((obj.id, True))
+                    comp_child = store.iter_children(child)
+                    while comp_child is not None:
+                        sub = store.get_value(comp_child, 1)
+                        if isinstance(sub, Component):
+                            result.append((sub.id, False))
+                        comp_child = store.iter_next(comp_child)
+                else:
+                    result.append((obj.id, False))
+            child = store.iter_next(child)
+
+    def _find_dest_row(self, rows, dest_path, dest_pos):
+        store = self.project_store
+        dest_iter = store.get_iter(dest_path)
+        if dest_iter is None:
+            return None
+        dest_obj = store.get_value(dest_iter, 1)
+        if not isinstance(dest_obj, Component):
+            return None
+        for i, (cid, _) in enumerate(rows):
+            if cid == dest_obj.id:
+                return i
+        return None
+
+    def _find_part_for_row(self, rows, idx):
+        for i in range(idx - 1, -1, -1):
+            cid, is_part = rows[i]
+            if is_part:
+                return next((c for c in self.project.components if c.id == cid), None)
+        return None
+
+    def _on_text_changed(self, buffer):
+        self._update_preview()
+
+    def _update_status(self, message):
+        self.status_label.set_text(message)
+        if self.project:
+            self.project_label.set_text(f"Proyecto: {self.project.name}")
+
+    def _get_config_path(self) -> tuple:
+        config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
+        os.makedirs(config_dir, exist_ok=True)
+        return config_dir, os.path.join(config_dir, "config.yaml")
+
+    def _load_recent_projects(self):
+        _, config_file = self._get_config_path()
+        config = YamlService.load(config_file)
+        self._recent_projects = config.get("recent_projects", [])
+        self._rebuild_recent_menu()
+
+    def _save_recent_projects(self):
+        _, config_file = self._get_config_path()
+        config = YamlService.load(config_file)
+        config["recent_projects"] = self._recent_projects
+        YamlService.save(config, config_file)
+
+    def _add_recent_project(self, project_path):
+        if project_path in self._recent_projects:
+            self._recent_projects.remove(project_path)
+        self._recent_projects.insert(0, project_path)
+        self._recent_projects = self._recent_projects[:10]
+        self._save_recent_projects()
+        self._rebuild_recent_menu()
+
+    def _rebuild_recent_menu(self):
+        for child in self._recent_menu.get_children():
+            self._recent_menu.remove(child)
+        if not self._recent_projects:
+            item = Gtk.MenuItem(label="(sin proyectos recientes)")
+            item.set_sensitive(False)
+            self._recent_menu.append(item)
+        else:
+            for path in self._recent_projects:
+                name = os.path.basename(path)
+                item = Gtk.MenuItem(label=f"{name}  ({path})")
+                item.connect("activate", lambda w, p=path: self._open_recent_project(p))
+                self._recent_menu.append(item)
+        self._recent_menu.show_all()
+
+    def _open_recent_project(self, path):
+        if not self._confirm_discard_project():
+            return
+        yaml_file = os.path.join(path, "project.yaml")
+        if not os.path.exists(yaml_file):
+            self._show_error(f"El proyecto ya no existe:\n{path}")
+            self._recent_projects = [p for p in self._recent_projects if p != path]
+            self._save_recent_projects()
+            self._rebuild_recent_menu()
+            return
+        project = FileService.load_project(path)
+        if project:
+            self.project = project
+            self._update_spell_lang()
+            self.current_component = None
+            self._set_read_only_mode(False)
+            self._refresh_project_tree()
+            self.text_view.get_buffer().set_text("")
+            self._update_status(f"Proyecto abierto: {project.name}")
+            self._add_recent_project(path)
+        else:
+            self._show_error("Error al cargar el proyecto")
+
+    def _show_error(self, message):
+        dialog = Gtk.MessageDialog(
+            transient_for=self.window,
+            modal=True,
+            message_type=Gtk.MessageType.ERROR,
+            buttons=Gtk.ButtonsType.OK,
+            text="Error",
+        )
+        dialog.format_secondary_text(message)
+        dialog.connect("response", lambda d, r: d.destroy())
+        dialog.show_all()
+
+    def _show_info(self, message):
+        dialog = Gtk.MessageDialog(
+            transient_for=self.window,
+            modal=True,
+            message_type=Gtk.MessageType.INFO,
+            buttons=Gtk.ButtonsType.OK,
+            text="Informacion",
+        )
+        dialog.format_secondary_text(message)
+        dialog.connect("response", lambda d, r: d.destroy())
+        dialog.show_all()
+
+    def _confirm(self, message):
+        dialog = Gtk.MessageDialog(
+            transient_for=self.window,
+            modal=True,
+            message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.YES_NO,
+            text="Confirmar",
+        )
+        dialog.format_secondary_text(message)
+        response = dialog.run()
+        dialog.destroy()
+        return response == Gtk.ResponseType.YES
+
+
+def main():
+    app = MDToEPUBApp()
+    return app.run(sys.argv)
+
+
+def main_with_system_gtk():
+    if sys.platform == "linux":
+        system_paths = ["/usr/lib/python3/dist-packages"]
+        for path in system_paths:
+            if path not in sys.path:
+                sys.path.insert(0, path)
+    return main()
+
+
+if __name__ == "__main__":
+    main()

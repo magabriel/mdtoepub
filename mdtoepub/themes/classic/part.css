@@ -1,0 +1,69 @@
+/* MDToEPUB - Classic Theme - Part Styles */
+
+.component-part {
+    page-break-before: always;
+}
+
+.component-part h1:not(.component-header) {
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 2em;
+    page-break-after: avoid;
+}
+
+.component-part h2 {
+    font-size: 1.4em;
+    margin-top: 2em;
+    page-break-after: avoid;
+}
+
+.component-part h3 {
+    font-size: 1.2em;
+    page-break-after: avoid;
+}
+
+.component-part p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+}
+
+.component-part p:first-of-type {
+    text-indent: 0;
+}
+
+.component-part blockquote {
+    margin: 1.5em 2em;
+}
+
+.component-part img {
+    max-width: 90%;
+    margin: 1.5em auto;
+}
+
+/* Lists */
+.component-part ul, .component-part ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+.component-part li {
+    margin: 0.3em 0;
+}
+
+/* Tables */
+.component-part table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.component-part th, .component-part td {
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    text-align: left;
+}
+
+.component-part th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}

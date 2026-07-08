@@ -1,0 +1,12 @@
+/* @doc Resalta el lugar y fecha dentro del capitulo */
+.location {
+  text-align: right;
+  font-variant: small-caps;
+  letter-spacing: 0.1em;
+  color: #6b4423;
+  margin-bottom: 1.5em;
+}
+
+#chapter-001 {
+  background: #faf8f5;
+}

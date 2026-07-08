@@ -1,0 +1,186 @@
+"""Spell-check service with {lang=xx} region markers."""
+
+import gi
+gi.require_version('GtkSpell', '3.0')
+from gi.repository import GtkSpell
+import re
+from typing import List, Tuple, Dict, Set
+
+
+LANG_MARKER_RE = re.compile(r'\{lang=(\w+(?:[_-]\w+)*)\}')
+WORD_RE = re.compile(r'\b([^\W\d_]+(?:[-\'][^\W\d_]+)*)\b', re.UNICODE)
+FENCE_RE = re.compile(r'^[ ]{0,3}```', re.MULTILINE)
+
+
+class SpellCheckService:
+    def __init__(self, default_lang: str = "es_ES"):
+        self.default_lang = default_lang
+        self._checkers: Dict[str, GtkSpell.Checker] = {}
+        self._global_words: Set[str] = set()
+
+    def get_language_list(self) -> List[str]:
+        chk = GtkSpell.Checker.new()
+        return chk.get_language_list()
+
+    def get_checker(self, lang: str) -> GtkSpell.Checker:
+        if lang not in self._checkers:
+            chk = GtkSpell.Checker.new()
+            chk.set_language(lang)
+            self._checkers[lang] = chk
+        return self._checkers[lang]
+
+    @staticmethod
+    def _find_fenced_blocks(text: str) -> List[Tuple[int, int]]:
+        """Find fenced code blocks (```). Returns sorted (start, end) positions."""
+        lines = text.split('\n')
+        positions = []
+        offsets = []
+        offset = 0
+        for line in lines:
+            offsets.append(offset)
+            offset += len(line) + 1
+
+        i = 0
+        while i < len(lines):
+            if FENCE_RE.match(lines[i]):
+                start = offsets[i]
+                j = i + 1
+                while j < len(lines):
+                    if FENCE_RE.match(lines[j]):
+                        end = offsets[j] + len(lines[j]) + 1
+                        positions.append((start, end))
+                        i = j + 1
+                        break
+                    j += 1
+                else:
+                    positions.append((start, len(text)))
+                    break
+            else:
+                i += 1
+        return positions
+
+    @staticmethod
+    def _find_inline_code(text: str) -> List[Tuple[int, int]]:
+        """Find inline code spans (backtick-delimited). Returns sorted (start, end)."""
+        ranges = []
+        i = 0
+        while i < len(text):
+            if text[i] == '`':
+                j = i
+                while j < len(text) and text[j] == '`':
+                    j += 1
+                n = j - i
+                k = j
+                while k <= len(text) - n:
+                    if text[k:k + n] == '`' * n:
+                        ranges.append((i, k + n))
+                        i = k + n
+                        break
+                    k += 1
+                else:
+                    i = j
+            else:
+                i += 1
+        return ranges
+
+    @staticmethod
+    def _merge_ranges(ranges: List[Tuple[int, int]]) -> List[Tuple[int, int]]:
+        """Merge overlapping ranges."""
+        if not ranges:
+            return []
+        sorted_r = sorted(ranges)
+        merged = [sorted_r[0]]
+        for start, end in sorted_r[1:]:
+            if start <= merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+            else:
+                merged.append((start, end))
+        return merged
+
+    def get_excluded_ranges(self, text: str) -> List[Tuple[int, int]]:
+        """Return sorted, merged ranges to exclude from spell-check (code)."""
+        ranges = self._find_fenced_blocks(text) + self._find_inline_code(text)
+        return self._merge_ranges(ranges)
+
+    @staticmethod
+    def _is_excluded(pos_start: int, pos_end: int,
+                     excluded: List[Tuple[int, int]]) -> bool:
+        for r_start, r_end in excluded:
+            if pos_start >= r_end:
+                continue
+            if pos_end <= r_start:
+                break
+            if pos_start >= r_start and pos_end <= r_end:
+                return True
+            if pos_start < r_end and pos_end > r_start:
+                return True
+        return False
+
+    def parse_regions(self, text: str,
+                      excluded_ranges: List[Tuple[int, int]] = None
+                      ) -> List[Tuple[int, int, str]]:
+        """Parse {lang=xx} markers into (start, end, lang) regions.
+
+        Markers themselves are excluded from regions.
+        Markers inside excluded_ranges (code blocks/spans) are ignored.
+        No marker -> default_lang for the whole text.
+        """
+        if excluded_ranges is None:
+            excluded_ranges = []
+        regions = []
+        pos = 0
+        current_lang = self.default_lang
+        for match in LANG_MARKER_RE.finditer(text):
+            start, end = match.start(), match.end()
+            if self._is_excluded(start, end, excluded_ranges):
+                continue
+            if start > pos:
+                regions.append((pos, start, current_lang))
+            current_lang = match.group(1)
+            pos = end
+        if pos < len(text):
+            regions.append((pos, len(text), current_lang))
+        return regions
+
+    def get_word_positions(self, text: str) -> List[Tuple[int, int, str]]:
+        return [(m.start(), m.end(), m.group(1)) for m in WORD_RE.finditer(text)]
+
+    def check_text(self, text: str,
+                   ignore_words: Set[str] = set()
+                   ) -> List[Tuple[int, int, str, str]]:
+        """Check text with language regions.
+
+        Words in code blocks, inline code, ignore_words or global dictionary
+        are skipped.
+        Returns list of (word_start, word_end, word, lang) for misspelled words.
+        """
+        excluded = self.get_excluded_ranges(text)
+        regions = self.parse_regions(text, excluded)
+        misspelled = []
+        all_ignored = ignore_words | self._global_words
+
+        for r_start, r_end, lang in regions:
+            region_text = text[r_start:r_end]
+            words = self.get_word_positions(region_text)
+            checker = self.get_checker(lang)
+            for w_start, w_end, word in words:
+                abs_start = r_start + w_start
+                abs_end = r_start + w_end
+                if self._is_excluded(abs_start, abs_end, excluded):
+                    continue
+                if word.lower() in all_ignored:
+                    continue
+                if not checker.check_word(word):
+                    misspelled.append((abs_start, abs_end, word, lang))
+
+        return misspelled
+
+    def add_global_word(self, word: str):
+        """Add word to the per-user global dictionary (system spell engine)."""
+        self._global_words.add(word.lower())
+        for lang, checker in self._checkers.items():
+            checker.add_to_dictionary(word)
+
+    def get_suggestions(self, word: str, lang: str) -> List[str]:
+        checker = self.get_checker(lang)
+        return checker.get_suggestions(word)

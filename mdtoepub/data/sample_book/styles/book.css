@@ -1,0 +1,18 @@
+/* @doc Pequena marca decorativa al final de cada capitulo */
+.fin-capitulo {
+  text-align: center;
+  margin: 2em 0;
+  font-size: 1.2em;
+  color: #999;
+}
+
+body {
+  font-size: 0.95em;
+  line-height: 1.7;
+  text-align: justify;
+  hyphens: auto;
+}
+
+p {
+  margin: 0.3em 0;
+}

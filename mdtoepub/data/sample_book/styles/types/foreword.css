@@ -1,0 +1,7 @@
+/* @doc Barra lateral decorativa en prologo */
+.component-foreword {
+  border-left: 3px solid #8b4513;
+  padding-left: 1.5em;
+  font-style: italic;
+  font-size: 0.95em;
+}

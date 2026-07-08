@@ -1,0 +1,35 @@
+.component-acknowledgement {
+    page-break-before: always;
+}
+
+.component-acknowledgement h1:not(.component-header) {
+    font-size: 1.8em;
+    text-align: center;
+    margin-bottom: 1.5em;
+    page-break-after: avoid;
+}
+
+.component-acknowledgement h2 {
+    font-size: 1.2em;
+    margin-top: 1.5em;
+    page-break-after: avoid;
+}
+
+.component-acknowledgement p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+    font-style: italic;
+}
+
+.component-acknowledgement p:first-of-type {
+    text-indent: 0;
+}
+
+/* @doc Persona o entidad a quien se agradece */
+.component-acknowledgement .dedicatee {
+    text-align: center;
+    font-size: 1.1em;
+    font-style: normal;
+    margin: 1em 0;
+    text-indent: 0;
+}

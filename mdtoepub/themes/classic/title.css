@@ -1,0 +1,53 @@
+.component-title {
+    text-align: center;
+    padding-top: 20%;
+    page-break-after: always;
+}
+
+/* @doc Titulo del libro */
+.component-title h1:not(.component-header) {
+    font-size: 2.5em;
+    font-weight: bold;
+    margin-bottom: 0.3em;
+    border-bottom: none;
+    line-height: 1.2;
+}
+
+/* @doc Subtitulo del libro */
+.component-title h2 {
+    font-size: 1.4em;
+    font-weight: normal;
+    font-style: italic;
+    color: #555;
+    margin-top: 0.5em;
+    margin-bottom: 1.5em;
+}
+
+/* @doc Nombre del autor o editores */
+.component-title h3 {
+    font-size: 1.1em;
+    font-weight: normal;
+    color: #777;
+    margin-top: 0;
+    margin-bottom: 0.2em;
+}
+
+.component-title h3:last-of-type {
+    margin-top: 2em;
+    font-style: italic;
+    font-size: 1em;
+}
+
+.component-title p {
+    text-indent: 0;
+    font-size: 0.9em;
+    color: #888;
+    margin-top: 3em;
+}
+
+.component-title hr {
+    width: 30%;
+    margin: 2em auto;
+    border: none;
+    border-top: 1px solid #ccc;
+}

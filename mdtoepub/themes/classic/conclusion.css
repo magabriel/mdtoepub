@@ -1,0 +1,69 @@
+/* MDToEPUB - Classic Theme - Conclusion Styles */
+
+.component-conclusion {
+    page-break-before: always;
+}
+
+.component-conclusion h1:not(.component-header) {
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 2em;
+    page-break-after: avoid;
+}
+
+.component-conclusion h2 {
+    font-size: 1.4em;
+    margin-top: 2em;
+    page-break-after: avoid;
+}
+
+.component-conclusion h3 {
+    font-size: 1.2em;
+    page-break-after: avoid;
+}
+
+.component-conclusion p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+}
+
+.component-conclusion p:first-of-type {
+    text-indent: 0;
+}
+
+.component-conclusion blockquote {
+    margin: 1.5em 2em;
+}
+
+.component-conclusion img {
+    max-width: 90%;
+    margin: 1.5em auto;
+}
+
+/* Lists */
+.component-conclusion ul, .component-conclusion ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+.component-conclusion li {
+    margin: 0.3em 0;
+}
+
+/* Tables */
+.component-conclusion table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.component-conclusion th, .component-conclusion td {
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    text-align: left;
+}
+
+.component-conclusion th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}

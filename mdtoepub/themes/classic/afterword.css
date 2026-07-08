@@ -1,0 +1,69 @@
+/* MDToEPUB - Classic Theme - Afterword Styles */
+
+.component-afterword {
+    page-break-before: always;
+}
+
+.component-afterword h1:not(.component-header) {
+    font-size: 2em;
+    text-align: center;
+    margin-bottom: 2em;
+    page-break-after: avoid;
+}
+
+.component-afterword h2 {
+    font-size: 1.4em;
+    margin-top: 2em;
+    page-break-after: avoid;
+}
+
+.component-afterword h3 {
+    font-size: 1.2em;
+    page-break-after: avoid;
+}
+
+.component-afterword p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+}
+
+.component-afterword p:first-of-type {
+    text-indent: 0;
+}
+
+.component-afterword blockquote {
+    margin: 1.5em 2em;
+}
+
+.component-afterword img {
+    max-width: 90%;
+    margin: 1.5em auto;
+}
+
+/* Lists */
+.component-afterword ul, .component-afterword ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+.component-afterword li {
+    margin: 0.3em 0;
+}
+
+/* Tables */
+.component-afterword table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.component-afterword th, .component-afterword td {
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    text-align: left;
+}
+
+.component-afterword th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+}

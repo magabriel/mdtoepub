@@ -1,0 +1,71 @@
+.component-glossary {
+    page-break-before: always;
+}
+
+.component-glossary h1:not(.component-header) {
+    font-size: 1.8em;
+    text-align: center;
+    margin-bottom: 1.5em;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 0.3em;
+    page-break-after: avoid;
+}
+
+.component-glossary h2 {
+    font-size: 1.3em;
+    margin-top: 1.5em;
+    page-break-after: avoid;
+}
+
+.component-glossary h3 {
+    font-size: 1.1em;
+    page-break-after: avoid;
+}
+
+.component-glossary p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+}
+
+.component-glossary p:first-of-type {
+    text-indent: 0;
+}
+
+.component-glossary pre {
+    font-size: 0.9em;
+    background: #f8f8f8;
+    border: 1px solid #ddd;
+    padding: 1em;
+    border-radius: 4px;
+}
+
+.component-glossary code {
+    font-size: 0.9em;
+}
+
+.component-glossary table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+
+.component-glossary th, .component-glossary td {
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    text-align: left;
+}
+
+.component-glossary th {
+    background: #f0f0f0;
+    font-weight: bold;
+}
+
+.component-glossary ul, .component-glossary ol {
+    margin: 0.5em 0;
+    padding-left: 2em;
+}
+
+.component-glossary li {
+    margin: 0.3em 0;
+}

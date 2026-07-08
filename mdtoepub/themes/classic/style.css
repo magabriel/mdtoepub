@@ -1,0 +1,267 @@
+/* MDToEPUB - Classic Theme - Base Styles */
+
+body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1em;
+    line-height: 1.6;
+    color: #333;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: Georgia, serif;
+    color: #1a1a1a;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+}
+
+h1 {
+    font-size: 2em;
+    text-align: center;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 0.3em;
+}
+
+h2 {
+    font-size: 1.5em;
+}
+
+h3 {
+    font-size: 1.2em;
+}
+
+p {
+    text-indent: 1.5em;
+    margin: 0.5em 0;
+}
+
+p:first-of-type {
+    text-indent: 0;
+}
+
+blockquote {
+    margin: 1em 2em;
+    padding: 0.5em 1em;
+    border-left: 3px solid #ccc;
+    font-style: italic;
+    color: #555;
+}
+
+code {
+    font-family: "Courier New", monospace;
+    background-color: #f4f4f4;
+    padding: 0.1em 0.3em;
+    border-radius: 3px;
+}
+
+pre {
+    background-color: #f4f4f4;
+    padding: 1em;
+    border-radius: 5px;
+    overflow-x: auto;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1em auto;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ccc;
+    margin: 2em 0;
+}
+
+a {
+    color: #0066cc;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Component header (auto-title number + title) */
+h1.component-header {
+    text-align: center;
+    margin-bottom: 1.5em;
+    page-break-after: avoid;
+    font-size: 1em;
+    font-weight: normal;
+    border: none;
+    padding: 0;
+}
+
+h1.component-header .header-number {
+    display: block;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #555;
+    margin-bottom: 0.2em;
+}
+
+h1.component-header .header-subtitle {
+    display: block;
+    font-size: 1.3em;
+    font-style: italic;
+    color: #666;
+    margin-bottom: 0.2em;
+}
+
+.component-header .header-title {
+    display: block;
+    font-size: 2em;
+    font-family: Georgia, serif;
+    color: #1a1a1a;
+    border-bottom: 2px solid #ccc;
+    padding-bottom: 0.3em;
+}
+
+/* Component specific styles */
+.component-title {
+    text-align: center;
+    padding-top: 30%;
+}
+
+.component-dedication {
+    text-align: center;
+    font-style: italic;
+    padding-top: 20%;
+}
+
+.component-cover {
+    text-align: center;
+    font-style: italic;
+    padding-top: 30%;
+}
+
+/* Decorative images */
+/* @doc Ornamento decorativo centrado */
+.ornament {
+    display: block;
+    margin: 1em auto;
+    max-width: 50%;
+}
+
+/* @doc Separador decorativo entre capitulos */
+.chapter-ornament {
+    text-align: center;
+    margin-bottom: 2em;
+}
+
+/* @doc Separador entre parrafos */
+.paragraph-separator {
+    text-align: center;
+    margin: 1.5em 0;
+}
+
+/* Imagen con caption */
+figure {
+    margin: 1.5em 0;
+    text-align: center;
+    page-break-inside: avoid;
+}
+
+figcaption {
+    font-style: italic;
+    font-size: 0.9em;
+    margin-top: 0.5em;
+    color: #555;
+}
+
+/* Letra capitular */
+.drop-cap {
+    font-size: 3.2em;
+    float: left;
+    line-height: 0.9;
+    margin-right: 0.1em;
+    font-family: Georgia, serif;
+    font-weight: bold;
+    vertical-align: text-top;
+}
+/* Si el reader no soporta float, la letra se ve grande inline
+   (raised cap en vez de drop cap) */
+
+/* ── Utility classes ── */
+
+/* @doc Alineacion centrada */
+.center {
+    text-align: center;
+}
+
+/* @doc Alineacion derecha */
+.right {
+    text-align: right;
+}
+
+/* @doc Texto muy pequeno */
+.tiny {
+    font-size: 0.7em;
+}
+
+/* @doc Texto pequeno */
+.small {
+    font-size: 0.85em;
+}
+
+/* @doc Texto grande */
+.big {
+    font-size: 1.3em;
+}
+
+/* @doc Texto muy grande */
+.huge {
+    font-size: 2em;
+}
+
+/* @doc Sin sangria de parrafo */
+.no-indent {
+    text-indent: 0;
+}
+
+/* @doc Interlineado compacto */
+.compact {
+    line-height: 1.2;
+}
+
+/* @doc Fuente sans-serif */
+.sans {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* @doc Versalitas (small caps) */
+.small-caps {
+    font-variant: small-caps;
+}
+
+/* @doc Texto atenuado (gris) */
+.muted {
+    color: #888;
+}
+
+/* @doc Salto de pagina antes del elemento */
+.page-break {
+    page-break-before: always;
+}
+
+/* @doc Evitar salto de pagina dentro del elemento */
+.avoid-break {
+    page-break-inside: avoid;
+}
+
+/* @doc Parrafo en formato epigrafe (derecha, italica, pequeno) */
+.epigraph {
+    text-align: right;
+    font-style: italic;
+    font-size: 0.9em;
+    color: #555;
+    margin: 1.5em 2em;
+}

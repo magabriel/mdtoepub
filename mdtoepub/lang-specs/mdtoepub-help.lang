@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language id="mdtoepub-help" name="MDToEPUB Help" version="2.0" _section="Other">
+  <metadata>
+    <property name="mimetypes">text/x-mdtoepub-help</property>
+  </metadata>
+  <styles>
+    <style id="section-header" name="Section Header" map-to="def:heading"/>
+    <style id="css-class" name="CSS Class" map-to="def:type"/>
+    <style id="variable" name="Variable" map-to="def:identifier"/>
+    <style id="boolean" name="Boolean" map-to="def:constant"/>
+    <style id="info" name="Info" map-to="def:note"/>
+  </styles>
+  <definitions>
+    <context id="section-header" style-ref="section-header" end-at-line-end="true">
+      <start>^(Tipo|Clases|Variables|No hay)</start>
+    </context>
+
+    <context id="info" style-ref="info" end-at-line-end="true">
+      <start>^(— Usa|Las variables|Selecciona)</start>
+    </context>
+
+    <context id="css-class" style-ref="css-class">
+      <start>\{</start>
+      <end>\}</end>
+    </context>
+
+    <context id="mdtoepub-help">
+      <include>
+        <context ref="section-header"/>
+        <context ref="info"/>
+        <context ref="css-class"/>
+        <context id="variable" style-ref="variable">
+          <match>^\s{2}[a-z_]+\s*$</match>
+        </context>
+        <context id="boolean" style-ref="boolean">
+          <keyword>true</keyword>
+          <keyword>false</keyword>
+        </context>
+      </include>
+    </context>
+  </definitions>
+</language>

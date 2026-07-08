@@ -1,0 +1,226 @@
+author: Ana M. Carvalho
+auto_chapter_title: chapter_number_with_title
+components:
+- filename: cover.md
+  frontmatter:
+    subtitle: Una novela de misterio historico
+  id: cover-001
+  order: 0
+  part_id: null
+  title: Portada
+  type: cover
+- filename: title.md
+  frontmatter: {}
+  id: title-001
+  order: 1
+  part_id: null
+  title: Pagina de titulo
+  type: title
+- filename: author.md
+  frontmatter:
+    birth: Oporto, 1972
+  id: author-001
+  order: 2
+  part_id: null
+  title: Sobre la autora
+  type: author
+- filename: license.md
+  frontmatter: {}
+  id: license-001
+  order: 3
+  part_id: null
+  title: Licencia
+  type: license
+- filename: dedication.md
+  frontmatter: {}
+  id: dedication-001
+  order: 4
+  part_id: null
+  title: Dedicatoria
+  type: dedication
+- filename: edition.md
+  frontmatter:
+    city: Lisboa
+    editor: Ediciones del Atlantico
+    isbn: 978-989-555-123-4
+    year: 2024
+  id: edition-001
+  order: 5
+  part_id: null
+  title: Edicion
+  type: edition
+- filename: toc.md
+  frontmatter:
+    toc_include:
+    - cover
+    - title
+    - author
+    - dedication
+    - foreword
+    - prologue
+    - preface
+    - introduction
+    - chapter
+    - conclusion
+    - epilogue
+    - afterword
+    - appendix
+    - glossary
+    - acknowledgement
+  id: toc-001
+  order: 6
+  part_id: null
+  title: Indice
+  type: toc
+- filename: lof.md
+  frontmatter: {}
+  id: lof-001
+  order: 7
+  part_id: null
+  title: Lista de figuras
+  type: lof
+- filename: lot.md
+  frontmatter: {}
+  id: lot-001
+  order: 8
+  part_id: null
+  title: Lista de tablas
+  type: lot
+- filename: foreword.md
+  frontmatter: {}
+  id: foreword-001
+  order: 9
+  part_id: null
+  title: Prologo
+  type: foreword
+- filename: prologue.md
+  frontmatter:
+    date: Lisboa, 1885
+  id: prologue-001
+  order: 10
+  part_id: null
+  title: Prologo (II)
+  type: prologue
+- filename: preface.md
+  frontmatter: {}
+  id: preface-001
+  order: 11
+  part_id: null
+  title: Prefacio
+  type: preface
+- filename: acknowledgement.md
+  frontmatter: {}
+  id: acknowledgement-001
+  order: 12
+  part_id: null
+  title: Agradecimientos
+  type: acknowledgement
+- filename: introduction.md
+  frontmatter: {}
+  id: introduction-001
+  order: 13
+  part_id: null
+  title: Introduccion
+  type: introduction
+- filename: chapter_01.md
+  frontmatter:
+    location: Oporto, 1897
+  id: chapter-001
+  order: 14
+  part_id: part-001
+  title: El Despertar
+  type: chapter
+- filename: chapter_02.md
+  frontmatter:
+    location: Coimbra, 1897
+  id: chapter-002
+  order: 15
+  part_id: part-001
+  title: La Carta Sellada
+  type: chapter
+- filename: chapter_03.md
+  frontmatter:
+    location: Lisboa, 1898
+  id: chapter-003
+  order: 16
+  part_id: part-001
+  title: El Archivo Perdido
+  type: chapter
+- filename: chapter_04.md
+  frontmatter:
+    location: Sintra, 1898
+  id: chapter-004
+  order: 17
+  part_id: part-002
+  title: La Biblioteca Secreta
+  type: chapter
+- filename: chapter_05.md
+  frontmatter:
+    location: Evora, 1899
+  id: chapter-005
+  order: 18
+  part_id: part-002
+  title: El Mapa de las Estrellas
+  type: chapter
+- filename: conclusion.md
+  frontmatter: {}
+  id: conclusion-001
+  order: 19
+  part_id: null
+  title: Conclusion
+  type: conclusion
+- filename: epilogue.md
+  frontmatter: {}
+  id: epilogue-001
+  order: 20
+  part_id: null
+  title: Epilogo
+  type: epilogue
+- filename: afterword.md
+  frontmatter: {}
+  id: afterword-001
+  order: 21
+  part_id: null
+  title: Nota final
+  type: afterword
+- filename: appendix.md
+  frontmatter: {}
+  id: appendix-001
+  order: 22
+  part_id: null
+  title: Notas Historicas
+  type: appendix
+- filename: glossary.md
+  frontmatter: {}
+  id: glossary-001
+  order: 23
+  part_id: null
+  title: Glosario
+  type: glossary
+drop_cap_enabled: true
+drop_cap_types:
+- chapter
+- preface
+epub_version: epub3
+language: es
+name: libro_ejemplo
+parts:
+- component_ids:
+  - chapter-001
+  - chapter-002
+  - chapter-003
+  filename: parte_01.md
+  frontmatter: {}
+  id: part-001
+  order: 0
+  title: Primera Parte
+- component_ids:
+  - chapter-004
+  - chapter-005
+  filename: parte_02.md
+  frontmatter: {}
+  id: part-002
+  order: 1
+  title: Segunda Parte
+theme_id: classic
+title: El Vestigio de los Siglos

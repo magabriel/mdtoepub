@@ -1,0 +1,9 @@
+/* @doc Color del numero de capitulo en cabecera */
+.component-header .header-number {
+  color: #8b4513;
+}
+
+/* @doc Color de la letra capitular */
+.drop-cap {
+  color: #8b4513;
+}

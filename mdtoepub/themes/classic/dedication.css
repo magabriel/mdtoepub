@@ -1,0 +1,29 @@
+.component-dedication {
+    text-align: center;
+    padding-top: 25%;
+    page-break-before: always;
+    page-break-after: always;
+}
+
+.component-dedication h1:not(.component-header) {
+    font-size: 1.5em;
+    font-weight: normal;
+    font-style: italic;
+    color: #555;
+    border-bottom: none;
+    margin-bottom: 2em;
+    text-align: center;
+}
+
+.component-dedication p {
+    text-indent: 0;
+    font-style: italic;
+    font-size: 1.1em;
+    line-height: 1.8;
+    color: #444;
+    margin: 0.3em 0;
+}
+
+.component-dedication p:first-of-type {
+    text-indent: 0;
+}
