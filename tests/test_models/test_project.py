@@ -17,6 +17,7 @@ class TestProject:
         assert project.publication_date == ""
         assert project.isbn == ""
         assert project.publisher == ""
+        assert project.subtitle == ""
         assert project.components == []
 
     def test_add_component(self):

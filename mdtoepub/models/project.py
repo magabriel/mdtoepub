@@ -26,6 +26,7 @@ class Project:
     publication_date: str = ""
     isbn: str = ""
     publisher: str = ""
+    subtitle: str = ""
 
     def add_component(self, component: Component) -> None:
         component.order = len(self.components)
