@@ -114,8 +114,8 @@ class EpubService:
             book.set_language(self.project.language)
             book.add_author(self.project.author)
 
-            book.add_metadata("DC", "publisher", self.project.editorial or "MDToEPUB")
-            book.add_metadata("DC", "date", self.project.fecha_publicacion or datetime.now().isoformat())
+            book.add_metadata("DC", "publisher", self.project.publisher or "MDToEPUB")
+            book.add_metadata("DC", "date", self.project.publication_date or datetime.now().isoformat())
 
             self._toc_filter = self._get_toc_include_filter()
             stylesheet = self._load_stylesheet()
