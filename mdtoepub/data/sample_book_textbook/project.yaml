@@ -1,9 +1,8 @@
-author: Ana M. Carvalho
+author: Clara M. Rivas
 auto_chapter_title: chapter_number_with_title
 components:
 - filename: cover.md
-  frontmatter:
-    subtitle: Una novela de misterio historico
+  frontmatter: {}
   id: cover-001
   order: 0
   part_id: null
@@ -17,8 +16,7 @@ components:
   title: Pagina de titulo
   type: title
 - filename: author.md
-  frontmatter:
-    birth: Oporto, 1972
+  frontmatter: {}
   id: author-001
   order: 2
   part_id: null
@@ -39,11 +37,7 @@ components:
   title: Dedicatoria
   type: dedication
 - filename: edition.md
-  frontmatter:
-    city: Lisboa
-    editor: Ediciones del Atlantico
-    isbn: 978-989-555-123-4
-    year: 2024
+  frontmatter: {}
   id: edition-001
   order: 5
   part_id: null
@@ -57,13 +51,10 @@ components:
     - author
     - dedication
     - foreword
-    - prologue
     - preface
     - introduction
     - chapter
     - conclusion
-    - epilogue
-    - afterword
     - appendix
     - glossary
     - acknowledgement
@@ -72,140 +63,85 @@ components:
   part_id: null
   title: Indice
   type: toc
-- filename: lof.md
-  frontmatter: {}
-  id: lof-001
-  order: 7
-  part_id: null
-  title: Lista de figuras
-  type: lof
-- filename: lot.md
-  frontmatter: {}
-  id: lot-001
-  order: 8
-  part_id: null
-  title: Lista de tablas
-  type: lot
 - filename: foreword.md
   frontmatter: {}
   id: foreword-001
-  order: 9
+  order: 7
   part_id: null
   title: Prologo
   type: foreword
-- filename: prologue.md
-  frontmatter:
-    date: Lisboa, 1885
-  id: prologue-001
-  order: 10
-  part_id: null
-  title: Prologo (II)
-  type: prologue
 - filename: preface.md
   frontmatter: {}
   id: preface-001
-  order: 11
+  order: 8
   part_id: null
   title: Prefacio
   type: preface
-- filename: acknowledgement.md
-  frontmatter: {}
-  id: acknowledgement-001
-  order: 12
-  part_id: null
-  title: Agradecimientos
-  type: acknowledgement
 - filename: introduction.md
   frontmatter: {}
   id: introduction-001
-  order: 13
+  order: 9
   part_id: null
   title: Introduccion
   type: introduction
 - filename: chapter_01.md
   frontmatter:
-    location: Oporto, 1897
+    focus: La atencion como puerta de entrada
   id: chapter-001
-  order: 14
-  part_id: part-001
-  title: El Despertar
+  order: 10
+  part_id: null
+  title: El Poder de la Atencion
   type: chapter
 - filename: chapter_02.md
   frontmatter:
-    location: Coimbra, 1897
+    focus: Estrategias para fijar conocimientos
   id: chapter-002
-  order: 15
-  part_id: part-001
-  title: La Carta Sellada
+  order: 11
+  part_id: null
+  title: Como Construir Conocimiento Solido
   type: chapter
 - filename: chapter_03.md
   frontmatter:
-    location: Lisboa, 1898
+    focus: Superar creencias limitantes
   id: chapter-003
-  order: 16
-  part_id: part-001
-  title: El Archivo Perdido
-  type: chapter
-- filename: chapter_04.md
-  frontmatter:
-    location: Sintra, 1898
-  id: chapter-004
-  order: 17
-  part_id: part-002
-  title: La Biblioteca Secreta
-  type: chapter
-- filename: chapter_05.md
-  frontmatter:
-    location: Evora, 1899
-  id: chapter-005
-  order: 18
-  part_id: part-002
-  title: El Mapa de las Estrellas
+  order: 12
+  part_id: null
+  title: La Mentalidad del Aprendiz
   type: chapter
 - filename: conclusion.md
   frontmatter: {}
   id: conclusion-001
-  order: 19
+  order: 13
   part_id: null
   title: Conclusion
   type: conclusion
-- filename: epilogue.md
-  frontmatter: {}
-  id: epilogue-001
-  order: 20
-  part_id: null
-  title: Epilogo
-  type: epilogue
-- filename: afterword.md
-  frontmatter: {}
-  id: afterword-001
-  order: 21
-  part_id: null
-  title: Nota final
-  type: afterword
 - filename: appendix.md
   frontmatter: {}
   id: appendix-001
-  order: 22
+  order: 14
   part_id: null
-  title: Notas Historicas
+  title: Recursos y Lecturas Recomendadas
   type: appendix
 - filename: glossary.md
   frontmatter: {}
   id: glossary-001
-  order: 23
+  order: 15
   part_id: null
   title: Glosario
   type: glossary
+- filename: acknowledgement.md
+  frontmatter: {}
+  id: acknowledgement-001
+  order: 16
+  part_id: null
+  title: Agradecimientos
+  type: acknowledgement
 drop_cap_enabled: true
 drop_cap_types:
 - chapter
-- preface
 epub_version: epub3
-export_filename: ''
 language: es
-name: libro_ejemplo
-spell_lang: es_ES
-spell_words: []
-theme_id: classic
-title: El Vestigio de los Siglos
+name: libro_aprender
+parts: []
+theme_id: textbook
+title: El Arte de Aprender

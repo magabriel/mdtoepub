@@ -141,11 +141,6 @@ class MDToEPUBApp(Gtk.Application):
         recent_item.set_submenu(self._recent_menu)
         archivo_menu.append(recent_item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
-        if self._dev_mode:
-            item = Gtk.MenuItem(label="Cargar libro de ejemplo")
-            item.connect("activate", self._on_load_sample_book)
-            archivo_menu.append(item)
-            archivo_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label="Importar libro...")
         item.connect("activate", self._on_import_book)
         archivo_menu.append(item)
@@ -225,6 +220,22 @@ class MDToEPUBApp(Gtk.Application):
         item.connect("activate", self._on_about)
         config_menu.append(item)
         menubar.append(config)
+
+        # Ayuda
+        ayuda = Gtk.MenuItem(label="Ayuda")
+        ayuda_menu = Gtk.Menu()
+        ayuda.set_submenu(ayuda_menu)
+        libros_ejemplo = Gtk.MenuItem(label="Libros de ejemplo")
+        libros_menu = Gtk.Menu()
+        libros_ejemplo.set_submenu(libros_menu)
+        item = Gtk.MenuItem(label="Novela clásica")
+        item.connect("activate", self._on_load_sample_book, "sample_book")
+        libros_menu.append(item)
+        item = Gtk.MenuItem(label="Libro de texto")
+        item.connect("activate", self._on_load_sample_book, "sample_book_textbook")
+        libros_menu.append(item)
+        ayuda_menu.append(libros_ejemplo)
+        menubar.append(ayuda)
 
         container.pack_start(menubar, False, False, 0)
 
@@ -1934,10 +1945,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self._toolbar_save_btn.set_sensitive(not enabled)
         self._update_window_title()
 
-    def _on_load_sample_book(self, widget):
+    def _on_load_sample_book(self, widget, book_dir="sample_book"):
         if not self._confirm_discard_project():
             return
-        sample_dir = os.path.join(os.path.dirname(__file__), "data", "sample_book")
+        sample_dir = os.path.join(os.path.dirname(__file__), "data", book_dir)
         yaml_path = os.path.join(sample_dir, "project.yaml")
         if not os.path.exists(yaml_path):
             self._show_error("No se encontro el libro de ejemplo")
