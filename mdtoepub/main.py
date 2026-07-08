@@ -814,6 +814,8 @@ hr { border: none; border-top: 1px solid #ccc; }
                 component_type = ComponentType.CHAPTER
 
             editor_fm, md_text = YamlService.parse_frontmatter(text)
+            if component:
+                component.frontmatter = editor_fm
 
             # Apply header and drop cap when project is loaded
             if self.project and component:
@@ -849,14 +851,16 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
                 h1_match = re.search(r'^# (.+)$', md_text, re.MULTILINE)
                 default_title = h1_match.group(1).strip() if h1_match else ""
+                show_title = editor_fm.get("show_title", True)
                 num_part, title_part, _ = epub_svc._get_component_header(
                     component, chapter_number
                 )
-                replaces = self.project.auto_chapter_title in ("chapter_number", "number")
-                if default_title and not title_part and not replaces:
-                    title_part = default_title
-                if default_title and title_part and default_title != component.title:
-                    title_part = default_title
+                if show_title:
+                    replaces = self.project.auto_chapter_title in ("chapter_number", "number")
+                    if default_title and not title_part and not replaces:
+                        title_part = default_title
+                    if default_title and title_part and default_title != component.title:
+                        title_part = default_title
 
                 subtitle_part = ""
                 if title_part:
@@ -870,7 +874,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                         md_text = md_text[:h1_match.start()] + md_text[h1_match.end():]
                         md_text = md_text.strip()
                     md_text = header_html + md_text
-                elif not default_title and component.frontmatter.get("show_title", True):
+                elif not default_title and editor_fm.get("show_title", True):
                     md_text = f"# {component.get_display_name()}\n\n{md_text}"
 
                 html = self.md_service.render(md_text, component_type, component_id)
