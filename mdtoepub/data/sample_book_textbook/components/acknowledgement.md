@@ -11,7 +11,7 @@ A **Mario A. Rivas**, por las ilustraciones y por su paciencia durante los meses
 A **Ediciones Aprender**, por confiar en este proyecto y por su compromiso con la divulgacion educativa de calidad.
 
 Y finalmente, a mi **familia**, por entender las horas de ausencia y por celebrar cada pequeno avance como si fuera un gran logro.
-
 Gracias.
-❦
-{.ornament}
+
+✦ ✦ ✦
+{.paragraph-separator}
