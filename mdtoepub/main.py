@@ -99,9 +99,14 @@ class MDToEPUBApp(Gtk.Application):
         self._toolbar_save_btn = None
 
     def do_activate(self):
+        settings = Gtk.Settings.get_default()
+        if settings:
+            settings.set_property("gtk-decoration-layout", "menu:minimize,maximize,close")
         self.window = Gtk.ApplicationWindow(application=self)
         self.window.set_title("MDToEPUB")
         self.window.set_default_size(1200, 800)
+        self.window.set_decorated(True)
+        self.window.set_resizable(True)
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
