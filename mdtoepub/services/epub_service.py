@@ -536,15 +536,17 @@ class EpubService:
             component, chapter_number
         )
 
-        # Use h1 as title_part if found and no title_part from header
-        # (but not for modes that replace the title entirely with just a number)
-        replaces_title = self.project.auto_chapter_title in ("chapter_number", "number")
-        if default_title and not title_part and not replaces_title:
-            title_part = default_title
+        show_title = frontmatter.get("show_title", True)
+        if show_title:
+            # Use h1 as title_part if found and no title_part from header
+            # (but not for modes that replace the title entirely with just a number)
+            replaces_title = self.project.auto_chapter_title in ("chapter_number", "number")
+            if default_title and not title_part and not replaces_title:
+                title_part = default_title
 
-        # Override title_part with h1 when both exist (h1 takes precedence)
-        if default_title and title_part and default_title != component.get_display_name():
-            title_part = default_title
+            # Override title_part with h1 when both exist (h1 takes precedence)
+            if default_title and title_part and default_title != component.get_display_name():
+                title_part = default_title
 
         # Split title_part into subtitle + title for separate styling
         full_title = title_part
