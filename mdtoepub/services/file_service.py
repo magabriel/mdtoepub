@@ -105,6 +105,10 @@ class FileService:
             "drop_cap_types": ["chapter"],
             "spell_lang": "es_ES",
             "spell_words": [],
+            "edicion": "",
+            "fecha_publicacion": "",
+            "isbn": "",
+            "editorial": "",
             "components": [],
             "parts": [],
         }
@@ -135,6 +139,10 @@ class FileService:
             export_filename=data.get("export_filename", ""),
             spell_lang=data.get("spell_lang", "es_ES"),
             spell_words=data.get("spell_words", []),
+            edicion=data.get("edicion", ""),
+            fecha_publicacion=data.get("fecha_publicacion", ""),
+            isbn=data.get("isbn", ""),
+            editorial=data.get("editorial", ""),
         )
 
         for comp_data in data.get("components", []):
@@ -180,6 +188,10 @@ class FileService:
             "export_filename": project.export_filename,
             "spell_lang": project.spell_lang,
             "spell_words": project.spell_words,
+            "edicion": project.edicion,
+            "fecha_publicacion": project.fecha_publicacion,
+            "isbn": project.isbn,
+            "editorial": project.editorial,
             "components": [
                 {
                     "id": c.id,

@@ -22,6 +22,10 @@ class Project:
     export_filename: str = ""
     spell_lang: str = "es_ES"
     spell_words: List[str] = field(default_factory=list)
+    edicion: str = ""
+    fecha_publicacion: str = ""
+    isbn: str = ""
+    editorial: str = ""
 
     def add_component(self, component: Component) -> None:
         component.order = len(self.components)
