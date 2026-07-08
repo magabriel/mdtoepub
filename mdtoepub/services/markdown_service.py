@@ -18,6 +18,7 @@ class MarkdownService:
             "markdown.extensions.meta",
             "markdown.extensions.nl2br",
             "markdown.extensions.attr_list",
+            "markdown.extensions.def_list",
         ]
         self._extension_configs = {
             "markdown.extensions.codehilite": {
