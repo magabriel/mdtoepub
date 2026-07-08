@@ -4,7 +4,7 @@ El sobre permanecio tres semanas cerrado en el cajon de la mesa de trabajo de So
 
 Pero aquella manana, con la luz entrando oblicua por la ventana de su gabinete y el cafe humeando a su lado, decidio que habia llegado el momento.
 
-Romper el lacre fue mas facil de lo que esperaba. La cera, seca y quebradiza, se desprendio en fragmentos irregulares. Dentro del sobre habia una unica hoja de papel verjurado, doblada en cuatro, cubierta por una caligrafia apretada y pulcra.
+<span class="all-caps">Romper el lacre</span> fue mas facil de lo que esperaba. La cera, seca y quebradiza, se desprendio en fragmentos irregulares. Dentro del sobre habia una unica hoja de papel verjurado, doblada en cuatro, cubierta por una caligrafia apretada y pulcra.
 
 La carta decia:
 
@@ -26,4 +26,14 @@ La carta decia:
 
 La carta no iba dirigida a el. No llevaba nombre de destinatario. Pero habia llegado a sus manos.
 
-Sousa releyo la carta tres veces, y al terminar la tercera, supo que su vida acababa de cambiar.
+<span class="small-caps">Sousa</span> releyo la carta tres veces, y al terminar la tercera, supo que su vida acababa de cambiar.
+
+—No es casualidad —dijo en voz alta, y el sonido de su propia voz en la habitacion vacia le resulto extrano.
+
+Se levanto y comenzo a pasear, la carta en la mano. El nombre de Almeida, el profesor desaparecido en 1885, le resultaba vagamente familiar. Recordaba haber leido algo en los anales de la Academia, una nota a pie de pagina en un estudio sobre la correspondencia diplomatica portuguesa.
+
+Tres semanas despues, Sousa tomaria la diligencia hacia Evora. Llevaba en el bolsillo la carta de Frei Jeronimo, una libreta de apuntes y la corazonada de que el hallazgo del almacen no era sino la primera pieza de un rompecabezas mucho mayor.
+
+> No hay descubrimiento tan pequeno que no pueda cambiar el rumbo
+> de una vida. Basta con que alguien sepa verlo.
+{.pull-quote}

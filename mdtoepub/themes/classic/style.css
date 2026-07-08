@@ -89,6 +89,129 @@ a:hover {
     text-decoration: underline;
 }
 
+/* ── Lists ── */
+
+ul, ol {
+    margin: 0.8em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin: 0.3em 0;
+}
+
+ul ul, ol ol, ul ol, ol ul {
+    margin: 0.2em 0;
+}
+
+/* ── Definition lists ── */
+
+dl {
+    margin: 1em 0;
+}
+
+dt {
+    font-weight: bold;
+    margin-top: 0.8em;
+    color: #1a1a1a;
+}
+
+dd {
+    margin-left: 1.5em;
+    margin-bottom: 0.5em;
+    color: #444;
+}
+
+/* ── Tables ── */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+
+th, td {
+    border: 1px solid #ccc;
+    padding: 0.5em;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background-color: #f4f4f4;
+    font-weight: bold;
+    color: #1a1a1a;
+}
+
+tr:nth-child(even) td {
+    background-color: #fafafa;
+}
+
+caption {
+    caption-side: bottom;
+    font-style: italic;
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 0.5em;
+}
+
+/* ── Inline elements ── */
+
+strong, b {
+    font-weight: bold;
+}
+
+em, i {
+    font-style: italic;
+}
+
+small {
+    font-size: 0.85em;
+    color: #666;
+}
+
+sub {
+    font-size: 0.75em;
+    vertical-align: sub;
+}
+
+sup {
+    font-size: 0.75em;
+    vertical-align: super;
+}
+
+/* @doc Texto resaltado (subrayado) */
+mark {
+    background-color: #fff3b0;
+    padding: 0.1em 0.2em;
+    color: #333;
+}
+
+/* @doc Texto eliminado */
+del {
+    text-decoration: line-through;
+    color: #999;
+}
+
+/* @doc Texto insertado */
+ins {
+    text-decoration: underline;
+    color: #333;
+}
+
+/* @doc Abreviatura */
+abbr {
+    border-bottom: 1px dotted #999;
+    cursor: help;
+}
+
+address {
+    font-style: italic;
+    color: #666;
+    margin: 1em 0;
+}
+
 /* Component header (auto-title number + title) */
 h1.component-header {
     text-align: center;
@@ -264,4 +387,89 @@ figcaption {
     font-size: 0.9em;
     color: #555;
     margin: 1.5em 2em;
+}
+
+/* @doc Primer parrafo destacado (sin sangria, versalitas) */
+.lead {
+    text-indent: 0;
+    font-variant: small-caps;
+    font-size: 1.05em;
+    color: #444;
+}
+
+/* @doc Decoracion de final de capitulo */
+.fin-capitulo {
+    text-align: center;
+    margin: 2em 0;
+    font-size: 1.2em;
+    color: #999;
+    letter-spacing: 0.5em;
+}
+
+/* @doc Cita destacada (centrada, mas grande) */
+.pull-quote {
+    text-align: center;
+    font-size: 1.1em;
+    font-style: italic;
+    color: #444;
+    margin: 1.5em 2em;
+    line-height: 1.4;
+}
+
+/* @doc Lista sin viñetas */
+.list-unstyled {
+    list-style: none;
+    padding-left: 0;
+}
+
+/* @doc Imagen flotante a la izquierda */
+.float-left {
+    float: left;
+    margin: 0.5em 1em 0.5em 0;
+    max-width: 40%;
+}
+
+/* @doc Imagen flotante a la derecha */
+.float-right {
+    float: right;
+    margin: 0.5em 0 0.5em 1em;
+    max-width: 40%;
+}
+
+/* @doc Sangria francesa */
+.hanging-indent {
+    padding-left: 1.5em;
+    text-indent: -1.5em;
+}
+
+/* @doc Lista horizontal (elementos en linea) */
+.list-inline {
+    list-style: none;
+    padding-left: 0;
+}
+
+.list-inline li {
+    display: inline;
+    margin: 0 0.5em;
+}
+
+/* @doc Texto en mayusculas */
+.all-caps {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+/* @doc Capitulo que empieza en pagina impar (pagina derecha) */
+.page-break-right {
+    page-break-before: right;
+}
+
+/* @doc Margen izquierdo */
+.indent-left {
+    margin-left: 2em;
+}
+
+/* @doc Margen derecho */
+.indent-right {
+    margin-right: 2em;
 }
