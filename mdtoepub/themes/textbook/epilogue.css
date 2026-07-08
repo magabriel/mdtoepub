@@ -1,0 +1,68 @@
+/* MDToEPUB - Textbook Theme - Epilogue Styles */
+
+.component-epilogue {
+    page-break-before: always;
+}
+
+.component-epilogue h1:not(.component-header) {
+    font-size: 2em;
+    text-align: left;
+    margin-bottom: 1.5em;
+    font-weight: 800;
+    border-bottom: 4px solid #2c7be5;
+    padding-bottom: 0.3em;
+}
+
+.component-epilogue h2 {
+    font-size: 1.5em;
+    margin-top: 2em;
+    font-weight: 700;
+    border-left: 5px solid #2c7be5;
+    padding-left: 0.6em;
+}
+
+.component-epilogue h3 {
+    font-size: 1.2em;
+    font-weight: 700;
+    border-bottom: 1px solid #d4e4f7;
+    padding-bottom: 0.2em;
+}
+
+.component-epilogue p {
+    margin: 0 0 1em 0;
+}
+
+.component-epilogue blockquote {
+    margin: 1.5em 0;
+}
+
+.component-epilogue img {
+    max-width: 90%;
+    margin: 1.5em auto;
+}
+
+.component-epilogue ul, .component-epilogue ol {
+    margin: 1em 0;
+    padding-left: 1.8em;
+}
+
+.component-epilogue li {
+    margin: 0.3em 0;
+}
+
+.component-epilogue table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.component-epilogue th, .component-epilogue td {
+    border: 1px solid #d4e4f7;
+    padding: 0.5em 0.7em;
+    text-align: left;
+}
+
+.component-epilogue th {
+    background-color: #2c7be5;
+    color: #fff;
+}

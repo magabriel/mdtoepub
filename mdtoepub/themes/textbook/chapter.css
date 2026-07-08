@@ -1,0 +1,73 @@
+/* MDToEPUB - Textbook Theme - Chapter Styles */
+
+.component-chapter {
+    page-break-before: always;
+}
+
+.component-chapter h1:not(.component-header) {
+    font-size: 2em;
+    text-align: left;
+    margin-bottom: 1.5em;
+    font-weight: 800;
+    color: #1a3a5c;
+    border-bottom: 4px solid #2c7be5;
+    padding-bottom: 0.3em;
+    letter-spacing: -0.01em;
+}
+
+.component-chapter h2 {
+    font-size: 1.5em;
+    margin-top: 2em;
+    font-weight: 700;
+    border-left: 5px solid #2c7be5;
+    padding-left: 0.6em;
+}
+
+.component-chapter h3 {
+    font-size: 1.2em;
+    font-weight: 700;
+    border-bottom: 1px solid #d4e4f7;
+    padding-bottom: 0.2em;
+}
+
+.component-chapter p {
+    margin: 0 0 1em 0;
+}
+
+.component-chapter blockquote {
+    margin: 1.5em 0;
+}
+
+.component-chapter img {
+    max-width: 90%;
+    margin: 1.5em auto;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.component-chapter ul, .component-chapter ol {
+    margin: 1em 0;
+    padding-left: 1.8em;
+}
+
+.component-chapter li {
+    margin: 0.3em 0;
+}
+
+.component-chapter table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.component-chapter th, .component-chapter td {
+    border: 1px solid #d4e4f7;
+    padding: 0.5em 0.7em;
+    text-align: left;
+}
+
+.component-chapter th {
+    background-color: #2c7be5;
+    font-weight: 700;
+    color: #fff;
+}

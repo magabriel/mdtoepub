@@ -1,0 +1,29 @@
+id: textbook
+name: Libro de texto
+description: Tema visual y estructurado para no ficcion, autoayuda y libros instructivos
+base_style: style.css
+styles:
+  acknowledgement: acknowledgement.css
+  afterword: afterword.css
+  appendix: appendix.css
+  author: author.css
+  chapter: chapter.css
+  conclusion: conclusion.css
+  cover: cover.css
+  dedication: dedication.css
+  edition: edition.css
+  epilogue: epilogue.css
+  foreword: foreword.css
+  glossary: glossary.css
+  introduction: introduction.css
+  license: license.css
+  lof: lof.css
+  lot: lot.css
+  part: part.css
+  preface: preface.css
+  prologue: prologue.css
+  title: title.css
+  toc: toc.css
+fonts:
+  serif: "Georgia, Times New Roman, serif"
+  sans: "Helvetica Neue, Helvetica, Arial, sans-serif"

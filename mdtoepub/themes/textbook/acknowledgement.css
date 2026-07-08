@@ -1,0 +1,34 @@
+.component-acknowledgement {
+    page-break-before: always;
+}
+
+.component-acknowledgement h1:not(.component-header) {
+    font-size: 1.6em;
+    text-align: left;
+    margin-bottom: 1.5em;
+    font-weight: 800;
+    border-bottom: 3px solid #2c7be5;
+    padding-bottom: 0.3em;
+}
+
+.component-acknowledgement h2 {
+    font-size: 1.2em;
+    margin-top: 1.5em;
+    font-weight: 700;
+}
+
+.component-acknowledgement p {
+    margin: 0 0 1em 0;
+    font-style: italic;
+    color: #444;
+}
+
+/* @doc Persona o entidad a quien se agradece */
+.component-acknowledgement .dedicatee {
+    text-align: center;
+    font-size: 1.05em;
+    font-style: normal;
+    margin: 1em 0;
+    font-weight: 600;
+    color: #2c7be5;
+}

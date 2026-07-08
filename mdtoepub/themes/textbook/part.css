@@ -1,0 +1,70 @@
+/* MDToEPUB - Textbook Theme - Part Styles */
+
+.component-part {
+    page-break-before: always;
+}
+
+.component-part h1:not(.component-header) {
+    font-size: 2.4em;
+    text-align: center;
+    margin-bottom: 2em;
+    font-weight: 800;
+    color: #1a3a5c;
+    border: none;
+    letter-spacing: -0.01em;
+}
+
+.component-part h2 {
+    font-size: 1.5em;
+    margin-top: 2em;
+    font-weight: 700;
+    border-left: 5px solid #2c7be5;
+    padding-left: 0.6em;
+}
+
+.component-part h3 {
+    font-size: 1.2em;
+    font-weight: 700;
+    border-bottom: 1px solid #d4e4f7;
+    padding-bottom: 0.2em;
+}
+
+.component-part p {
+    margin: 0 0 1em 0;
+}
+
+.component-part blockquote {
+    margin: 1.5em 0;
+}
+
+.component-part img {
+    max-width: 90%;
+    margin: 1.5em auto;
+}
+
+.component-part ul, .component-part ol {
+    margin: 1em 0;
+    padding-left: 1.8em;
+}
+
+.component-part li {
+    margin: 0.3em 0;
+}
+
+.component-part table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.component-part th, .component-part td {
+    border: 1px solid #d4e4f7;
+    padding: 0.5em 0.7em;
+    text-align: left;
+}
+
+.component-part th {
+    background-color: #2c7be5;
+    color: #fff;
+    font-weight: 700;
+}
