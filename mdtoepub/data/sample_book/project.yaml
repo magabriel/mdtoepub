@@ -207,5 +207,9 @@ language: es
 name: libro_ejemplo
 spell_lang: es_ES
 spell_words: []
+edicion: 1ª edicion
+fecha_publicacion: "2024"
+isbn: 978-989-555-123-4
+editorial: Ediciones del Atlantico
 theme_id: classic
 title: El Vestigio de los Siglos

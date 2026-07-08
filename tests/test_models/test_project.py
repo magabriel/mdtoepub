@@ -13,6 +13,10 @@ class TestProject:
         assert project.theme_id == "classic"
         assert project.epub_version == "epub3"
         assert project.auto_chapter_title == "none"
+        assert project.edicion == ""
+        assert project.fecha_publicacion == ""
+        assert project.isbn == ""
+        assert project.editorial == ""
         assert project.components == []
 
     def test_add_component(self):

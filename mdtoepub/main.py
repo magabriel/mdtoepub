@@ -1012,6 +1012,46 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_book.attach(combo_epub, 1, row, 1, 1)
         row += 1
 
+        label = Gtk.Label(label="Edicion:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_edicion = Gtk.Entry()
+        entry_edicion.set_text(self.project.edicion)
+        entry_edicion.set_hexpand(True)
+        entry_edicion.set_placeholder_text("1ª edicion")
+        grid_book.attach(entry_edicion, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Fecha de publicacion:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_fecha = Gtk.Entry()
+        entry_fecha.set_text(self.project.fecha_publicacion)
+        entry_fecha.set_hexpand(True)
+        entry_fecha.set_placeholder_text("2025-01-15")
+        grid_book.attach(entry_fecha, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="ISBN:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_isbn = Gtk.Entry()
+        entry_isbn.set_text(self.project.isbn)
+        entry_isbn.set_hexpand(True)
+        entry_isbn.set_placeholder_text("978-84-999-9999-9")
+        grid_book.attach(entry_isbn, 1, row, 1, 1)
+        row += 1
+
+        label = Gtk.Label(label="Editorial:")
+        label.set_xalign(1)
+        grid_book.attach(label, 0, row, 1, 1)
+        entry_editorial = Gtk.Entry()
+        entry_editorial.set_text(self.project.editorial)
+        entry_editorial.set_hexpand(True)
+        entry_editorial.set_placeholder_text("Ediciones Aprender")
+        grid_book.attach(entry_editorial, 1, row, 1, 1)
+        row += 1
+
         # ── Tab 2: Appearance ──
         grid_app = Gtk.Grid()
         grid_app.set_row_spacing(8)
@@ -1145,6 +1185,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     t for t, cb in self._drop_cap_checkbuttons.items() if cb.get_active()
                 ] or ["chapter"]
                 self.project.export_filename = entry_export.get_text().strip()
+                self.project.edicion = entry_edicion.get_text().strip()
+                self.project.fecha_publicacion = entry_fecha.get_text().strip()
+                self.project.isbn = entry_isbn.get_text().strip()
+                self.project.editorial = entry_editorial.get_text().strip()
                 lang_idx = combo_lang.get_active()
                 if lang_idx >= 0 and lang_idx < len(langs):
                     self.project.spell_lang = langs[lang_idx]
@@ -1476,6 +1520,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 new_project.language = self.project.language
                 new_project.theme_id = self.project.theme_id
                 new_project.epub_version = self.project.epub_version
+                new_project.edicion = self.project.edicion
+                new_project.fecha_publicacion = self.project.fecha_publicacion
+                new_project.isbn = self.project.isbn
+                new_project.editorial = self.project.editorial
 
                 old_components_dir = os.path.join(self.project.path, "components")
                 new_components_dir = os.path.join(new_project.path, "components")

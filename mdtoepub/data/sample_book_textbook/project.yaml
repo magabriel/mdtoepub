@@ -143,5 +143,9 @@ epub_version: epub3
 language: es
 name: libro_aprender
 parts: []
+edicion: 1ª edicion
+fecha_publicacion: "2025"
+isbn: 978-84-999-9999-9
+editorial: Ediciones Aprender
 theme_id: textbook
 title: El Arte de Aprender
