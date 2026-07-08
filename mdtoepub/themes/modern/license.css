@@ -1,0 +1,48 @@
+.component-license {
+    page-break-before: always;
+}
+
+.component-license h1:not(.component-header) {
+    font-size: 1.3em;
+    text-align: center;
+    margin-bottom: 1.5em;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.component-license h2 {
+    font-size: 1.2em;
+    margin-top: 1.5em;
+    font-weight: 600;
+}
+
+.component-license p {
+    margin: 0 0 1em 0;
+    text-indent: 0;
+    font-size: 0.9em;
+    color: #555;
+}
+
+/* @doc Nombre del editor o editorial */
+.component-license .publisher {
+    text-align: center;
+    font-size: 0.95em;
+    margin-top: 2em;
+    color: #666;
+    font-weight: 500;
+}
+
+/* @doc ISBN del libro */
+.component-license .isbn {
+    text-align: center;
+    font-size: 0.85em;
+    color: #999;
+}
+
+/* @doc Ano de edicion */
+.component-license .year {
+    text-align: center;
+    font-size: 0.85em;
+    color: #999;
+}

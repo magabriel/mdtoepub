@@ -1,0 +1,62 @@
+/* MDToEPUB - Modern Theme - Afterword Styles */
+
+.component-afterword {
+    page-break-before: always;
+}
+
+.component-afterword h1:not(.component-header) {
+    font-size: 1.8em;
+    text-align: left;
+    margin-bottom: 1.5em;
+    font-weight: 700;
+}
+
+.component-afterword h2 {
+    font-size: 1.4em;
+    margin-top: 2em;
+    font-weight: 600;
+}
+
+.component-afterword h3 {
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+.component-afterword p {
+    margin: 0 0 1em 0;
+}
+
+.component-afterword blockquote {
+    margin: 1.5em 0;
+}
+
+.component-afterword img {
+    max-width: 90%;
+    margin: 1.5em auto;
+}
+
+.component-afterword ul, .component-afterword ol {
+    margin: 1em 0;
+    padding-left: 1.8em;
+}
+
+.component-afterword li {
+    margin: 0.3em 0;
+}
+
+.component-afterword table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+}
+
+.component-afterword th, .component-afterword td {
+    border: 1px solid #ddd;
+    padding: 0.5em 0.7em;
+    text-align: left;
+}
+
+.component-afterword th {
+    background-color: #f8f8f8;
+    font-weight: 700;
+}

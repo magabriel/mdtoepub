@@ -1,0 +1,68 @@
+.component-glossary {
+    page-break-before: always;
+}
+
+.component-glossary h1:not(.component-header) {
+    font-size: 1.6em;
+    text-align: left;
+    margin-bottom: 1.2em;
+    font-weight: 700;
+}
+
+.component-glossary h2 {
+    font-size: 1.3em;
+    margin-top: 1.5em;
+    font-weight: 600;
+}
+
+.component-glossary h3 {
+    font-size: 1.1em;
+    font-weight: 600;
+}
+
+.component-glossary p {
+    margin: 0 0 1em 0;
+}
+
+.component-glossary pre {
+    font-size: 0.85em;
+    background: #f8f8f8;
+    border: 1px solid #e0e0e0;
+    padding: 1em;
+    border-radius: 6px;
+}
+
+.component-glossary code {
+    font-size: 0.9em;
+}
+
+.component-glossary table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 0.9em;
+}
+
+.component-glossary th, .component-glossary td {
+    border: 1px solid #ddd;
+    padding: 0.5em;
+    text-align: left;
+}
+
+.component-glossary th {
+    background: #f8f8f8;
+    font-weight: 700;
+}
+
+.component-glossary ul, .component-glossary ol {
+    margin: 0.5em 0;
+    padding-left: 1.8em;
+}
+
+.component-glossary li {
+    margin: 0.3em 0;
+}
+
+.component-glossary dt {
+    font-size: 1em;
+}

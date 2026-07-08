@@ -1,0 +1,489 @@
+/* MDToEPUB - Modern Theme - Base Styles */
+
+body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 1em;
+    line-height: 1.7;
+    color: #222;
+    margin: 0;
+    padding: 0;
+    font-weight: 400;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 700;
+    color: #111;
+    line-height: 1.3;
+    margin-top: 1.8em;
+    margin-bottom: 0.6em;
+}
+
+h1 {
+    font-size: 2em;
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+
+h2 {
+    font-size: 1.5em;
+}
+
+h3 {
+    font-size: 1.2em;
+    font-weight: 600;
+}
+
+p {
+    margin: 0 0 1em 0;
+    text-indent: 0;
+}
+
+blockquote {
+    margin: 1.5em 0;
+    padding: 0.8em 1.5em;
+    border-left: 4px solid #bbb;
+    font-style: italic;
+    color: #555;
+    background: #fafafa;
+}
+
+code {
+    font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    font-size: 0.9em;
+    background-color: #f0f0f0;
+    padding: 0.15em 0.4em;
+    border-radius: 3px;
+    color: #c7254e;
+}
+
+pre {
+    background-color: #f5f5f5;
+    padding: 1.2em;
+    border-radius: 6px;
+    overflow-x: auto;
+    font-size: 0.85em;
+    line-height: 1.5;
+    border: 1px solid #e0e0e0;
+}
+
+pre code {
+    background-color: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5em auto;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 2.5em 0;
+}
+
+a {
+    color: #1a73e8;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* ── Lists ── */
+
+ul, ol {
+    margin: 1em 0;
+    padding-left: 1.8em;
+}
+
+li {
+    margin: 0.4em 0;
+}
+
+ul ul, ol ol, ul ol, ol ul {
+    margin: 0.3em 0;
+}
+
+/* ── Definition lists ── */
+
+dl {
+    margin: 1.2em 0;
+}
+
+dt {
+    font-weight: 700;
+    margin-top: 1em;
+    color: #111;
+    font-size: 0.95em;
+}
+
+dd {
+    margin-left: 1.5em;
+    margin-bottom: 0.6em;
+    color: #444;
+}
+
+/* ── Tables ── */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.2em 0;
+    font-size: 0.9em;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 0.6em 0.8em;
+    text-align: left;
+    vertical-align: top;
+}
+
+th {
+    background-color: #f8f8f8;
+    font-weight: 700;
+    color: #111;
+}
+
+tr:nth-child(even) td {
+    background-color: #fcfcfc;
+}
+
+caption {
+    caption-side: bottom;
+    font-style: italic;
+    font-size: 0.85em;
+    color: #888;
+    margin-top: 0.5em;
+}
+
+/* ── Inline elements ── */
+
+strong, b {
+    font-weight: 700;
+}
+
+em, i {
+    font-style: italic;
+}
+
+small {
+    font-size: 0.85em;
+    color: #888;
+}
+
+sub {
+    font-size: 0.75em;
+    vertical-align: sub;
+}
+
+sup {
+    font-size: 0.75em;
+    vertical-align: super;
+}
+
+/* @doc Texto resaltado */
+mark {
+    background-color: #ffeaa7;
+    padding: 0.1em 0.2em;
+    color: #333;
+    border-radius: 2px;
+}
+
+/* @doc Texto eliminado */
+del {
+    text-decoration: line-through;
+    color: #999;
+}
+
+/* @doc Texto insertado */
+ins {
+    text-decoration: none;
+    border-bottom: 2px solid #2ecc71;
+    color: #333;
+}
+
+/* @doc Abreviatura */
+abbr {
+    border-bottom: 1px dotted #aaa;
+    cursor: help;
+}
+
+address {
+    font-style: italic;
+    color: #666;
+    margin: 1em 0;
+}
+
+/* Component header (auto-title number + title) */
+h1.component-header {
+    text-align: center;
+    margin-bottom: 2em;
+    page-break-after: avoid;
+    font-size: 1em;
+    font-weight: 400;
+    border: none;
+    padding: 0;
+}
+
+h1.component-header .header-number {
+    display: block;
+    font-size: 0.85em;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 0.3em;
+}
+
+h1.component-header .header-subtitle {
+    display: block;
+    font-size: 1.1em;
+    font-style: italic;
+    color: #888;
+    margin-bottom: 0.3em;
+}
+
+.component-header .header-title {
+    display: block;
+    font-size: 1.8em;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 700;
+    color: #111;
+    letter-spacing: -0.01em;
+}
+
+/* Component generic styles */
+.component-title {
+    text-align: center;
+    padding-top: 30%;
+}
+
+.component-dedication {
+    text-align: center;
+    font-style: italic;
+    padding-top: 20%;
+}
+
+.component-cover {
+    text-align: center;
+    font-style: italic;
+    padding-top: 30%;
+}
+
+/* Figure */
+figure {
+    margin: 1.5em 0;
+    text-align: center;
+    page-break-inside: avoid;
+}
+
+figcaption {
+    font-style: italic;
+    font-size: 0.85em;
+    margin-top: 0.5em;
+    color: #888;
+}
+
+/* Drop cap */
+.drop-cap {
+    font-size: 3.5em;
+    float: left;
+    line-height: 0.85;
+    margin-right: 0.12em;
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-weight: 700;
+    color: #111;
+}
+
+/* ── Utility classes ── */
+
+/* @doc Alineacion centrada */
+.center {
+    text-align: center;
+}
+
+/* @doc Alineacion derecha */
+.right {
+    text-align: right;
+}
+
+/* @doc Texto muy pequeno */
+.tiny {
+    font-size: 0.7em;
+}
+
+/* @doc Texto pequeno */
+.small {
+    font-size: 0.85em;
+}
+
+/* @doc Texto grande */
+.big {
+    font-size: 1.3em;
+}
+
+/* @doc Texto muy grande */
+.huge {
+    font-size: 2em;
+}
+
+/* @doc Sin sangria de parrafo */
+.no-indent {
+    text-indent: 0;
+}
+
+/* @doc Interlineado compacto */
+.compact {
+    line-height: 1.3;
+}
+
+/* @doc Fuente sans-serif */
+.sans {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+/* @doc Versalitas */
+.small-caps {
+    font-variant: small-caps;
+    letter-spacing: 0.05em;
+}
+
+/* @doc Texto atenuado */
+.muted {
+    color: #999;
+}
+
+/* @doc Salto de pagina antes del elemento */
+.page-break {
+    page-break-before: always;
+}
+
+/* @doc Evitar salto de pagina dentro del elemento */
+.avoid-break {
+    page-break-inside: avoid;
+}
+
+/* @doc Cita en epigrafe (derecha, italica, pequeno) */
+.epigraph {
+    text-align: right;
+    font-style: italic;
+    font-size: 0.9em;
+    color: #777;
+    margin: 1.5em 2em;
+}
+
+/* @doc Ornamento decorativo centrado */
+.ornament {
+    display: block;
+    margin: 1.5em auto;
+    max-width: 30%;
+    opacity: 0.5;
+}
+
+/* @doc Separador decorativo entre capitulos */
+.chapter-ornament {
+    text-align: center;
+    margin-bottom: 2em;
+    color: #ccc;
+    font-size: 1.2em;
+}
+
+/* @doc Separador entre parrafos */
+.paragraph-separator {
+    text-align: center;
+    margin: 2em 0;
+    color: #ddd;
+}
+
+/* @doc Primer parrafo destacado */
+.lead {
+    font-size: 1.1em;
+    color: #444;
+    font-weight: 300;
+}
+
+/* @doc Decoracion de final de capitulo */
+.fin-capitulo {
+    text-align: center;
+    margin: 2.5em 0;
+    font-size: 1em;
+    color: #ccc;
+    letter-spacing: 0.5em;
+}
+
+/* @doc Cita destacada centrada */
+.pull-quote {
+    text-align: center;
+    font-size: 1.15em;
+    font-style: italic;
+    color: #555;
+    margin: 1.5em 2em;
+    line-height: 1.5;
+    font-weight: 300;
+}
+
+/* @doc Lista sin viñetas */
+.list-unstyled {
+    list-style: none;
+    padding-left: 0;
+}
+
+/* @doc Imagen flotante a la izquierda */
+.float-left {
+    float: left;
+    margin: 0.3em 1em 0.5em 0;
+    max-width: 40%;
+}
+
+/* @doc Imagen flotante a la derecha */
+.float-right {
+    float: right;
+    margin: 0.3em 0 0.5em 1em;
+    max-width: 40%;
+}
+
+/* @doc Sangria francesa */
+.hanging-indent {
+    padding-left: 1.5em;
+    text-indent: -1.5em;
+}
+
+/* @doc Lista horizontal */
+.list-inline {
+    list-style: none;
+    padding-left: 0;
+}
+
+.list-inline li {
+    display: inline;
+    margin: 0 0.5em;
+}
+
+/* @doc Texto en mayusculas */
+.all-caps {
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-weight: 600;
+}
+
+/* @doc Capitulo en pagina impar */
+.page-break-right {
+    page-break-before: right;
+}
+
+/* @doc Margen izquierdo */
+.indent-left {
+    margin-left: 2em;
+}
+
+/* @doc Margen derecho */
+.indent-right {
+    margin-right: 2em;
+}
