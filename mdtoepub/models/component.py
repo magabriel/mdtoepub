@@ -26,6 +26,7 @@ class ComponentType(Enum):
     PROLOGUE = "prologue"
     TITLE = "title"
     TOC = "toc"
+    FOOTNOTES = "footnotes"
 
 
 COMPONENT_TYPE_LABELS = {
@@ -50,6 +51,7 @@ COMPONENT_TYPE_LABELS = {
     ComponentType.PROLOGUE: "Prologo",
     ComponentType.TITLE: "Pagina de titulo",
     ComponentType.TOC: "Tabla de contenidos",
+    ComponentType.FOOTNOTES: "Notas al pie",
 }
 
 
