@@ -196,6 +196,25 @@ class EpubService:
                     footnote_start[component.id] = running_total + 1
                     running_total += fn_count
 
+            # Pre-scan figure info for LOF generation and figure numbering
+            figure_info = []
+            figure_start: Dict[str, int] = {}
+            running_fig_total = 0
+            if self.project.figure_numbering:
+                for component in self.project.get_ordered_components():
+                    if component.type in (ComponentType.PART, ComponentType.FOOTNOTES,
+                                          ComponentType.LOF, ComponentType.TOC, ComponentType.COVER):
+                        continue
+                    content = FileService.load_component(self.project.path, component)
+                    if content:
+                        _, md_text = YamlService.parse_frontmatter(content)
+                        alts = MarkdownService.extract_figure_alts(md_text)
+                        if alts:
+                            figure_start[component.id] = running_fig_total + 1
+                            for alt, _ in alts:
+                                running_fig_total += 1
+                                figure_info.append((running_fig_total, alt, component.filename))
+
             chapter_count = 0
             for component in self.project.get_ordered_components():
                 if component.type in (ComponentType.PART, ComponentType.FOOTNOTES):
@@ -210,9 +229,15 @@ class EpubService:
                 if comp_item:
                     chapter_styles.append(comp_item)
                 start_num = footnote_start.get(component.id, 1)
+
+                fig_start = figure_start.get(component.id, 0)
+
                 chapter = self._create_chapter(component, chapter_styles, chapter_count if component.type == ComponentType.CHAPTER else None,
                                                footnotes_comp=footnotes_comp, collected_footnotes=collected_footnotes,
-                                               start_number=start_num)
+                                               start_number=start_num,
+                                               figure_num_start=fig_start,
+                                               figure_num_style=self.project.figure_numbering_style,
+                                               figure_info=figure_info if component.type == ComponentType.LOF else None)
                 if chapter:
                     chapter_map[component.id] = chapter
                     book.add_item(chapter)
@@ -549,6 +574,49 @@ class EpubService:
             lines.append(f'<p class="toc-sub" style="margin-left:{indent_px}px"><a href="{target}">{text}</a></p>')
         return lines
 
+    def _collect_figure_info(self) -> list:
+        """Scan all components and collect info about figures.
+
+        Returns list of (fig_num, caption, component_filename) tuples
+        for all non-decorative images with alt text.
+        """
+        figure_info = []
+        fig_num = 0
+        for component in self.project.get_ordered_components():
+            if component.type in (ComponentType.PART, ComponentType.FOOTNOTES,
+                                  ComponentType.LOF, ComponentType.TOC, ComponentType.COVER):
+                continue
+            content = FileService.load_component(self.project.path, component)
+            if not content:
+                continue
+            _, md_text = YamlService.parse_frontmatter(content)
+            alts = MarkdownService.extract_figure_alts(md_text)
+            for alt, _ in alts:
+                fig_num += 1
+                figure_info.append((fig_num, alt, component.filename))
+        return figure_info
+
+    def _generate_lof_html(self, figure_info: list) -> str:
+        """Generate the List of Figures HTML from collected figure info."""
+        if not figure_info:
+            return ""
+        use_roman = self.project.figure_numbering_style == "roman"
+        lines = ['<div class="lof-list">', '<ul>']
+        for fig_num, caption, filename in figure_info:
+            href = f"{filename.replace('.md', '.xhtml')}#fig_{fig_num}"
+            if use_roman:
+                num_str = MarkdownService._to_roman(fig_num)
+            else:
+                num_str = str(fig_num)
+            if caption:
+                text = f"Figura {num_str} - {caption}"
+            else:
+                text = f"Figura {num_str}"
+            lines.append(f'<li class="lof-entry"><a href="{href}">{text}</a></li>')
+        lines.append('</ul>')
+        lines.append('</div>')
+        return "\n".join(lines)
+
     def _toc_class_for_type(self, comp_type: ComponentType) -> str:
         return "toc-entry"
 
@@ -558,12 +626,19 @@ class EpubService:
         footnotes_comp: Optional[Component] = None,
         collected_footnotes: Optional[Dict[str, dict]] = None,
         start_number: int = 1,
+        figure_num_start: int = 0,
+        figure_num_style: str = "arabic",
+        figure_info: Optional[list] = None,
     ) -> Optional[epub.EpubHtml]:
         content = FileService.load_component(self.project.path, component)
         if not content:
-            return None
-
-        frontmatter, markdown_content = YamlService.parse_frontmatter(content)
+            if component.type in (ComponentType.LOF, ComponentType.TOC):
+                frontmatter = {}
+                markdown_content = f"# {component.get_display_name()}\n\n"
+            else:
+                return None
+        else:
+            frontmatter, markdown_content = YamlService.parse_frontmatter(content)
 
         # Special handling for COVER with only one image
         if component.type == ComponentType.COVER and self._is_cover_only_image(markdown_content):
@@ -632,6 +707,15 @@ class EpubService:
             title_html = MarkdownService._add_image_captions(title_html)
             combined = (title_html + "\n" + auto_toc) if title_html else auto_toc
             html_content = self.markdown_service._wrap_in_section(combined, component.type, component.id)
+        elif component.type == ComponentType.LOF:
+            auto_lof = self._generate_lof_html(figure_info) if figure_info else ""
+            import markdown
+            md = markdown.Markdown(extensions=self.markdown_service.extensions,
+                                   extension_configs=self.markdown_service.get_extension_configs())
+            title_html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content)) if markdown_content.strip() else ""
+            title_html = MarkdownService._add_image_captions(title_html)
+            combined = (title_html + "\n" + auto_lof) if title_html else auto_lof
+            html_content = self.markdown_service._wrap_in_section(combined, component.type, component.id)
         else:
             header_html = self._build_header_html(number_part, subtitle_part, title_part)
             show_title = frontmatter.get("show_title", True)
@@ -647,7 +731,8 @@ class EpubService:
                     # No user h1, no header: prepend title as h1
                     markdown_content = f"# {component.get_display_name()}\n\n{markdown_content}"
             # else show_title=False, no header: just render content as-is
-            html_content = self.markdown_service.render(markdown_content, component.type, component.id, start_number)
+            html_content = self.markdown_service.render(markdown_content, component.type, component.id, start_number,
+                                                         figure_num_start, figure_num_style)
 
         # Apply drop cap to non-TOC components
         if (component.type != ComponentType.TOC

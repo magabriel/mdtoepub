@@ -110,6 +110,8 @@ class FileService:
             "isbn": "",
             "publisher": "",
             "subtitle": "",
+            "figure_numbering": False,
+            "figure_numbering_style": "arabic",
             "components": [],
             "parts": [],
         }
@@ -145,6 +147,8 @@ class FileService:
             isbn=data.get("isbn", ""),
             publisher=data.get("publisher", ""),
             subtitle=data.get("subtitle", ""),
+            figure_numbering=data.get("figure_numbering", False),
+            figure_numbering_style=data.get("figure_numbering_style", "arabic"),
         )
 
         for comp_data in data.get("components", []):
@@ -195,6 +199,8 @@ class FileService:
             "isbn": project.isbn,
             "publisher": project.publisher,
             "subtitle": project.subtitle,
+            "figure_numbering": project.figure_numbering,
+            "figure_numbering_style": project.figure_numbering_style,
             "components": [
                 {
                     "id": c.id,

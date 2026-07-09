@@ -11,6 +11,9 @@ FN_REF_RE = re.compile(r'\[\^(\d+)\]')
 FN_DEF_RE = re.compile(r'^(\s*)\[\^(\d+)\]\s*:(.*)$', re.MULTILINE)
 ERROR_BASE_KEY = 1000000
 
+MD_IMG_RE = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
+DECORATIVE_PATH_RE = re.compile(r'(?:^|/)decorative/', re.IGNORECASE)
+
 
 class MarkdownService:
     def __init__(self, extensions: Optional[List[str]] = None):
@@ -39,14 +42,15 @@ class MarkdownService:
         r'(<li[^>]*\bid="fn:)(\d+)(")(>)'
     )
 
-    def render(self, markdown_text: str, component_type: ComponentType = ComponentType.CHAPTER, component_id: str = "", start_number: int = 1) -> str:
+    def render(self, markdown_text: str, component_type: ComponentType = ComponentType.CHAPTER, component_id: str = "", start_number: int = 1,
+               figure_num_start: int = 0, figure_num_style: str = "arabic") -> str:
         cleaned = re.sub(r'\{lang=\w+(?:[_-]\w+)*\}', '', markdown_text)
         cleaned = self._renumber_footnotes(cleaned, start_number)
         md = markdown.Markdown(extensions=self.extensions,
                                extension_configs=self._extension_configs)
         html = md.convert(cleaned)
         html = self._fix_footnote_display_numbers(html)
-        html = self._add_image_captions(html)
+        html = self._add_image_captions(html, figure_num_start, figure_num_style)
         return self._wrap_in_section(html, component_type, component_id)
 
     @staticmethod
@@ -167,19 +171,71 @@ class MarkdownService:
         return HtmlFormatter(style=PYGMENTS_STYLE, cssclass="highlight").get_style_defs(".highlight")
 
     @staticmethod
-    def _add_image_captions(html: str) -> str:
-        """Wrap <img> tags that have alt text in <figure>/<figcaption>."""
+    def _to_roman(num: int) -> str:
+        """Convert an integer to Roman numerals."""
+        if num < 1 or num > 3999:
+            return str(num)
+        vals = [(1000, 'M'), (900, 'CM'), (500, 'D'), (400, 'CD'),
+                (100, 'C'), (90, 'XC'), (50, 'L'), (40, 'XL'),
+                (10, 'X'), (9, 'IX'), (5, 'V'), (4, 'IV'), (1, 'I')]
+        result = []
+        for v, s in vals:
+            while num >= v:
+                result.append(s)
+                num -= v
+        return ''.join(result)
+
+    @staticmethod
+    def _add_image_captions(html: str, figure_num_start: int = 0, figure_num_style: str = "arabic") -> str:
+        """Wrap <img> tags that have alt text in <figure>/<figcaption>.
+        
+        When figure_num_start > 0, figures are numbered starting from that value.
+        Decorative images (path containing '/decorative/') are never numbered.
+        """
+        DECORATIVE_HTML_RE = re.compile(r'(?:^|/)decorative/', re.IGNORECASE)
+        next_num = figure_num_start
+
         def _wrap(m):
+            nonlocal next_num
             tag = m.group(0)
             alt_m = re.search(r'alt="([^"]*)"', tag)
             if alt_m and alt_m.group(1).strip():
                 alt = alt_m.group(1)
-                return f'<figure>\n{tag}\n<figcaption>{alt}</figcaption>\n</figure>'
+                is_decorative = bool(DECORATIVE_HTML_RE.search(tag))
+                if figure_num_start > 0 and not is_decorative:
+                    num = next_num
+                    next_num += 1
+                    if figure_num_style == "roman":
+                        num_str = MarkdownService._to_roman(num)
+                    else:
+                        num_str = str(num)
+                    if alt.strip():
+                        caption = f"Figura {num_str} - {alt}"
+                    else:
+                        caption = f"Figura {num_str}"
+                    return f'<figure id="fig_{num}">\n{tag}\n<figcaption>{caption}</figcaption>\n</figure>'
+                else:
+                    return f'<figure>\n{tag}\n<figcaption>{alt}</figcaption>\n</figure>'
             return tag
+
         html = re.sub(r'<img[^>]+>', _wrap, html)
-        # Unwrap <figure> from <p> since figure is block-level
-        html = re.sub(r'<p>\s*(<figure>.*?</figure>)\s*</p>', r'\1', html, flags=re.DOTALL)
+        html = re.sub(r'<p>\s*(<figure.*?</figure>)\s*</p>', r'\1', html, flags=re.DOTALL)
         return html
+
+    @staticmethod
+    def extract_figure_alts(md_text: str) -> list:
+        """Extract alt text from markdown image references, skipping decorative images.
+
+        Returns list of (alt_text, image_path) tuples for non-decorative images.
+        """
+        results = []
+        for m in MD_IMG_RE.finditer(md_text):
+            alt = m.group(1).strip()
+            path = m.group(2)
+            if DECORATIVE_PATH_RE.search(path):
+                continue
+            results.append((alt, path))
+        return results
 
     def extract_title(self, markdown_text: str) -> Optional[str]:
         for line in markdown_text.split("\n"):
