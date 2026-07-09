@@ -784,7 +784,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         # Level 5: Pygments code syntax CSS
         css += "\n" + MarkdownService.get_code_css()
         css += """
-.footnote-notice {
+.auto-notice {
     margin-top: 2em;
     padding: 0.8em 1em;
     border: 1px solid #ccc;
@@ -818,7 +818,8 @@ hr { border: none; border-top: 1px solid #ccc; }
         component = self.current_component
         if not text.strip():
             if (self.project and component
-                    and component.type == ComponentType.FOOTNOTES):
+                    and component.type
+                    in (ComponentType.FOOTNOTES, ComponentType.TOC)):
                 text = '\u200b'
             else:
                 self.webview.load_html(self.default_html, self._get_base_uri())
@@ -906,17 +907,26 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             else:
                 html = self.md_service.render(md_text, component_type, component_id)
 
-            # Preview notice in FOOTNOTES component
-            if (self.project and component
-                    and component.type == ComponentType.FOOTNOTES):
-                html = html.replace(
-                    '</section>',
-                    '<div class="footnote-notice">'
-                    '<p>Aquí aparecerán automáticamente todas '
-                    'las notas al pie del libro.</p>'
-                    '</div>\n</section>',
-                    1
-                )
+            # Preview notices for auto-generated components
+            if self.project and component:
+                if component.type == ComponentType.FOOTNOTES:
+                    html = html.replace(
+                        '</section>',
+                        '<div class="auto-notice">'
+                        '<p>Aquí aparecerán automáticamente todas '
+                        'las notas al pie del libro.</p>'
+                        '</div>\n</section>',
+                        1
+                    )
+                elif component.type == ComponentType.TOC:
+                    html = html.replace(
+                        '</section>',
+                        '<div class="auto-notice">'
+                        '<p>Aquí aparecerá automáticamente la '
+                        'tabla de contenidos.</p>'
+                        '</div>\n</section>',
+                        1
+                    )
 
             full_html = self._build_preview_html(html, component_type, component)
             self.webview.load_html(full_html, self._get_base_uri())
