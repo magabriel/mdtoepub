@@ -18,7 +18,7 @@ IMAGE_MIME_MAP = {
 
 from ..models.project import Project
 from ..models.component import Component, ComponentType, COMPONENT_TYPE_LABELS
-from .markdown_service import MarkdownService
+from .markdown_service import MarkdownService, ERROR_BASE_KEY
 from .file_service import FileService
 from .yaml_service import YamlService
 from .theme_service import ThemeService
@@ -27,6 +27,21 @@ from .theme_service import ThemeService
 class EpubService:
     COVER_ONLY_IMAGE_RE = re.compile(r'^\s*!\[.*?\]\([^)]+\)\s*(\{.*?\})?\s*$')
     SUBTITLE_SEPARATOR_RE = re.compile(r'\s+[-–—]\s+')
+
+    FOOTNOTE_DIV_RE = re.compile(
+        r'<div class="footnote">.*?<ol>(.*?)</ol>.*?</div>',
+        re.DOTALL,
+    )
+    LI_FN_RE = re.compile(
+        r'<li[^>]*\bid="fn:(\d+)"[^>]*>(.*?)</li>',
+        re.DOTALL,
+    )
+    SUP_FN_REF_RE = re.compile(
+        r'href="#fn:(\d+)"',
+    )
+    FN_BACKLINK_RE = re.compile(
+        r'href="#fnref:(\d+)"',
+    )
 
     @staticmethod
     def _is_cover_only_image(md_content: str) -> bool:
@@ -78,6 +93,12 @@ class EpubService:
                     raw = frontmatter.get("toc_include")
                     if isinstance(raw, list):
                         return set(raw)
+        return None
+
+    def _get_footnotes_component(self) -> Optional[Component]:
+        for c in self.project.components:
+            if c.type == ComponentType.FOOTNOTES:
+                return c
         return None
 
     def _embed_images(self, book: epub.EpubBook, html_content: str, comp_id: str, embedded: Set[str]) -> None:
@@ -152,6 +173,8 @@ class EpubService:
             chapter_map = {}
             part_chapters: Dict[str, epub.EpubHtml] = {}
             embedded_images: Set[str] = set()
+            footnotes_comp = self._get_footnotes_component()
+            collected_footnotes: Dict[str, dict] = {}
 
             for part_comp in self.project.get_parts():
                 part_ch = self._create_part_chapter(part_comp, style_items)
@@ -160,9 +183,22 @@ class EpubService:
                     book.add_item(part_ch)
                     self._embed_images(book, part_ch.content.decode("utf-8"), part_comp.id, embedded_images)
 
+            # First pass: count footnote references per component for global renumbering
+            footnote_start: Dict[str, int] = {}
+            running_total = 0
+            for component in self.project.get_ordered_components():
+                if component.type in (ComponentType.PART, ComponentType.FOOTNOTES):
+                    continue
+                content = FileService.load_component(self.project.path, component)
+                if content:
+                    _, md_text = YamlService.parse_frontmatter(content)
+                    fn_count = MarkdownService._count_footnote_refs(md_text)
+                    footnote_start[component.id] = running_total + 1
+                    running_total += fn_count
+
             chapter_count = 0
             for component in self.project.get_ordered_components():
-                if component.type in (ComponentType.PART,):
+                if component.type in (ComponentType.PART, ComponentType.FOOTNOTES):
                     continue
                 if component.type == ComponentType.CHAPTER:
                     chapter_count += 1
@@ -173,11 +209,31 @@ class EpubService:
                 comp_item = comp_css_items.get(component.id)
                 if comp_item:
                     chapter_styles.append(comp_item)
-                chapter = self._create_chapter(component, chapter_styles, chapter_count if component.type == ComponentType.CHAPTER else None)
+                start_num = footnote_start.get(component.id, 1)
+                chapter = self._create_chapter(component, chapter_styles, chapter_count if component.type == ComponentType.CHAPTER else None,
+                                               footnotes_comp=footnotes_comp, collected_footnotes=collected_footnotes,
+                                               start_number=start_num)
                 if chapter:
                     chapter_map[component.id] = chapter
                     book.add_item(chapter)
                     self._embed_images(book, chapter.content.decode("utf-8"), component.id, embedded_images)
+
+            # Build footnotes chapter if footnotes component exists
+            if footnotes_comp:
+                fn_styles = list(style_items)
+                fn_type_item = type_css_items.get(footnotes_comp.type.value)
+                if fn_type_item:
+                    fn_styles.append(fn_type_item)
+                fn_comp_item = comp_css_items.get(footnotes_comp.id)
+                if fn_comp_item:
+                    fn_styles.append(fn_comp_item)
+                fn_chapter = self._build_footnotes_chapter(
+                    footnotes_comp, collected_footnotes, fn_styles
+                )
+                if fn_chapter:
+                    chapter_map[footnotes_comp.id] = fn_chapter
+                    book.add_item(fn_chapter)
+                    self._embed_images(book, fn_chapter.content.decode("utf-8"), footnotes_comp.id, embedded_images)
 
             ordered_chapters = []
             seen_parts = set()
@@ -498,7 +554,10 @@ class EpubService:
 
     def _create_chapter(
         self, component: Component, style_items: List[epub.EpubItem] = None,
-        chapter_number: Optional[int] = None
+        chapter_number: Optional[int] = None,
+        footnotes_comp: Optional[Component] = None,
+        collected_footnotes: Optional[Dict[str, dict]] = None,
+        start_number: int = 1,
     ) -> Optional[epub.EpubHtml]:
         content = FileService.load_component(self.project.path, component)
         if not content:
@@ -588,13 +647,22 @@ class EpubService:
                     # No user h1, no header: prepend title as h1
                     markdown_content = f"# {component.get_display_name()}\n\n{markdown_content}"
             # else show_title=False, no header: just render content as-is
-            html_content = self.markdown_service.render(markdown_content, component.type, component.id)
+            html_content = self.markdown_service.render(markdown_content, component.type, component.id, start_number)
 
         # Apply drop cap to non-TOC components
         if (component.type != ComponentType.TOC
                 and self.project.drop_cap_enabled
                 and component.type.value in self.project.drop_cap_types):
             html_content = self._apply_drop_cap(html_content)
+
+        # Extract footnotes when footnotes component exists
+        if footnotes_comp:
+            html_content, fn_data = self._strip_footnotes_from_html(html_content, component)
+            if fn_data and collected_footnotes is not None:
+                collected_footnotes[component.id] = {
+                    'title': display_title,
+                    'footnotes': fn_data,
+                }
 
         chapter = epub.EpubHtml(
             title=display_title,
@@ -610,6 +678,119 @@ class EpubService:
 </head>
 <body>
 {html_content}
+</body>
+</html>"""
+
+        chapter.content = full_html.encode("utf-8")
+
+        if style_items:
+            for item in style_items:
+                chapter.add_item(item)
+
+        return chapter
+
+    def _strip_footnotes_from_html(self, html: str, component: Component) -> tuple:
+        """Extract footnotes from rendered HTML and remove them.
+        
+        Returns (cleaned_html, list_of_(namespaced_id, li_inner_html)).
+        """
+        fn_div_match = EpubService.FOOTNOTE_DIV_RE.search(html)
+        if not fn_div_match:
+            return html, []
+
+        ol_content = fn_div_match.group(1)
+        ch_fn_base = component.filename.replace('.md', '')
+        fn_filename = self._get_footnotes_component().filename.replace('.md', '.xhtml')
+
+        footnotes = []
+        for li_match in EpubService.LI_FN_RE.finditer(ol_content):
+            orig_num = li_match.group(1)
+            li_inner = li_match.group(2)
+            namespaced_id = f"fn:{ch_fn_base}-{orig_num}"
+
+            # Rewrite backlinks: href="#fnref:X" -> href="{ch_fn_base}.xhtml#fnref:X"
+            li_inner = EpubService.FN_BACKLINK_RE.sub(
+                f'href="{ch_fn_base}.xhtml#fnref:\\1"', li_inner
+            )
+
+            footnotes.append((namespaced_id, li_inner))
+
+        # Remove footnote div from HTML
+        html = EpubService.FOOTNOTE_DIV_RE.sub('', html)
+
+        # Rewrite sup references: href="#fn:X" -> href="{fn_filename}#fn:{ch_fn_base}-X"
+        html = EpubService.SUP_FN_REF_RE.sub(
+            lambda m: f'href="{fn_filename}#fn:{ch_fn_base}-{m.group(1)}"', html
+        )
+
+        return html, footnotes
+
+    def _build_footnotes_chapter(
+        self, component: Component, collected: Dict[str, dict],
+        style_items: List[epub.EpubItem] = None,
+    ) -> Optional[epub.EpubHtml]:
+        """Build the footnotes chapter with user content + collected footnotes."""
+        content = FileService.load_component(self.project.path, component)
+        display_title = component.get_display_name()
+
+        if content:
+            frontmatter, markdown_content = YamlService.parse_frontmatter(content)
+        else:
+            frontmatter = {}
+            markdown_content = f"# {display_title}\n\n"
+
+        # Render user content with header
+        h1_match = re.search(r'^# (.+)$', markdown_content, re.MULTILINE)
+        default_title = h1_match.group(1).strip() if h1_match else ""
+        show_title = frontmatter.get("show_title", True)
+
+        header_html = self._build_header_html("", "", display_title if show_title else "")
+        if header_html:
+            if h1_match:
+                markdown_content = (markdown_content[:h1_match.start()]
+                                    + markdown_content[h1_match.end():])
+                markdown_content = markdown_content.strip()
+            markdown_content = header_html + markdown_content
+        elif show_title and not default_title:
+            markdown_content = f"# {display_title}\n\n{markdown_content}"
+
+        user_html = self.markdown_service.render(markdown_content, component.type, component.id)
+
+        # Build flat footnotes collection in document order, no chapter grouping
+        if collected:
+            fn_parts = ['<ol class="footnotes-collection">']
+            for data in collected.values():
+                for namespaced_id, li_inner in data['footnotes']:
+                    value_num = namespaced_id.rsplit('-', 1)[1]
+                    if int(value_num) >= ERROR_BASE_KEY:
+                        fn_parts.append(f'<li id="{namespaced_id}">{li_inner}</li>')
+                    else:
+                        fn_parts.append(f'<li id="{namespaced_id}" value="{value_num}">{li_inner}</li>')
+            fn_parts.append('</ol>')
+            fn_collection = '\n'.join(fn_parts)
+            # Insert footnotes collection before closing </section>
+            sep = '</section>'
+            if sep in user_html:
+                full_html_content = user_html.replace(sep, fn_collection + '\n' + sep, 1)
+            else:
+                full_html_content = user_html + '\n' + fn_collection
+        else:
+            full_html_content = user_html
+
+        chapter = epub.EpubHtml(
+            title=display_title,
+            file_name=f"{component.filename.replace('.md', '.xhtml')}",
+            lang=self.project.language,
+        )
+
+        full_html = f"""<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head>
+    <title>{display_title}</title>
+</head>
+<body>
+{full_html_content}
 </body>
 </html>"""
 

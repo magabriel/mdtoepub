@@ -191,3 +191,260 @@ class TestEmbedImages:
             assert len(embedded) == 1
             svc._embed_images(epub.EpubBook(), html2, "c2", embedded)
             assert len(embedded) == 1
+
+
+class TestFootnotes:
+    def test_strip_footnotes_none(self):
+        """No footnotes in HTML returns unchanged."""
+        svc = EpubService(Project())
+        html = '<section class="component-chapter"><p>Hello world.</p></section>'
+        comp = Component(type=ComponentType.CHAPTER, filename="test.md")
+        cleaned, fn_data = svc._strip_footnotes_from_html(html, comp)
+        assert cleaned == html
+        assert fn_data == []
+
+    def test_strip_footnotes_single(self):
+        """Extracts a single footnote from rendered HTML."""
+        svc = EpubService(Project())
+        comp = Component(type=ComponentType.CHAPTER, filename="test.md")
+        svc._get_footnotes_component = lambda: Component(
+            type=ComponentType.FOOTNOTES, filename="notas.md"
+        )
+        html = (
+            '<section class="component-chapter">'
+            '<p>Some text<sup id="fnref:1"><a href="#fn:1" role="doc-noteref">1</a></sup>.</p>'
+            '<div class="footnote">'
+            '<hr>'
+            '<ol>'
+            '<li id="fn:1" role="doc-endnote">'
+            '<p>Footnote text. <a href="#fnref:1" class="footnote-backref" role="doc-backlink">\u21a9</a></p>'
+            '</li>'
+            '</ol>'
+            '</div>'
+            '</section>'
+        )
+
+        cleaned, fn_data = svc._strip_footnotes_from_html(html, comp)
+
+        assert len(fn_data) == 1
+        fn_id, fn_inner = fn_data[0]
+        assert fn_id == "fn:test-1"
+        assert '<div class="footnote">' not in cleaned
+        assert 'href="notas.xhtml#fn:test-1"' in cleaned
+
+    def test_strip_footnotes_multiple(self):
+        """Extracts multiple footnotes from one chapter."""
+        svc = EpubService(Project())
+        svc._get_footnotes_component = lambda: Component(
+            type=ComponentType.FOOTNOTES, filename="notas.md"
+        )
+        comp = Component(type=ComponentType.CHAPTER, filename="cap1.md")
+        html = (
+            '<section class="component-chapter">'
+            '<p>Foo<sup id="fnref:1"><a href="#fn:1">1</a></sup> '
+            'bar<sup id="fnref:2"><a href="#fn:2">2</a></sup></p>'
+            '<div class="footnote">'
+            '<ol>'
+            '<li id="fn:1"><p>First. <a href="#fnref:1">\u21a9</a></p></li>'
+            '<li id="fn:2"><p>Second. <a href="#fnref:2">\u21a9</a></p></li>'
+            '</ol>'
+            '</div>'
+            '</section>'
+        )
+        cleaned, fn_data = svc._strip_footnotes_from_html(html, comp)
+
+        assert len(fn_data) == 2
+        assert fn_data[0][0] == "fn:cap1-1"
+        assert fn_data[1][0] == "fn:cap1-2"
+        assert 'href="notas.xhtml#fn:cap1-1"' in cleaned
+        assert 'href="notas.xhtml#fn:cap1-2"' in cleaned
+        assert 'href="cap1.xhtml#fnref:1"' in fn_data[0][1]
+        assert 'href="cap1.xhtml#fnref:2"' in fn_data[1][1]
+
+    def test_footnotes_default_without_component(self):
+        """Without FOOTNOTES component, footnotes remain at chapter end."""
+        import tempfile, uuid
+        from mdtoepub.services.file_service import FileService
+
+        with tempfile.TemporaryDirectory() as tmp:
+            proj = FileService.create_project_structure(tmp, "fndefault")
+            proj.path = str(Path(proj.path))
+
+            comp = Component(
+                id=str(uuid.uuid4()),
+                type=ComponentType.CHAPTER,
+                title="Test",
+                filename="test.md",
+                order=0,
+            )
+            proj.add_component(comp)
+            md = "# Test\n\nSome text with a footnote[^1].\n\n[^1]: The footnote text."
+            FileService.save_component(proj.path, comp, md)
+            FileService.save_project(proj)
+
+            svc = EpubService(proj)
+            with tempfile.NamedTemporaryFile(suffix=".epub", delete=False) as f:
+                output = f.name
+            svc.generate(output, "epub3")
+
+            import zipfile
+            with zipfile.ZipFile(output) as z:
+                assert "EPUB/test.xhtml" in z.namelist()
+                content = z.read("EPUB/test.xhtml").decode("utf-8")
+                assert 'class="footnote"' in content
+                assert 'id="fn:1"' in content
+                assert 'id="fnref:1"' in content
+            Path(output).unlink()
+
+    def test_footnotes_collected_with_component(self):
+        """With FOOTNOTES component, footnotes are collected and chapter is clean."""
+        import tempfile, uuid
+        from mdtoepub.services.file_service import FileService
+
+        with tempfile.TemporaryDirectory() as tmp:
+            proj = FileService.create_project_structure(tmp, "fncollected")
+            proj.path = str(Path(proj.path))
+
+            comp1 = Component(
+                id=str(uuid.uuid4()),
+                type=ComponentType.CHAPTER,
+                title="Chapter 1",
+                filename="cap1.md",
+                order=0,
+            )
+            proj.add_component(comp1)
+            md1 = "# Chapter 1\n\nText with note[^1].\n\n[^1]: First note."
+            FileService.save_component(proj.path, comp1, md1)
+
+            comp2 = Component(
+                id=str(uuid.uuid4()),
+                type=ComponentType.CHAPTER,
+                title="Chapter 2",
+                filename="cap2.md",
+                order=1,
+            )
+            proj.add_component(comp2)
+            md2 = "# Chapter 2\n\nAnother note[^1].\n\n[^1]: Second note."
+            FileService.save_component(proj.path, comp2, md2)
+
+            fn_comp = Component(
+                id=str(uuid.uuid4()),
+                type=ComponentType.FOOTNOTES,
+                title="Notas",
+                filename="notas.md",
+                order=2,
+            )
+            proj.add_component(fn_comp)
+            FileService.save_component(proj.path, fn_comp,
+                                       "# Notas\n\nAqui estan las notas.")
+            FileService.save_project(proj)
+
+            svc = EpubService(proj)
+            with tempfile.NamedTemporaryFile(suffix=".epub", delete=False) as f:
+                output = f.name
+            svc.generate(output, "epub3")
+
+            import zipfile
+            with zipfile.ZipFile(output) as z:
+                namelist = z.namelist()
+                assert "EPUB/notas.xhtml" in namelist
+
+                cap1_content = z.read("EPUB/cap1.xhtml").decode("utf-8")
+                assert 'class="footnote"' not in cap1_content
+                assert 'href="notas.xhtml#' in cap1_content
+
+                notas_content = z.read("EPUB/notas.xhtml").decode("utf-8")
+                assert 'id="fn:cap1-1"' in notas_content
+                assert 'id="fn:cap2-2"' in notas_content
+                assert "Aqui estan las notas" in notas_content
+                assert "Notas" in notas_content
+
+            Path(output).unlink()
+
+    def test_footnotes_component_no_notes_in_chapters(self):
+        """FOOTNOTES component with no footnotes in chapters shows user content only."""
+        import tempfile, uuid
+        from mdtoepub.services.file_service import FileService
+
+        with tempfile.TemporaryDirectory() as tmp:
+            proj = FileService.create_project_structure(tmp, "fnempty")
+            proj.path = str(Path(proj.path))
+
+            comp = Component(
+                id=str(uuid.uuid4()),
+                type=ComponentType.CHAPTER,
+                title="Chapter",
+                filename="cap.md",
+                order=0,
+            )
+            proj.add_component(comp)
+            FileService.save_component(proj.path, comp, "# Chapter\n\nNo footnotes here.")
+
+            fn_comp = Component(
+                id=str(uuid.uuid4()),
+                type=ComponentType.FOOTNOTES,
+                title="Notas",
+                filename="notas.md",
+                order=1,
+            )
+            proj.add_component(fn_comp)
+            FileService.save_component(proj.path, fn_comp,
+                                       "# Notas\n\nNotas vacias.")
+            FileService.save_project(proj)
+
+            svc = EpubService(proj)
+            with tempfile.NamedTemporaryFile(suffix=".epub", delete=False) as f:
+                output = f.name
+            svc.generate(output, "epub3")
+
+            import zipfile
+            with zipfile.ZipFile(output) as z:
+                notas_content = z.read("EPUB/notas.xhtml").decode("utf-8")
+                assert "Notas vacias" in notas_content
+                assert 'footnotes-collection' not in notas_content
+            Path(output).unlink()
+
+    def test_footnotes_empty_content_still_included(self):
+        """FOOTNOTES component with empty content still generates a chapter."""
+        import tempfile, uuid
+        from mdtoepub.services.file_service import FileService
+
+        with tempfile.TemporaryDirectory() as tmp:
+            proj = FileService.create_project_structure(tmp, "fnempty2")
+            proj.path = str(Path(proj.path))
+
+            comp = Component(
+                id=str(uuid.uuid4()),
+                type=ComponentType.CHAPTER,
+                title="Chapter",
+                filename="cap.md",
+                order=0,
+            )
+            proj.add_component(comp)
+            FileService.save_component(proj.path, comp,
+                                       "# Chapter\n\nNote[^1].\n\n[^1]: Text.")
+
+            fn_comp = Component(
+                id=str(uuid.uuid4()),
+                type=ComponentType.FOOTNOTES,
+                title="Mis Notas",
+                filename="notas.md",
+                order=1,
+            )
+            proj.add_component(fn_comp)
+            FileService.save_component(proj.path, fn_comp, "")
+            FileService.save_project(proj)
+
+            svc = EpubService(proj)
+            with tempfile.NamedTemporaryFile(suffix=".epub", delete=False) as f:
+                output = f.name
+            svc.generate(output, "epub3")
+
+            import zipfile
+            with zipfile.ZipFile(output) as z:
+                assert "EPUB/notas.xhtml" in z.namelist(), \
+                    "notas.xhtml must exist even with empty content"
+                notas_content = z.read("EPUB/notas.xhtml").decode("utf-8")
+                assert "Mis Notas" in notas_content
+                assert 'id="fn:cap-1"' in notas_content
+            Path(output).unlink()

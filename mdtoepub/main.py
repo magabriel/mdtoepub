@@ -57,6 +57,7 @@ def _component_icon(comp: Component) -> str:
         ComponentType.EDITION: "text-x-preview",
         ComponentType.EPILOGUE: "text-x-preview",
         ComponentType.FOREWORD: "text-x-preview",
+        ComponentType.FOOTNOTES: "accessories-dictionary",
         ComponentType.GLOSSARY: "accessories-dictionary",
         ComponentType.INTRODUCTION: "text-x-preview",
         ComponentType.LICENSE: "application-certificate",
@@ -782,6 +783,18 @@ hr { border: none; border-top: 1px solid #ccc; }
             css += "\n" + component.custom_css
         # Level 5: Pygments code syntax CSS
         css += "\n" + MarkdownService.get_code_css()
+        css += """
+.footnote-notice {
+    margin-top: 2em;
+    padding: 0.8em 1em;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background: #f5f5f5;
+    font-style: italic;
+    color: #666;
+    font-size: 0.9em;
+}
+"""
         return f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <style>{css}</style>
@@ -802,8 +815,16 @@ hr { border: none; border-top: 1px solid #ccc; }
             return
 
         text = self._get_editor_text()
+        component = self.current_component
+        if not text.strip():
+            if (self.project and component
+                    and component.type == ComponentType.FOOTNOTES):
+                text = '\u200b'
+            else:
+                self.webview.load_html(self.default_html, self._get_base_uri())
+                return
+
         if text.strip():
-            component = self.current_component
             component_id = ""
             if component:
                 component_type = component.type
@@ -884,6 +905,18 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     html = epub_svc._apply_drop_cap(html)
             else:
                 html = self.md_service.render(md_text, component_type, component_id)
+
+            # Preview notice in FOOTNOTES component
+            if (self.project and component
+                    and component.type == ComponentType.FOOTNOTES):
+                html = html.replace(
+                    '</section>',
+                    '<div class="footnote-notice">'
+                    '<p>Aquí aparecerán automáticamente todas '
+                    'las notas al pie del libro.</p>'
+                    '</div>\n</section>',
+                    1
+                )
 
             full_html = self._build_preview_html(html, component_type, component)
             self.webview.load_html(full_html, self._get_base_uri())
@@ -1142,7 +1175,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         from .models.component import ComponentType, COMPONENT_TYPE_LABELS
         skip_types = {ComponentType.PART, ComponentType.TOC, ComponentType.COVER,
-                      ComponentType.TITLE, ComponentType.LICENSE}
+                      ComponentType.TITLE, ComponentType.LICENSE, ComponentType.FOOTNOTES}
         self._drop_cap_checkbuttons = {}
         for ct in ComponentType:
             if ct in skip_types:
