@@ -819,7 +819,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         if not text.strip():
             if (self.project and component
                     and component.type
-                    in (ComponentType.FOOTNOTES, ComponentType.TOC)):
+                    in (ComponentType.FOOTNOTES, ComponentType.TOC, ComponentType.LOF)):
                 text = '\u200b'
             else:
                 self.webview.load_html(self.default_html, self._get_base_uri())
@@ -924,6 +924,15 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                         '<div class="auto-notice">'
                         '<p>Aquí aparecerá automáticamente la '
                         'tabla de contenidos.</p>'
+                        '</div>\n</section>',
+                        1
+                    )
+                elif component.type == ComponentType.LOF:
+                    html = html.replace(
+                        '</section>',
+                        '<div class="auto-notice">'
+                        '<p>Aquí aparecerá automáticamente la '
+                        'lista de figuras.</p>'
                         '</div>\n</section>',
                         1
                     )
@@ -1207,6 +1216,46 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_app.attach(sep2, 0, row, 2, 1)
         row += 1
 
+        # ── Figure numbering ──
+        label_fig = Gtk.Label(label="Numeracion de figuras:")
+        label_fig.set_xalign(1)
+        label_fig.set_valign(Gtk.Align.START)
+        grid_app.attach(label_fig, 0, row, 1, 1)
+
+        fig_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        grid_app.attach(fig_vbox, 1, row, 1, 1)
+        row += 1
+
+        check_figure_numbering = Gtk.CheckButton(label="Numerar figuras automaticamente")
+        check_figure_numbering.set_active(self.project.figure_numbering)
+        fig_vbox.pack_start(check_figure_numbering, False, False, 0)
+
+        fig_style_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        fig_style_label = Gtk.Label(label="Estilo:")
+        fig_style_box.pack_start(fig_style_label, False, False, 0)
+        combo_fig_style = Gtk.ComboBoxText()
+        combo_fig_style.append_text("Numeros arabigos")
+        combo_fig_style.append_text("Numeros romanos")
+        fig_style_values = ["arabic", "roman"]
+        fig_style_index = 0
+        for i, v in enumerate(fig_style_values):
+            if v == self.project.figure_numbering_style:
+                fig_style_index = i
+                break
+        combo_fig_style.set_active(fig_style_index)
+        fig_style_box.pack_start(combo_fig_style, False, False, 0)
+        fig_vbox.pack_start(fig_style_box, False, False, 0)
+
+        # Toggle style combo sensitivity based on checkbox
+        def _on_fig_numbering_toggle(cb):
+            combo_fig_style.set_sensitive(cb.get_active())
+        check_figure_numbering.connect("toggled", _on_fig_numbering_toggle)
+        _on_fig_numbering_toggle(check_figure_numbering)
+
+        sep3 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        grid_app.attach(sep3, 0, row, 2, 1)
+        row += 1
+
         # ── Spell check language ──
         label_lang = Gtk.Label(label="Corrector ortografico:")
         label_lang.set_xalign(1)
@@ -1241,6 +1290,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 self.project.drop_cap_types = [
                     t for t, cb in self._drop_cap_checkbuttons.items() if cb.get_active()
                 ] or ["chapter"]
+                self.project.figure_numbering = check_figure_numbering.get_active()
+                fig_style_idx = combo_fig_style.get_active()
+                if 0 <= fig_style_idx < len(fig_style_values):
+                    self.project.figure_numbering_style = fig_style_values[fig_style_idx]
                 self.project.export_filename = entry_export.get_text().strip()
                 self.project.edition = entry_edicion.get_text().strip()
                 self.project.publication_date = entry_fecha.get_text().strip()
@@ -1578,8 +1631,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 new_project.language = self.project.language
                 new_project.theme_id = self.project.theme_id
                 new_project.epub_version = self.project.epub_version
+                new_project.figure_numbering = self.project.figure_numbering
+                new_project.figure_numbering_style = self.project.figure_numbering_style
                 new_project.edition = self.project.edition
-                new_project.publication_date = self.project.publication_date
                 new_project.isbn = self.project.isbn
                 new_project.publisher = self.project.publisher
                 new_project.subtitle = self.project.subtitle
@@ -1909,6 +1963,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             buffer.set_text(content)
             self._update_status(f"Editando: {obj.get_display_name()}")
             self._update_help_panel(obj.type)
+            self._update_preview()
         elif isinstance(obj, Component) and obj.type == ComponentType.PART:
             self._save_current_component()
             self.current_part = obj
@@ -1920,6 +1975,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             buffer.set_text(content)
             self._update_status(f"Editando parte: {obj.title}")
             self._update_help_panel(None)
+            self._update_preview()
 
     def _on_tree_button_press(self, tree, event):
         if event.button != 3:
