@@ -1,4 +1,4 @@
-Hermann Ebbinghaus descubrio algo inquietante: olvidamos la mayor parte de lo que aprendemos en cuestion de horas. Pero tambien descubrio algo esperanzador: **cada repaso espaciado en el tiempo fija el recuerdo con mas fuerza**.
+Hermann Ebbinghaus[^1] descubrio algo inquietante: olvidamos la mayor parte de lo que aprendemos en cuestion de horas. Pero tambien descubrio algo esperanzador: **cada repaso espaciado en el tiempo fija el recuerdo con mas fuerza**.
 
 Este capitulo te ensenara a construir conocimiento que perdure.
 
@@ -41,7 +41,7 @@ Consiste en cerrar el libro e intentar recordar la informacion por ti mismo. Es 
 
 **Haz esto:** Cierra el libro y escribete en una hoja todo lo que recuerdas. Luego abre el libro y comprueba lo que has omitido.
 
-La investigacion demuestra que el recuerdo activo es hasta **un 50% mas efectivo** que la relectura para la misma cantidad de tiempo invertido.
+La investigacion demuestra que el recuerdo activo es hasta **un 50% mas efectivo**[^2] que la relectura para la misma cantidad de tiempo invertido.
 
 | Estrategia | Retencion a 1 semana | Retencion a 1 mes |
 |------------|---------------------|-------------------|
@@ -93,6 +93,10 @@ Una de las tecnicas mnemotecnicas mas antiguas y poderosas:
 2. Cierra el libro y escribete todo lo que recuerdas (recuerdo activo)
 3. Vuelve a abrir el libro y anade lo que faltaba
 4. Repite el proceso 24 horas despues
+
+[^1]: Ebbinghaus, H. (1885). *Uber das Gedachtnis* (*On Memory*). Leipzig: Duncker & Humblot. Ebbinghaus fue el primero en aplicar el metodo experimental al estudio de la memoria, utilizando silabas sin sentido para aislar el proceso de la memorizacion pura.
+
+[^2]: Roediger, H. L., & Karpicke, J. D. (2006). Test-enhanced learning: Taking memory tests improves long-term retention. *Psychological Science*, 17(3), 249-255.
 
 **Ideas clave del capitulo**
 {.key-takeaway}

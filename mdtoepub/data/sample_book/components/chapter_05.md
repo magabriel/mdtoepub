@@ -1,6 +1,6 @@
 *Evora, 2 de enero de 1899*
 
-El Mapa de las Estrellas no era un mapa celeste, pese a su nombre. Era un diagrama de correspondencias, un laberinto de lineas y simbolos que conectaban puntos en una superficie de pergamino amarillento. Sousa y Costa habian tardado seis meses en descifrar las primeras claves del codex utilizando el manual de Sintra, y el resultado era aquel mapa.
+El Mapa de las Estrellas[^1] no era un mapa celeste, pese a su nombre. Era un diagrama de correspondencias, un laberinto de lineas y simbolos que conectaban puntos en una superficie de pergamino amarillento. Sousa y Costa[^2] habian tardado seis meses en descifrar las primeras claves del codex utilizando el manual de Sintra, y el resultado era aquel mapa.
 
 Pero no conseguian entender lo que representaba.
 
@@ -25,3 +25,7 @@ Costa asintio lentamente.
 —Entonces puede que no seamos los primeros en llegar. Pero tal vez si seamos los primeros en entender lo que significa.
 
 Afuera, el viento de enero azotaba las calles empedradas de Evora, y en el silencio del estudio, los dos hombres volvieron a inclinarse sobre el pergamino, tratando de descifrar el mensaje que alguien, siglos atras, habia tejido en aquel laberinto de tinta y pergamino.
+
+[^1]: El concepto de "mapa estelar" como sistema de coordenadas simbolicas tiene precedentes historicos en la tradicion hermetico-renacentista. El manuscrito *Mappa Stellae* de Athanasius Kircher (1665) describe un sistema similar de correspondencias entre astros y acontecimientos.
+
+[^2]: Raimundo da Costa (1844-1912) fue un historiador y paleografo portugues, autor de *Estudos de Paleografia Portuguesa* (Coimbra, 1887) y miembro de la Academia Real das Ciencias de Lisboa.

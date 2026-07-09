@@ -2,13 +2,13 @@
 
 ## El Convento de Sao Bento de Aviz-Maramonte
 
-El convento fue fundado en el siglo <span class="small-caps">XIII</span> por la Orden de Aviz, una de las ordenes militares portuguesas. Su iglesia, de estilo gotico-mudejar, fue ampliamente reformada en el siglo <span class="small-caps">XVIII</span>, periodo durante el cual se anadio el retablo mayor barroco que jugaria un papel central en el descubrimiento narrado en esta novela. El convento fue declarado monumento nacional en 1910 y actualmente alberga un museo de arte sacro.
+El convento fue fundado en el siglo <span class="small-caps">XIII</span> por la Orden de Aviz[^1], una de las ordenes militares portuguesas. Su iglesia, de estilo gotico-mudejar, fue ampliamente reformada en el siglo <span class="small-caps">XVIII</span>, periodo durante el cual se anadio el retablo mayor barroco que jugaria un papel central en el descubrimiento narrado en esta novela. El convento fue declarado monumento nacional en 1910 y actualmente alberga un museo de arte sacro.
 
 > **Coordenadas:** 38°42'N 8°15'O | **Altitud:** 287 m s. n. m.
 
 ## La Criptografia en el Portugal del siglo XVI
 
-El manual de criptografia que aparece en la novela esta inspirado en obras reales como el *Polygraphiae* de Trithemius (1518) y el *De cifris* de Alberti (1466). Se sabe que la corte portuguesa del siglo <span class="small-caps">XVI</span> mantuvo correspondencia cifrada con sus embajadores en toda Europa, y que existio en la Universidad de Coimbra una catedra de *artes secretas* que incluia la ensenanza de tecnicas criptograficas, aunque los registros de dicha catedra son fragmentarios.
+El manual de criptografia que aparece en la novela esta inspirado en obras reales como el *Polygraphiae* de Trithemius[^2] (1518) y el *De cifris* de Alberti (1466). Se sabe que la corte portuguesa del siglo <span class="small-caps">XVI</span> mantuvo correspondencia cifrada con sus embajadores en toda Europa, y que existio en la Universidad de Coimbra una catedra de *artes secretas* que incluia la ensenanza de tecnicas criptograficas, aunque los registros de dicha catedra son fragmentarios.
 
 Los metodos de cifrado empleados en la epoca incluian:
 
@@ -51,3 +51,7 @@ donde F<sub>m</sub> representa la fraccion de <sup>14</sup>C medida respecto al 
 
 *Las abreviaturas empleadas en este apendice siguen las convenciones del <abbr title="Archivo Nacional da Torre do Tombo">ANTT</abbr>. Los siglos se expresan en numeracion romana segun la usanza academica del periodo.*
 {.small .muted}
+
+[^1]: La Orden de Aviz fue fundada en 1146 como orden militar para la defensa de las fronteras portuguesas durante la Reconquista. Su sede principal era el Convento de Sao Bento de Aviz-Maramonte, en el Alentejo.
+
+[^2]: Johannes Trithemius (1462-1516), abad benedictino aleman, es considerado uno de los padres de la criptografia moderna. Su *Steganographia* (escrita hacia 1499) fue puesta en el Indice de libros prohibidos por sus presuntos contenidos magicos.
