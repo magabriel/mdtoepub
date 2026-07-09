@@ -8,7 +8,7 @@ La mentalidad es el filtro a traves del cual interpretas tus experiencias de apr
 
 ## Mentalidad fija vs. mentalidad de crecimiento
 
-La psicologa Carol Dweck, de la Universidad de Stanford, dedico decadas a estudiar como nuestras creencias sobre la inteligencia afectan nuestro rendimiento. Identifico dos perfiles:
+La psicologa Carol Dweck[^1], de la Universidad de Stanford, dedico decadas a estudiar como nuestras creencias sobre la inteligencia afectan nuestro rendimiento. Identifico dos perfiles:
 
 **Mentalidad Fija**
 :   Creencia de que la inteligencia y las habilidades son traits fijos e inmutables. Las personas con esta mentalidad evitan desafios, se rinden facilmente y ven el esfuerzo como algo inutil.
@@ -69,7 +69,7 @@ En lugar de felicitarte por haber aprobado el examen, celebralo por haber estudi
 
 La mayoria de la gente evita lo dificil. Tu haz lo contrario: busca activamente problemas que esten un paso mas alla de tu nivel actual.
 
-**Zona de Desarrollo Proximo (Vygotsky)**
+**Zona de Desarrollo Proximo (Vygotsky)[^2]**
 :   La distancia entre lo que puedes hacer por ti mismo y lo que puedes hacer con ayuda. El aprendizaje optimo ocurre cuando trabajas en esta zona: lo suficientemente dificil para estirarte, pero no tanto como para frustrarte.
 {.definition}
 
@@ -89,6 +89,10 @@ Durante las proximas dos semanas, dedica cinco minutos cada noche a escribir tu 
 ## Conclusion del capitulo
 
 La mentalidad de crecimiento no es algo que se tenga o no se tenga. Es una practica, una decision que se toma cada dia, cada vez que te enfrentas a un desafio.
+
+[^1]: Dweck, C. S. (2006). *Mindset: The New Psychology of Success*. Random House. La investigacion de Dweck ha sido replicada en multiples contextos educativos y culturales, demostrando la robustez de sus hallazgos.
+
+[^2]: Vygotsky, L. S. (1978). *Mind in Society: The Development of Higher Psychological Processes*. Harvard University Press. Vygotsky propuso que el aprendizaje optimo ocurre cuando el estudiante trabaja con tareas que no puede hacer solo pero si con ayuda de un guia mas competente.
 
 **Ideas clave del capitulo**
 {.key-takeaway}

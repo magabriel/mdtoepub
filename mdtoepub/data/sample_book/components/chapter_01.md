@@ -6,8 +6,8 @@ Llevaba tres semanas catalogando el contenido de aquel almacen, un encargo que h
 
 > **Inventario preliminar — Almacon Municipal n.º 7**
 >
-> 1. Facturas comerciales de la *Real Fabrica Textil* (1873-1881) — 14 legajos
-> 2. Correspondencia de la *Sociedad Literaria Portuense* (1865-1879) — 8 cajas
+> 1. Facturas comerciales de la *Real Fabrica Textil* (1873-1881)[^1] — 14 legajos
+> 2. Correspondencia de la *Sociedad Literaria Portuense* (1865-1879)[^2] — 8 cajas
 > 3. Planos de obras publicas del ayuntamiento (1840-1885) — 22 rollos
 > 4. <del>Registros parroquiales</del> (extraviados antes del traslado)
 > 5. Papeles varios sin clasificar — 5 cajas
@@ -45,3 +45,7 @@ Estado: Bueno
 ```
 
 Algo en la textura del papel, en la resistencia del lacre, le dijo que aquello no era un documento administrativo extraviado. Era otra cosa. Algo que habia estado esperando, quizas durante anos, a que alguien lo encontrara.
+
+[^1]: La Real Fabrica Textil de Oporto, fundada en 1758 por el Marques de Pombal, fue uno de los primeros centros industriales de Portugal. Sus archivos fueron dispersados tras su cierre en 1881.
+
+[^2]: La Sociedad Literaria Portuense, activa entre 1865 y 1879, agrupaba a intelectuales y escritores de la region nortena. Su archivo fue donado a la Camara Municipal de Oporto en 1880.

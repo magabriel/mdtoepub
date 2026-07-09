@@ -57,6 +57,7 @@ components:
     - conclusion
     - appendix
     - glossary
+    - footnotes
     - acknowledgement
   id: toc-001
   order: 6
@@ -129,10 +130,17 @@ components:
   part_id: null
   title: Glosario
   type: glossary
+- filename: notas.md
+  frontmatter: {}
+  id: footnotes-001
+  order: 16
+  part_id: null
+  title: Notas
+  type: footnotes
 - filename: acknowledgement.md
   frontmatter: {}
   id: acknowledgement-001
-  order: 16
+  order: 17
   part_id: null
   title: Agradecimientos
   type: acknowledgement

@@ -11,6 +11,7 @@ toc_include:
   - conclusion
   - appendix
   - glossary
+  - footnotes
   - acknowledgement
 toc_deep: 3
 ---

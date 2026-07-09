@@ -7,7 +7,7 @@ Para entender por que la atencion es tan crucial, empecemos con un experimento m
 
 ## El experimento del gorila invisible
 
-En 1999, los psicologos Daniel Simons y Christopher Chabris realizaron un experimento que se ha convertido en un clasico de la psicologia cognitiva. Pidieron a los participantes que vieran un video en el que dos equipos se pasaban una pelota de baloncesto. La tarea era contar cuantos pases hacia el equipo de blanco.
+En 1999, los psicologos Daniel Simons y Christopher Chabris[^1] realizaron un experimento que se ha convertido en un clasico de la psicologia cognitiva. Pidieron a los participantes que vieran un video en el que dos equipos se pasaban una pelota de baloncesto. La tarea era contar cuantos pases hacia el equipo de blanco.
 
 A mitad del video, una persona disfrazada de gorila cruzaba lentamente la escena, se detenia en medio, se golpeaba el pecho y segui adelante. La pregunta: ?cuantos participantes vieron al gorila?
 
@@ -41,7 +41,7 @@ A continuacion, presentamos las estrategias mas efectivas respaldadas por la inv
 
 ### 1. La tecnica Pomodoro
 
-Desarrollada por Francesco Cirillo en los anos 80, esta tecnica consiste en trabajar en bloques de tiempo concentrado intercalados con descansos breves:
+Desarrollada por Francesco Cirillo[^2] en los anos 80, esta tecnica consiste en trabajar en bloques de tiempo concentrado intercalados con descansos breves:
 
 ```
 Pomodoro 1: 25 min de trabajo + 5 min de descanso
@@ -84,6 +84,10 @@ Durante una semana, anota en que empleas cada hora de tu dia. Al final de la sem
 1. ?Cuantas horas dedicaste a trabajo profundo (sin interrupciones)?
 2. ?Cuantas veces cambiaste de tarea en una hora?
 3. ?Que momentos del dia eres mas productivo?
+
+[^1]: Simons, D. J., & Chabris, C. F. (1999). Gorillas in our midst: Sustained inattentional blindness for dynamic events. *Perception*, 28(9), 1059-1074.
+
+[^2]: Cirillo, F. (2006). *The Pomodoro Technique*. Creative Commons.
 
 **Ideas clave del capitulo**
 {.key-takeaway}
