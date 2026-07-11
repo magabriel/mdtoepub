@@ -973,9 +973,13 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         text = self._get_editor_text()
         frontmatter, markdown_content = YamlService.parse_frontmatter(text)
         if self.current_part:
+            if self.current_part not in self.project.components:
+                return
             self.current_part.frontmatter = frontmatter
             FileService.save_component(self.project.path, self.current_part, text)
         elif self.current_component:
+            if self.current_component not in self.project.components:
+                return
             self.current_component.frontmatter = frontmatter
             FileService.save_component(self.project.path, self.current_component, text)
 
@@ -2190,10 +2194,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self.project = project
             self.project.path = sample_dir
             self._update_spell_lang()
-            self._refresh_project_tree()
             self.current_component = None
-            self.text_view.get_buffer().set_text("")
             self._set_read_only_mode(True)
+            self._refresh_project_tree()
+            self.text_view.get_buffer().set_text("")
             self._update_status(f"Libro de ejemplo cargado: {project.name} [SOLO LECTURA]")
         else:
             self._show_error("Error al cargar el libro de ejemplo")
