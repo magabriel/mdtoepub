@@ -5,18 +5,29 @@
   </metadata>
   <styles>
     <style id="section-header" name="Section Header" map-to="def:heading"/>
-    <style id="css-class" name="CSS Class" map-to="def:type"/>
-    <style id="variable" name="Variable" map-to="def:identifier"/>
-    <style id="boolean" name="Boolean" map-to="def:constant"/>
-    <style id="info" name="Info" map-to="def:note"/>
+    <style id="sub-header"     name="Sub Header"     map-to="def:strong"/>
+    <style id="css-class"      name="CSS Class"      map-to="def:type"/>
+    <style id="extension"      name="Extension"      map-to="def:statement"/>
+    <style id="variable"       name="Variable"       map-to="def:identifier"/>
+    <style id="boolean"        name="Boolean"        map-to="def:constant"/>
+    <style id="info"           name="Info"           map-to="def:note"/>
   </styles>
   <definitions>
     <context id="section-header" style-ref="section-header" end-at-line-end="true">
-      <start>^(Tipo|Clases|Variables|No hay)</start>
+      <start>^(Tipo|Clases|Variables|No hay|Sintaxis|Extensiones)</start>
+    </context>
+
+    <context id="sub-header" style-ref="sub-header" end-at-line-end="true">
+      <start>^— [^—]+ —$</start>
     </context>
 
     <context id="info" style-ref="info" end-at-line-end="true">
-      <start>^(— Usa|Las variables|Selecciona)</start>
+      <start>^  \* </start>
+    </context>
+
+    <context id="extension" style-ref="extension">
+      <start>\(</start>
+      <end>\)</end>
     </context>
 
     <context id="css-class" style-ref="css-class">
@@ -27,7 +38,9 @@
     <context id="mdtoepub-help">
       <include>
         <context ref="section-header"/>
+        <context ref="sub-header"/>
         <context ref="info"/>
+        <context ref="extension"/>
         <context ref="css-class"/>
         <context id="variable" style-ref="variable">
           <match>^\s{2}[a-z_]+\s*$</match>

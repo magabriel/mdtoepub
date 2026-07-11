@@ -440,6 +440,16 @@ class MDToEPUBApp(Gtk.Application):
         self.front_textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         front_scrolled.add(self.front_textview)
 
+        syntax_scrolled = Gtk.ScrolledWindow()
+        syntax_scrolled.set_vexpand(True)
+        syntax_buf = GtkSource.Buffer.new_with_language(help_lang)
+        self.syntax_textview = GtkSource.View.new_with_buffer(syntax_buf)
+        self.syntax_textview.set_editable(False)
+        self.syntax_textview.set_cursor_visible(False)
+        self.syntax_textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        syntax_scrolled.add(self.syntax_textview)
+        self._init_syntax_help(syntax_buf)
+
         # Inner notebook: Contenido (Editor + Vista previa)
         self.content_notebook = Gtk.Notebook()
         self.content_notebook.append_page(editor_scrolled, Gtk.Label(label="Editor"))
@@ -456,6 +466,7 @@ class MDToEPUBApp(Gtk.Application):
         self.main_stack.add_titled(self.content_notebook, "content", "Contenido")
         self.main_stack.add_titled(self.theme_notebook, "theme", "Tema")
         self.main_stack.add_titled(front_scrolled, "help", "Ayuda")
+        self.main_stack.add_titled(syntax_scrolled, "syntax", "Sintaxis")
 
         sidebar = Gtk.StackSidebar()
         sidebar.set_stack(self.main_stack)
@@ -560,6 +571,140 @@ hr { border: none; border-top: 1px solid #ccc; }
                 theme_dir = str(ThemeService.BUILTIN_DIR / "classic")
             self._style_doc_svc = StyleDocService(theme_dir)
         return self._style_doc_svc
+
+    def _init_syntax_help(self, buf):
+        lines = [
+            "Sintaxis Markdown",
+            "",
+            "— Texto —",
+            "",
+            "  *cursiva*                _cursiva_",
+            "  **negrita**              __negrita__",
+            "  ~~tachado~~              `codigo`",
+            "  > cita                   > cita anidada",
+            "",
+            "— Encabezados —",
+            "",
+            "  # Titulo                 ## Seccion",
+            "  ### Subseccion           #### Sub-sub",
+            "",
+            "— Enlaces e imagenes —",
+            "",
+            "  [Texto](url)             [Texto](url \"Titulo\")",
+            "  ![Alt](ruta/imagen.jpg)",
+            "",
+            "— Listas —",
+            "",
+            "  - item                   * item",
+            "    - subitem",
+            "  1. numerada              1) numerada",
+            "",
+            "— Separador —",
+            "",
+            "  ---                      ***",
+            "",
+            "Extensiones activas",
+            "",
+            "— Tablas —  (tables)",
+            "",
+            "  | Col A | Col B | Col C |",
+            "  |-------|-------|-------|",
+            "  | a     | b     | c     |",
+            "",
+            "  * Alineacion con :   |:---|:---:|---:|",
+            "",
+            "— Bloque de codigo —  (fenced_code + codehilite)",
+            "",
+            "  ```python",
+            "  def hola():",
+            "      print(\"Hola\")",
+            "  ```",
+            "",
+            "  * Lenguajes: python, js, html, css, bash, json, yaml...",
+            "  * Resaltado con Pygments en el EPUB exportado.",
+            "",
+            "— Listas de definicion —  (def_list)",
+            "",
+            "  Termino",
+            "  : Definicion del termino.",
+            "  : Parrafo adicional de la definicion.",
+            "",
+            "— Atributos CSS —  (attr_list)",
+            "",
+            "  {.clase}                 → <elemento class=\"clase\">",
+            "  {.c1 .c2}                → varias clases",
+            "  {#id-unico}              → ancla con id",
+            "",
+            "  * Se coloca en la linea siguiente al elemento.",
+            "  * Clases disponibles segun el tema activo.",
+            "",
+            "— Notas al pie —  (footnotes)",
+            "",
+            "  Texto con nota[^1] y otra nota[^2].",
+            "",
+            "  [^1]: Contenido de la primera nota.",
+            "  [^2]: Contenido de la segunda nota.",
+            "",
+            "  * Se numeran automaticamente por componente.",
+            "  * Se recogen al final en el componente Notas al pie.",
+            "",
+            "— Tabla de contenidos —  (toc)",
+            "",
+            "  [TOC]",
+            "",
+            "  * Genera un indice local dentro del propio componente.",
+            "",
+            "— Saltos de linea —  (nl2br)",
+            "",
+            "  * Un solo salto de linea dentro de un parrafo",
+            "    se convierte en <br> en el HTML.",
+            "",
+            "Sintaxis personalizada",
+            "",
+            "— Tablas con titulo —",
+            "",
+            "  <!-- Table: Mi tabla de datos -->",
+            "  | A | B |",
+            "  |---|---|",
+            "  | 1 | 2 |",
+            "",
+            "  * Aparecen en la Lista de Tablas si se activa",
+            "    la numeracion en Configuracion del proyecto.",
+            "  * Tablas sin comentario no se numeran ni listan.",
+            "",
+            "— Figuras numerables —",
+            "",
+            "  ![Pie de figura](images/illustrations/foto.jpg)",
+            "",
+            "  * Las imagenes en images/illustrations/ se numeran",
+            "    automaticamente y aparecen en la Lista de Figuras.",
+            "",
+            "— Imagenes decorativas —",
+            "",
+            "  ![Alt](images/decorative/ornamento.jpg)",
+            "",
+            "  * Quedan fuera de la numeracion y de la LOF.",
+            "  * Aun asi obtienen <figure> con alt como caption.",
+            "",
+            "— Idioma del corrector —",
+            "",
+            "  {lang=en}This text is in English.{lang=es}",
+            "",
+            "  * Cambia el idioma del corrector ortografico.",
+            "  * Los marcadores se eliminan del EPUB.",
+            "",
+            "— Metadatos del componente —  (frontmatter)",
+            "",
+            "  ---",
+            "  show_title: false",
+            "  toc_deep: 2",
+            "  ---",
+            "",
+            "  * En YAML, entre --- al inicio del archivo.",
+            "  * Variables comunes: show_title, toc_deep,",
+            "    toc_include, split_title.",
+        ]
+        buf.set_text("\n".join(lines))
 
     def _update_help_panel(self, component_type=None):
         theme_config = self._load_theme_config()
