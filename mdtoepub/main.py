@@ -98,6 +98,8 @@ class MDToEPUBApp(Gtk.Application):
         self._read_only = False
         self._dev_mode = os.environ.get("MDTOEPUB_DEV") == "1"
         self._toolbar_save_btn = None
+        self._styles_current_component = None
+        self._styles_current_comp_type = None
 
     def do_activate(self):
         settings = Gtk.Settings.get_default()
@@ -183,18 +185,6 @@ class MDToEPUBApp(Gtk.Application):
         item.connect("activate", lambda w: self._focus_preview())
         ver_menu.append(item)
         menubar.append(ver)
-
-        # Estilos
-        estilos = Gtk.MenuItem(label="Estilos")
-        estilos_menu = Gtk.Menu()
-        estilos.set_submenu(estilos_menu)
-        item = Gtk.MenuItem(label="Editar estilos del libro")
-        item.connect("activate", self._on_edit_book_css)
-        estilos_menu.append(item)
-        item = Gtk.MenuItem(label="Gestionar estilos por tipo")
-        item.connect("activate", self._on_manage_type_css)
-        estilos_menu.append(item)
-        menubar.append(estilos)
 
         # Exportar
         exportar = Gtk.MenuItem(label="Exportar")
@@ -413,24 +403,6 @@ class MDToEPUBApp(Gtk.Application):
         self.webview = WebKit2.WebView()
         self.webview.set_vexpand(True)
 
-        help_scrolled = Gtk.ScrolledWindow()
-        help_scrolled.set_vexpand(True)
-        help_buf = GtkSource.Buffer.new_with_language(help_lang)
-        self.help_textview = GtkSource.View.new_with_buffer(help_buf)
-        self.help_textview.set_editable(False)
-        self.help_textview.set_cursor_visible(False)
-        self.help_textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
-        help_scrolled.add(self.help_textview)
-
-        global_scrolled = Gtk.ScrolledWindow()
-        global_scrolled.set_vexpand(True)
-        global_buf = GtkSource.Buffer.new_with_language(help_lang)
-        self.global_textview = GtkSource.View.new_with_buffer(global_buf)
-        self.global_textview.set_editable(False)
-        self.global_textview.set_cursor_visible(False)
-        self.global_textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
-        global_scrolled.add(self.global_textview)
-
         front_scrolled = Gtk.ScrolledWindow()
         front_scrolled.set_vexpand(True)
         front_buf = GtkSource.Buffer.new_with_language(help_lang)
@@ -456,18 +428,20 @@ class MDToEPUBApp(Gtk.Application):
         self.content_notebook.append_page(editor_scrolled, Gtk.Label(label="Editor"))
         self.content_notebook.append_page(self.webview, Gtk.Label(label="Vista previa"))
 
-        # Inner notebook: Tema (Tipo de componente + Global)
-        self.theme_notebook = Gtk.Notebook()
-        self.theme_notebook.append_page(help_scrolled, Gtk.Label(label="Tipo de componente"))
-        self.theme_notebook.append_page(global_scrolled, Gtk.Label(label="Global"))
+        # Styles panel (replaces old Tema tab)
+        self._build_styles_panel()
+
+        # Help notebook: Metadatos + Sintaxis (merged from old Ayuda and Sintaxis tabs)
+        help_notebook = Gtk.Notebook()
+        help_notebook.append_page(front_scrolled, Gtk.Label(label="Metadatos"))
+        help_notebook.append_page(syntax_scrolled, Gtk.Label(label="Sintaxis"))
 
         # StackSidebar + Stack for section navigation
         self.main_stack = Gtk.Stack()
         self.main_stack.set_vexpand(True)
         self.main_stack.add_titled(self.content_notebook, "content", "Contenido")
-        self.main_stack.add_titled(self.theme_notebook, "theme", "Tema")
-        self.main_stack.add_titled(front_scrolled, "help", "Ayuda")
-        self.main_stack.add_titled(syntax_scrolled, "syntax", "Sintaxis")
+        self.main_stack.add_titled(self._styles_scrolled, "styles", "Estilos")
+        self.main_stack.add_titled(help_notebook, "help", "Ayuda")
 
         sidebar = Gtk.StackSidebar()
         sidebar.set_stack(self.main_stack)
@@ -514,6 +488,114 @@ hr { border: none; border-top: 1px solid #ccc; }
         self.project_label = Gtk.Label(label="")
         self.project_label.set_xalign(1)
         status_box.pack_end(self.project_label, False, False, 0)
+
+    def _build_styles_panel(self):
+        self._styles_scrolled = Gtk.ScrolledWindow()
+        self._styles_scrolled.set_vexpand(True)
+
+        styles_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        styles_vbox.set_margin_top(8)
+        styles_vbox.set_margin_bottom(8)
+        styles_vbox.set_margin_start(8)
+        styles_vbox.set_margin_end(8)
+
+        header = Gtk.Label()
+        header.set_xalign(0)
+        header.get_style_context().add_class("heading")
+        styles_vbox.pack_start(header, False, False, 0)
+
+        hierarchy_label = Gtk.Label(label="Jerarquia de estilos — los de abajo sobreescriben")
+        hierarchy_label.set_xalign(0)
+        styles_vbox.pack_start(hierarchy_label, False, False, 0)
+
+        self._theme_frame = Gtk.Frame()
+        self._theme_frame_label = Gtk.Label()
+        self._theme_frame_label.set_use_markup(True)
+        self._theme_frame.set_label_widget(self._theme_frame_label)
+        theme_inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        theme_inner.set_margin_top(6)
+        theme_inner.set_margin_bottom(6)
+        theme_inner.set_margin_start(8)
+        theme_inner.set_margin_end(8)
+        self._theme_box = theme_inner
+        self._theme_frame.add(theme_inner)
+        styles_vbox.pack_start(self._theme_frame, False, False, 0)
+
+        self._project_frame = Gtk.Frame()
+        self._project_frame_label = Gtk.Label()
+        self._project_frame_label.set_use_markup(True)
+        self._project_frame.set_label_widget(self._project_frame_label)
+        project_inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        project_inner.set_margin_top(6)
+        project_inner.set_margin_bottom(6)
+        project_inner.set_margin_start(8)
+        project_inner.set_margin_end(8)
+        self._project_box = project_inner
+        self._project_frame.add(project_inner)
+        styles_vbox.pack_start(self._project_frame, False, False, 0)
+
+        self._comp_frame = Gtk.Frame()
+        self._comp_frame_label = Gtk.Label()
+        self._comp_frame_label.set_use_markup(True)
+        self._comp_frame.set_label_widget(self._comp_frame_label)
+        comp_inner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+        comp_inner.set_margin_top(6)
+        comp_inner.set_margin_bottom(6)
+        comp_inner.set_margin_start(8)
+        comp_inner.set_margin_end(8)
+        self._comp_box = comp_inner
+        self._comp_frame.add(comp_inner)
+        styles_vbox.pack_start(self._comp_frame, False, False, 0)
+
+        css_header = Gtk.Label(label="Clases CSS disponibles")
+        css_header.set_xalign(0)
+        css_header.get_style_context().add_class("heading")
+        styles_vbox.pack_start(css_header, False, False, 0)
+
+        self._css_store = Gtk.ListStore(str, str, str)
+        self._css_tree = Gtk.TreeView(model=self._css_store)
+        self._css_tree.set_headers_visible(True)
+
+        r_sel = Gtk.CellRendererText()
+        r_sel.set_property("family", "Monospace")
+        col_sel = Gtk.TreeViewColumn("Selector", r_sel, text=0)
+        col_sel.set_resizable(True)
+        col_sel.set_expand(True)
+        self._css_tree.append_column(col_sel)
+
+        r_desc = Gtk.CellRendererText()
+        r_desc.set_property("wrap-mode", Pango.WrapMode.WORD_CHAR)
+        r_desc.set_property("wrap-width", 250)
+        col_desc = Gtk.TreeViewColumn("Descripcion", r_desc, text=1)
+        col_desc.set_resizable(True)
+        col_desc.set_expand(True)
+        self._css_tree.append_column(col_desc)
+
+        r_origin = Gtk.CellRendererText()
+        col_origin = Gtk.TreeViewColumn("Origen", r_origin, text=2)
+        col_origin.set_resizable(True)
+        self._css_tree.append_column(col_origin)
+
+        css_scrolled = Gtk.ScrolledWindow()
+        css_scrolled.set_vexpand(True)
+        css_scrolled.set_min_content_height(130)
+        css_scrolled.add(self._css_tree)
+        styles_vbox.pack_start(css_scrolled, True, True, 0)
+
+        btn_box = Gtk.Box(spacing=6)
+        btn_box.set_margin_top(6)
+
+        theme_mgr_btn = Gtk.Button(label="Gestor de temas...")
+        theme_mgr_btn.connect("clicked", self._on_theme_manager)
+        btn_box.pack_start(theme_mgr_btn, False, False, 0)
+
+        manage_btn = Gtk.Button(label="Gestionar todos los tipos...")
+        manage_btn.connect("clicked", self._on_manage_type_css)
+        btn_box.pack_start(manage_btn, False, False, 0)
+
+        styles_vbox.pack_start(btn_box, False, False, 0)
+
+        self._styles_scrolled.add(styles_vbox)
 
     def _get_theme_dir(self) -> str:
         return ThemeService.get_theme_path(self.project.theme_id) or ""
@@ -721,73 +803,10 @@ hr { border: none; border-top: 1px solid #ccc; }
         ]
         buf.set_text("\n".join(lines))
 
-    def _update_help_panel(self, component_type=None):
-        theme_config = self._load_theme_config()
-        svc = self._ensure_style_doc_svc()
+    def _update_styles_panel(self, component_type=None):
+        """Refreshes the Styles panel: hierarchy and CSS classes table."""
 
-        # Ayuda tab (component-specific + user overrides)
-        help_buf = self.help_textview.get_buffer()
-        if not self.project or component_type is None:
-            help_buf.set_text("Selecciona un componente para ver su ayuda.")
-        else:
-            comp_label = COMPONENT_TYPE_LABELS.get(component_type, component_type.value)
-
-            # Theme component docs
-            theme_docs = svc.get_docs_for_type(component_type, theme_config)
-
-            # User type-level CSS docs
-            type_css = self.project.type_css_overrides.get(component_type.value, "")
-            user_type_docs = svc.get_docs_from_css(type_css) if type_css else []
-
-            lines = [
-                f"Tipo: {comp_label}",
-                "",
-            ]
-            if theme_docs:
-                lines.append("Clases de formato del tema:")
-                lines.append("")
-                for doc in theme_docs:
-                    lines.append(f"  {doc['markdown_hint']}  —  {doc['description']}")
-                    lines.append("")
-            if user_type_docs:
-                lines.append("Clases definidas por el usuario (tipo):")
-                lines.append("")
-                for doc in user_type_docs:
-                    lines.append(f"  {doc['markdown_hint']}  —  {doc['description']}")
-                    lines.append("")
-            if not theme_docs and not user_type_docs:
-                lines.append("No hay clases de formato documentadas para este tipo.")
-                lines.append("")
-            lines.append("— Usa {.clase} en markdown para aplicar una clase CSS.")
-            lines.append("— Usa #, ##, ### para encabezados.")
-            help_buf.set_text("\n".join(lines))
-
-        # Temas tab (global classes from style.css + book CSS)
-        global_buf = self.global_textview.get_buffer()
-        theme_global_docs = svc.get_docs("style.css") if self.project else []
-
-        # User book-level CSS docs
-        user_book_docs = svc.get_docs_from_css(self.project.custom_css) if self.project and self.project.custom_css else []
-
-        lines = []
-        if theme_global_docs:
-            lines.append("Clases globales disponibles en todos los componentes:")
-            lines.append("")
-            for doc in theme_global_docs:
-                lines.append(f"  {doc['markdown_hint']}  —  {doc['description']}")
-                lines.append("")
-        if user_book_docs:
-            lines.append("Clases definidas por el usuario (libro):")
-            lines.append("")
-            for doc in user_book_docs:
-                lines.append(f"  {doc['markdown_hint']}  —  {doc['description']}")
-                lines.append("")
-        if not theme_global_docs and not user_book_docs:
-            lines.append("No hay clases globales documentadas.")
-        lines.append("— Usa {.clase} en markdown para aplicar una clase CSS.")
-        global_buf.set_text("\n".join(lines))
-
-        # Frontmatter tab (per-component frontmatter variables)
+        # Frontmatter tab (still needed for Ayuda → Metadatos)
         front_buf = self.front_textview.get_buffer()
         if not self.project or component_type is None:
             front_buf.set_text(
@@ -818,6 +837,271 @@ hr { border: none; border-top: 1px solid #ccc; }
             fm_lines.append("Los metadatos se añaden al principio del componente")
             fm_lines.append("(entre las lineas --- al inicio del archivo).")
             front_buf.set_text("\n".join(fm_lines))
+
+        # Styles panel
+        self._styles_current_comp_type = component_type
+        theme_config = self._load_theme_config()
+        svc = self._ensure_style_doc_svc()
+
+        # Clear dynamic widgets in hierarchy frames
+        for child in self._theme_box.get_children():
+            self._theme_box.remove(child)
+        for child in self._project_box.get_children():
+            self._project_box.remove(child)
+        for child in self._comp_box.get_children():
+            self._comp_box.remove(child)
+
+        project_opened = self.project is not None
+        theme_name = ""
+        theme_dir = ""
+        theme_is_builtin = True
+        if project_opened:
+            theme_dir = self._get_theme_dir()
+            theme = ThemeService.get_theme(self.project.theme_id)
+            if theme:
+                theme_name = theme.name
+                theme_is_builtin = theme.is_builtin
+
+        # --- THEME FRAME ---
+        if project_opened and theme_dir:
+            theme_scope = "compartido entre todos los libros con este tema"
+            self._theme_frame_label.set_markup(
+                f"<b>Tema: {theme_name}</b>  <small>({theme_scope})</small>"
+            )
+            self._theme_frame.set_visible(True)
+
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            row.pack_start(Gtk.Label(label="Base: style.css", xalign=0), True, True, 0)
+            if theme_is_builtin:
+                btn = Gtk.Button(label="Ver")
+                btn.set_tooltip_text("Solo lectura — los temas integrados no se editan")
+            else:
+                btn = Gtk.Button(label="Editar")
+                btn.set_tooltip_text("Atencion: los cambios afectaran a TODOS los libros que usen este tema")
+            btn.connect("clicked", lambda b: self._on_view_theme_css_by_file("style.css", theme_name))
+            row.pack_start(btn, False, False, 0)
+            self._theme_box.pack_start(row, False, False, 0)
+
+            if component_type is not None:
+                type_value = component_type.value
+                type_file = theme_config.get("styles", {}).get(type_value, "")
+                type_label = COMPONENT_TYPE_LABELS.get(component_type, type_value)
+                if type_file:
+                    row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                    row2.pack_start(Gtk.Label(label=f"Tipo {type_label}: {type_file}", xalign=0), True, True, 0)
+                    btn2 = Gtk.Button(label="Ver" if theme_is_builtin else "Editar")
+                    if theme_is_builtin:
+                        btn2.set_tooltip_text("Solo lectura — los temas integrados no se editan")
+                    else:
+                        btn2.set_tooltip_text("Atencion: los cambios afectaran a TODOS los libros que usen este tema")
+                    btn2.connect("clicked", lambda b, f=type_file: self._on_view_theme_css_by_file(f, theme_name))
+                    row2.pack_start(btn2, False, False, 0)
+                    self._theme_box.pack_start(row2, False, False, 0)
+        else:
+            self._theme_frame.set_visible(False)
+
+        # --- PROJECT FRAME ---
+        if project_opened:
+            self._project_frame_label.set_markup(
+                f"<b>Proyecto: {self.project.title}</b>  <small>(solo este libro)</small>"
+            )
+            self._project_frame.set_visible(True)
+
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            status = "Editado" if self.project.custom_css.strip() else "Sin cambios"
+            row.pack_start(Gtk.Label(label="Estilos globales", xalign=0), True, True, 0)
+            status_lbl = Gtk.Label(label=status, xalign=0)
+            row.pack_start(status_lbl, False, False, 0)
+            btn = Gtk.Button(label="Editar")
+            btn.connect("clicked", self._on_edit_book_css)
+            row.pack_start(btn, False, False, 0)
+            self._project_box.pack_start(row, False, False, 0)
+
+            if component_type is not None:
+                type_value = component_type.value
+                type_label = COMPONENT_TYPE_LABELS.get(component_type, type_value)
+                has_override = type_value in self.project.type_css_overrides
+                row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                row2.pack_start(Gtk.Label(label=f"Tipo: {type_label}", xalign=0), True, True, 0)
+                status2 = Gtk.Label(label="Editado" if has_override else "Sin cambios", xalign=0)
+                row2.pack_start(status2, False, False, 0)
+                btn2 = Gtk.Button(label="Editar")
+                btn2.connect("clicked", lambda b, ct=component_type: self._on_styles_edit_type_css(ct))
+                row2.pack_start(btn2, False, False, 0)
+                if has_override:
+                    reset_btn = Gtk.Button(label="Restablecer")
+                    reset_btn.connect("clicked", lambda b, ct=component_type: self._on_styles_reset_type_css(ct))
+                    row2.pack_start(reset_btn, False, False, 0)
+                self._project_box.pack_start(row2, False, False, 0)
+        else:
+            self._project_frame.set_visible(False)
+
+        # --- COMPONENT FRAME ---
+        if self._styles_current_component and component_type is not None:
+            comp = self._styles_current_component
+            self._comp_frame_label.set_markup(
+                f"<b>Componente: {comp.get_display_name()}</b>  <small>(solo este componente)</small>"
+            )
+            self._comp_frame.set_visible(True)
+
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            has_comp_css = bool(comp.custom_css.strip())
+            row.pack_start(Gtk.Label(label="Estilos del componente", xalign=0), True, True, 0)
+            status = Gtk.Label(label="Editado" if has_comp_css else "Sin cambios", xalign=0)
+            row.pack_start(status, False, False, 0)
+            btn = Gtk.Button(label="Editar")
+            btn.connect("clicked", self._on_styles_edit_comp_css)
+            row.pack_start(btn, False, False, 0)
+            self._comp_box.pack_start(row, False, False, 0)
+        else:
+            self._comp_frame.set_visible(False)
+
+        # --- CSS CLASSES TABLE ---
+        self._css_store.clear()
+        if project_opened and svc:
+            all_docs = []
+
+            theme_global = svc.get_docs("style.css")
+            for d in theme_global:
+                all_docs.append((d["markdown_hint"], d["description"], f"Tema ({theme_name or 'desconocido'})"))
+
+            if component_type is not None:
+                theme_type_docs = svc.get_docs_for_type(component_type, theme_config)
+                for d in theme_type_docs:
+                    all_docs.append((d["markdown_hint"], d["description"], f"Tema ({theme_name or 'desconocido'}) — tipo"))
+
+            if self.project.custom_css:
+                book_docs = svc.get_docs_from_css(self.project.custom_css)
+                for d in book_docs:
+                    all_docs.append((d["markdown_hint"], d["description"], "Proyecto (libro)"))
+
+            if component_type is not None:
+                type_css = self.project.type_css_overrides.get(component_type.value, "")
+                if type_css:
+                    type_docs = svc.get_docs_from_css(type_css)
+                    for d in type_docs:
+                        all_docs.append((d["markdown_hint"], d["description"], f"Proyecto (tipo)"))
+
+            if self._styles_current_component and self._styles_current_component.custom_css:
+                comp_docs = svc.get_docs_from_css(self._styles_current_component.custom_css)
+                for d in comp_docs:
+                    all_docs.append((d["markdown_hint"], d["description"], "Componente"))
+
+            for selector, desc, origin in all_docs:
+                self._css_store.append([selector, desc, origin])
+
+        self._styles_scrolled.show_all()
+
+    def _on_styles_edit_type_css(self, component_type):
+        ct = component_type
+        type_key = ct.value
+        current = self.project.type_css_overrides.get(type_key, "")
+        label = COMPONENT_TYPE_LABELS[ct]
+        css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
+        if css is None:
+            return
+        if css.strip():
+            self.project.type_css_overrides[type_key] = css
+        else:
+            self.project.type_css_overrides.pop(type_key, None)
+        FileService.save_project(self.project)
+        self._update_preview()
+        self._update_styles_panel(ct)
+        self._update_status(f"Estilos del tipo '{label}' actualizados")
+
+    def _on_styles_reset_type_css(self, component_type):
+        ct = component_type
+        type_key = ct.value
+        label = COMPONENT_TYPE_LABELS[ct]
+        if type_key not in self.project.type_css_overrides:
+            return
+        if not self._confirm(f"Restablecer estilos del tipo «{label}»?\nSe perderan los cambios personalizados."):
+            return
+        del self.project.type_css_overrides[type_key]
+        FileService.save_project(self.project)
+        self._update_preview()
+        self._update_styles_panel(ct)
+        self._update_status(f"Estilos del tipo '{label}' restablecidos al tema")
+
+    def _on_styles_edit_comp_css(self, btn):
+        if not self._styles_current_component:
+            return
+        self._on_edit_component_css(btn, self._styles_current_component)
+
+    def _on_view_theme_css_by_file(self, filename, theme_name=None):
+        """Opens the theme CSS viewer/editor for a specific file within the current theme."""
+        if not self.project:
+            return
+        theme_id = self.project.theme_id
+        theme = ThemeService.get_theme(theme_id)
+        if not theme:
+            return
+        theme_dir = theme.path
+        fpath = os.path.join(theme_dir, filename)
+        if not os.path.exists(fpath):
+            self._show_info(f"El archivo {filename} no existe en el tema.")
+            return
+
+        with open(fpath, "r") as f:
+            text = f.read()
+
+        display_name = theme_name or theme.name
+        is_read_only = theme.is_builtin
+        mode_title = "Visualizar" if is_read_only else "Editar"
+
+        editor_dialog = Gtk.Dialog(
+            title=f"{mode_title} CSS: {display_name} — {filename}",
+            transient_for=self.window,
+            modal=True,
+        )
+        editor_dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        if not is_read_only:
+            editor_dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+        editor_dialog.set_default_size(700, 500)
+
+        editor_content = editor_dialog.get_content_area()
+        editor_content.set_spacing(8)
+        editor_content.set_margin_top(12)
+        editor_content.set_margin_bottom(12)
+        editor_content.set_margin_start(12)
+        editor_content.set_margin_end(12)
+
+        if not is_read_only:
+            warning = Gtk.Label()
+            warning.set_markup(
+                "<b>Los cambios en este tema afectaran a TODOS los libros que lo usen.</b>"
+            )
+            warning.set_xalign(0)
+            editor_content.pack_start(warning, False, False, 0)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        buf = GtkSource.Buffer.new_with_language(
+            GtkSource.LanguageManager.get_default().get_language("css")
+        )
+        text_view = GtkSource.View.new_with_buffer(buf)
+        text_view.set_monospace(True)
+        text_view.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        text_view.set_hexpand(True)
+        text_view.set_vexpand(True)
+        text_view.set_editable(not is_read_only)
+        if is_read_only:
+            text_view.set_cursor_visible(False)
+        buf.set_text(text)
+        scrolled.add(text_view)
+        editor_content.pack_start(scrolled, True, True, 0)
+
+        def on_editor_response(d, response):
+            if response == Gtk.ResponseType.ACCEPT and not is_read_only:
+                new_text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
+                with open(fpath, "w") as f:
+                    f.write(new_text)
+                self._update_styles_panel(self._styles_current_comp_type)
+                self._update_preview()
+            d.destroy()
+
+        editor_dialog.connect("response", on_editor_response)
+        editor_dialog.show_all()
 
     def _update_spell_lang(self):
         """Update the default spell-check language from the current project."""
@@ -2250,23 +2534,25 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self._save_current_component()
             self.current_component = obj
             self.current_part = None
+            self._styles_current_component = obj
             content = self._load_component_content(obj)
             buffer = self.text_view.get_buffer()
             buffer.set_text(content)
             self._update_status(f"Editando: {obj.get_display_name()}")
-            self._update_help_panel(obj.type)
+            self._update_styles_panel(obj.type)
             self._update_preview()
         elif isinstance(obj, Component) and obj.type == ComponentType.PART:
             self._save_current_component()
             self.current_part = obj
             self.current_component = None
+            self._styles_current_component = None
             content = FileService.load_component(self.project.path, obj)
             if not content:
                 content = f"# {obj.title}\n\n"
             buffer = self.text_view.get_buffer()
             buffer.set_text(content)
             self._update_status(f"Editando parte: {obj.title}")
-            self._update_help_panel(None)
+            self._update_styles_panel(None)
             self._update_preview()
 
     def _on_tree_button_press(self, tree, event):
@@ -2357,12 +2643,17 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 item_detach.connect("activate", self._on_detach_from_part, obj)
                 menu.append(item_detach)
             menu.append(Gtk.SeparatorMenuItem())
-            item_type_css = Gtk.MenuItem(label="Editar estilos del tipo")
-            item_type_css.connect("activate", self._on_edit_type_css, obj)
-            menu.append(item_type_css)
-            item_comp_css = Gtk.MenuItem(label="Editar estilos del componente")
-            item_comp_css.connect("activate", self._on_edit_component_css, obj)
-            menu.append(item_comp_css)
+            item_styles = Gtk.MenuItem(label="Estilos")
+            styles_menu = Gtk.Menu()
+            type_label = COMPONENT_TYPE_LABELS.get(obj.type, obj.type.value)
+            s1 = Gtk.MenuItem(label=f"Del tipo «{type_label}»")
+            s1.connect("activate", self._on_edit_type_css, obj)
+            styles_menu.append(s1)
+            s2 = Gtk.MenuItem(label=f"Del componente «{obj.get_display_name()}»")
+            s2.connect("activate", self._on_edit_component_css, obj)
+            styles_menu.append(s2)
+            item_styles.set_submenu(styles_menu)
+            menu.append(item_styles)
             menu.append(Gtk.SeparatorMenuItem())
             item_delete = Gtk.MenuItem(label="Eliminar componente")
             item_delete.connect("activate", self._on_delete_component, obj)
@@ -2387,6 +2678,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         self.project = None
         self.project_store.clear()
         self.current_component = None
+        self._styles_current_component = None
+        self._styles_current_comp_type = None
         self.text_view.get_buffer().set_text("")
         self.webview.load_html(self.default_html, self._get_base_uri())
         self._set_read_only_mode(False)
@@ -2565,7 +2858,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         if theme_id:
             self.project.theme_id = theme_id
             FileService.save_project(self.project)
+            self._style_doc_svc = None
             self._update_preview()
+            self._update_styles_panel(
+                self.current_component.type if self.current_component else None
+            )
             self._update_status(f"Tema activado: {model.get_value(iter_, 0)}")
             dialog.destroy()
 
@@ -2803,7 +3100,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 self._update_status(f"CSS guardado: {fname}")
                 if self.project and self.project.theme_id == theme_id:
                     self._update_preview()
-                    self._update_help_panel()
+                    self._update_styles_panel()
             d.destroy()
 
         editor_dialog.connect("response", on_editor_response)
@@ -3504,7 +3801,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         self.project.custom_css = css
         FileService.save_project(self.project)
         self._update_preview()
-        self._update_help_panel(
+        self._update_styles_panel(
             self.current_component.type if self.current_component else None
         )
         self._update_status("Estilos del libro actualizados")
@@ -3524,7 +3821,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self.project.type_css_overrides.pop(type_key, None)
         FileService.save_project(self.project)
         self._update_preview()
-        self._update_help_panel(component.type)
+        self._update_styles_panel(component.type)
         self._update_status(f"Estilos del tipo '{label}' actualizados")
 
     def _on_edit_component_css(self, widget, component):
@@ -3539,7 +3836,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         component.custom_css = css
         FileService.save_project(self.project)
         self._update_preview()
-        self._update_help_panel(component.type)
+        self._update_styles_panel(component.type)
         self._update_status(f"Estilos del componente '{component.get_display_name()}' actualizados")
 
     def _on_manage_type_css(self, widget):
@@ -3559,7 +3856,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         for ct in ComponentType:
             label = COMPONENT_TYPE_LABELS[ct]
             has_css = ct.value in self.project.type_css_overrides
-            status = "Editado" if has_css else "Tema por defecto"
+            status = "Editado" if has_css else "Por defecto del tema"
             store.append([label, status, ct.value])
 
         tree = Gtk.TreeView(model=store)
@@ -3611,7 +3908,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             FileService.save_project(self.project)
             self._update_preview()
             if self.current_component:
-                self._update_help_panel(self.current_component.type)
+                self._update_styles_panel(self.current_component.type)
             self._update_status(f"Estilos del tipo '{label}' actualizados")
             _refresh_list()
 
@@ -3629,7 +3926,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             FileService.save_project(self.project)
             self._update_preview()
             if self.current_component:
-                self._update_help_panel(self.current_component.type)
+                self._update_styles_panel(self.current_component.type)
             self._update_status(f"Estilos del tipo '{label}' restablecidos al tema")
             _refresh_list()
 
@@ -3638,7 +3935,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             for ct in ComponentType:
                 label = COMPONENT_TYPE_LABELS[ct]
                 has_css = ct.value in self.project.type_css_overrides
-                status = "Editado" if has_css else "Tema por defecto"
+                status = "Editado" if has_css else "Por defecto del tema"
                 store.append([label, status, ct.value])
 
         tree.connect("row-activated", lambda t, path, col: _on_edit(None))
