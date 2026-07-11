@@ -745,7 +745,6 @@ hr { border: none; border-top: 1px solid #ccc; }
                 lines.append("")
             lines.append("— Usa {.clase} en markdown para aplicar una clase CSS.")
             lines.append("— Usa #, ##, ### para encabezados.")
-            lines.append("— <!-- Table: titulo --> antes de una tabla para asignarle un titulo.")
             help_buf.set_text("\n".join(lines))
 
         # Temas tab (global classes from style.css + book CSS)
