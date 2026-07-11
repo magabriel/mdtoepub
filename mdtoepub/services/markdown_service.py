@@ -19,7 +19,7 @@ TABLE_CAPTION_HTML_RE = re.compile(
     r'(<table\b.*?</table>)',
     re.DOTALL | re.IGNORECASE,
 )
-INTERP_RE = re.compile(r'\{\{(\w+)\}\}')
+INTERP_RE = re.compile(r'\{\{(\w+)(?::(\w+))?\}\}')
 
 
 class MarkdownService:
@@ -312,13 +312,23 @@ class MarkdownService:
 
     @staticmethod
     def _interpolate_variables(text: str, variables: Optional[Dict[str, str]] = None) -> str:
-        """Replace {{key}} placeholders with values from the given dict."""
+        """Replace {{key}} and {{key:format}} placeholders with values from the given dict.
+
+        Supported formats:
+          :year  — extract the first 4 digits (year) from a date string
+        """
         if not variables:
             return text
 
         def _replacer(m):
             key = m.group(1)
-            return variables.get(key, m.group(0))
+            fmt = m.group(2)
+            value = variables.get(key)
+            if value is None:
+                return m.group(0)
+            if fmt == "year":
+                value = value[:4]
+            return value
 
         return INTERP_RE.sub(_replacer, text)
 

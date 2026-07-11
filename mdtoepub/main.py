@@ -711,9 +711,12 @@ hr { border: none; border-top: 1px solid #ccc; }
             "  {{author}}      {{publisher}}",
             "  {{isbn}}        {{edition}}",
             "  {{publication_date}}",
+            "  {{publication_date:year}}",
             "",
             "  * Se sustituyen por los valores de la configuracion",
             "    del proyecto (Archivo → Configuracion).",
+            "  * {{publication_date:year}} extrae solo el año",
+            "    (ej: 2025-01-15 → 2025).",
             "  * Los campos no definidos quedan como {{clave}}.",
         ]
         buf.set_text("\n".join(lines))
@@ -1310,9 +1313,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         entry_fecha.set_placeholder_text("2025-01-15")
         fec_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         fec_box.pack_start(entry_fecha, True, True, 0)
-        hint = Gtk.Label(label="{{publication_date}}")
+        hint = Gtk.Label(label="{{publication_date}}  {{publication_date:year}}")
         hint.set_opacity(0.55)
-        hint.set_tooltip_text("Usa {{publication_date}} en el texto para insertar este valor")
+        hint.set_tooltip_text("Usa {{publication_date}} o {{publication_date:year}} (solo año) en el texto")
         fec_box.pack_start(hint, False, False, 0)
         grid_book.attach(fec_box, 1, row, 1, 1)
         row += 1
