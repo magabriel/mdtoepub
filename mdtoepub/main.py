@@ -447,6 +447,7 @@ class MDToEPUBApp(Gtk.Application):
         self.syntax_textview.set_editable(False)
         self.syntax_textview.set_cursor_visible(False)
         self.syntax_textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
+        self.syntax_textview.set_monospace(True)
         syntax_scrolled.add(self.syntax_textview)
         self._init_syntax_help(syntax_buf)
 

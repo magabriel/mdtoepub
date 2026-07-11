@@ -5,12 +5,12 @@
   </metadata>
   <styles>
     <style id="section-header" name="Section Header" map-to="def:heading"/>
-    <style id="sub-header"     name="Sub Header"     map-to="def:strong"/>
+    <style id="sub-header"     name="Sub Header"     map-to="def:statement"/>
     <style id="css-class"      name="CSS Class"      map-to="def:type"/>
     <style id="extension"      name="Extension"      map-to="def:statement"/>
     <style id="variable"       name="Variable"       map-to="def:identifier"/>
     <style id="boolean"        name="Boolean"        map-to="def:constant"/>
-    <style id="info"           name="Info"           map-to="def:note"/>
+    <style id="info"           name="Info"           map-to="def:comment"/>
   </styles>
   <definitions>
     <context id="section-header" style-ref="section-header" end-at-line-end="true">
