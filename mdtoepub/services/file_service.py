@@ -112,6 +112,8 @@ class FileService:
             "subtitle": "",
             "figure_numbering": False,
             "figure_numbering_style": "arabic",
+            "table_numbering": False,
+            "table_numbering_style": "arabic",
             "components": [],
             "parts": [],
         }
@@ -149,6 +151,8 @@ class FileService:
             subtitle=data.get("subtitle", ""),
             figure_numbering=data.get("figure_numbering", False),
             figure_numbering_style=data.get("figure_numbering_style", "arabic"),
+            table_numbering=data.get("table_numbering", False),
+            table_numbering_style=data.get("table_numbering_style", "arabic"),
         )
 
         for comp_data in data.get("components", []):
@@ -201,6 +205,8 @@ class FileService:
             "subtitle": project.subtitle,
             "figure_numbering": project.figure_numbering,
             "figure_numbering_style": project.figure_numbering_style,
+            "table_numbering": project.table_numbering,
+            "table_numbering_style": project.table_numbering_style,
             "components": [
                 {
                     "id": c.id,

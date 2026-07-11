@@ -29,6 +29,8 @@ class Project:
     subtitle: str = ""
     figure_numbering: bool = False
     figure_numbering_style: str = "arabic"
+    table_numbering: bool = False
+    table_numbering_style: str = "arabic"
 
     def add_component(self, component: Component) -> None:
         component.order = len(self.components)

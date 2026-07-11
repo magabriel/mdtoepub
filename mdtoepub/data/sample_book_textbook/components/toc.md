@@ -7,6 +7,8 @@ toc_include:
   - foreword
   - preface
   - introduction
+  - lof
+  - lot
   - chapter
   - conclusion
   - appendix

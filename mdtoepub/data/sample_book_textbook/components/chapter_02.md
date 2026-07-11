@@ -9,6 +9,8 @@ Construir conocimiento solido no es cuestion de repetir una y otra vez el mismo 
 
 Ebbinghaus demostro que el olvido sigue un patron predecible:
 
+![Curva del olvido de Ebbinghaus con repasos espaciados](images/illustrations/curva_olvido.png)
+
 ```
 Retencion (%)
 100 | Punto de aprendizaje
@@ -43,6 +45,7 @@ Consiste en cerrar el libro e intentar recordar la informacion por ti mismo. Es 
 
 La investigacion demuestra que el recuerdo activo es hasta **un 50% mas efectivo**[^2] que la relectura para la misma cantidad de tiempo invertido.
 
+<!-- Table: Eficacia comparada de estrategias de estudio -->
 | Estrategia | Retencion a 1 semana | Retencion a 1 mes |
 |------------|---------------------|-------------------|
 | Relectura | 28% | 15% |

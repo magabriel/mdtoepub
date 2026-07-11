@@ -13,6 +13,12 @@ ERROR_BASE_KEY = 1000000
 
 MD_IMG_RE = re.compile(r'!\[([^\]]*)\]\(([^)]+)\)')
 DECORATIVE_PATH_RE = re.compile(r'(?:^|/)decorative/', re.IGNORECASE)
+TABLE_CAPTION_MD_RE = re.compile(r'^<!--\s*Table:\s*(.*?)\s*-->\s*$', re.IGNORECASE)
+TABLE_CAPTION_HTML_RE = re.compile(
+    r'<!--\s*Table:\s*(.*?)\s*-->\s*'
+    r'(<table\b.*?</table>)',
+    re.DOTALL | re.IGNORECASE,
+)
 
 
 class MarkdownService:
@@ -43,7 +49,8 @@ class MarkdownService:
     )
 
     def render(self, markdown_text: str, component_type: ComponentType = ComponentType.CHAPTER, component_id: str = "", start_number: int = 1,
-               figure_num_start: int = 0, figure_num_style: str = "arabic") -> str:
+               figure_num_start: int = 0, figure_num_style: str = "arabic",
+               table_num_start: int = 0, table_num_style: str = "arabic") -> str:
         cleaned = re.sub(r'\{lang=\w+(?:[_-]\w+)*\}', '', markdown_text)
         cleaned = self._renumber_footnotes(cleaned, start_number)
         md = markdown.Markdown(extensions=self.extensions,
@@ -51,6 +58,7 @@ class MarkdownService:
         html = md.convert(cleaned)
         html = self._fix_footnote_display_numbers(html)
         html = self._add_image_captions(html, figure_num_start, figure_num_style)
+        html = self._add_table_captions(html, table_num_start, table_num_style)
         return self._wrap_in_section(html, component_type, component_id)
 
     @staticmethod
@@ -236,6 +244,68 @@ class MarkdownService:
                 continue
             results.append((alt, path))
         return results
+
+    @staticmethod
+    def extract_table_captions(md_text: str) -> list:
+        """Extract captions from <!-- Table: caption --> patterns preceding pipe tables.
+
+        Returns list of (caption, None) tuples, skipping those inside code blocks.
+        """
+        results = []
+        lines = md_text.split('\n')
+        in_code = False
+        for i, line in enumerate(lines):
+            stripped = line.strip()
+            if stripped.startswith('```'):
+                in_code = not in_code
+                continue
+            if in_code:
+                continue
+            m = TABLE_CAPTION_MD_RE.match(stripped)
+            if m:
+                caption = m.group(1).strip()
+                for j in range(i + 1, len(lines)):
+                    next_line = lines[j].strip()
+                    if not next_line or next_line.startswith('```'):
+                        if next_line.startswith('```'):
+                            break
+                        continue
+                    if next_line.startswith('|'):
+                        results.append((caption, None))
+                    break
+        return results
+
+    @staticmethod
+    def _add_table_captions(html: str, table_num_start: int = 0, table_num_style: str = "arabic") -> str:
+        """Wrap <!-- Table: caption --><table>...</table> in <figure>/<figcaption>.
+
+        When table_num_start > 0, captioned tables are numbered starting from that value.
+        Tables without a <!-- Table: --> comment stay as-is.
+        """
+        next_num = table_num_start
+
+        def _wrap(m):
+            nonlocal next_num
+            caption = m.group(1).strip()
+            table = m.group(2)
+            if table_num_start > 0:
+                num = next_num
+                next_num += 1
+                if table_num_style == "roman":
+                    num_str = MarkdownService._to_roman(num)
+                else:
+                    num_str = str(num)
+                if caption:
+                    cap_text = f"Tabla {num_str} - {caption}"
+                else:
+                    cap_text = f"Tabla {num_str}"
+                return f'<figure id="tab_{num}">\n{table}\n<figcaption>{cap_text}</figcaption>\n</figure>'
+            else:
+                return f'<figure>\n{table}\n<figcaption>{caption}</figcaption>\n</figure>'
+
+        html = TABLE_CAPTION_HTML_RE.sub(_wrap, html)
+        html = re.sub(r'<p>\s*(<figure.*?</figure>)\s*</p>', r'\1', html, flags=re.DOTALL)
+        return html
 
     def extract_title(self, markdown_text: str) -> Optional[str]:
         for line in markdown_text.split("\n"):
