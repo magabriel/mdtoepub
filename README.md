@@ -75,6 +75,31 @@ The editor supports standard Markdown with these extensions:
 - Attribute lists (`{.class}` for CSS styling)
 - Code highlighting with language specifier: ```` ```python ````
 
+#### Table captions
+
+Tables can be given a caption for automatic numbering and inclusion in the List of Tables (LOT). Add an HTML comment with `<!-- Table: caption text -->` on the line immediately before the pipe table:
+
+```markdown
+<!-- Table: Cronología de los documentos hallados -->
+| Fecha      | Documento       | Origen     |
+|------------|-----------------|------------|
+| 1876-01-15 | Contrato textil  | Oporto     |
+| 1879-03-22 | Factura de lana   | Covilhã    |
+```
+
+Tables without this comment will not appear in the LOT.
+
+#### Figures
+
+Images placed in `images/illustrations/` get automatic figure numbering and appear in
+the List of Figures (LOF). The image's alt text becomes the figure caption:
+
+```markdown
+![Vista de la fachada principal en 1903](images/illustrations/fachada.jpg)
+```
+
+Images placed in `images/decorative/` are excluded from numbering and the LOF.
+
 ### Spell-check
 
 Spell-check is enabled by default. Right-click a misspelled word for suggestions and dictionary options.
@@ -105,6 +130,7 @@ Most settings are configured per project via File → Project Configuration:
 - EPUB version (2 or 3)
 - Auto-chapter title mode
 - Theme
+- Figure and Table auto-numbering with arabic/roman style options
 - Drop cap settings
 - Spell-check language
 - Export filename

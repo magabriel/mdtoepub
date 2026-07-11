@@ -59,29 +59,45 @@ components:
     - glossary
     - footnotes
     - acknowledgement
+    - lof
+    - lot
   id: toc-001
   order: 6
   part_id: null
   title: Indice
   type: toc
+- filename: lof.md
+  frontmatter: {}
+  id: lof-001
+  order: 7
+  part_id: null
+  title: Lista de figuras
+  type: lof
+- filename: lot.md
+  frontmatter: {}
+  id: lot-001
+  order: 8
+  part_id: null
+  title: Lista de tablas
+  type: lot
 - filename: foreword.md
   frontmatter: {}
   id: foreword-001
-  order: 7
+  order: 9
   part_id: null
   title: Prologo
   type: foreword
 - filename: preface.md
   frontmatter: {}
   id: preface-001
-  order: 8
+  order: 10
   part_id: null
   title: Prefacio
   type: preface
 - filename: introduction.md
   frontmatter: {}
   id: introduction-001
-  order: 9
+  order: 11
   part_id: null
   title: Introduccion
   type: introduction
@@ -89,7 +105,7 @@ components:
   frontmatter:
     focus: La atencion como puerta de entrada
   id: chapter-001
-  order: 10
+  order: 12
   part_id: null
   title: El Poder de la Atencion
   type: chapter
@@ -97,7 +113,7 @@ components:
   frontmatter:
     focus: Estrategias para fijar conocimientos
   id: chapter-002
-  order: 11
+  order: 13
   part_id: null
   title: Como Construir Conocimiento Solido
   type: chapter
@@ -105,42 +121,42 @@ components:
   frontmatter:
     focus: Superar creencias limitantes
   id: chapter-003
-  order: 12
+  order: 14
   part_id: null
   title: La Mentalidad del Aprendiz
   type: chapter
 - filename: conclusion.md
   frontmatter: {}
   id: conclusion-001
-  order: 13
+  order: 15
   part_id: null
   title: Conclusion
   type: conclusion
 - filename: appendix.md
   frontmatter: {}
   id: appendix-001
-  order: 14
+  order: 16
   part_id: null
   title: Recursos y Lecturas Recomendadas
   type: appendix
 - filename: glossary.md
   frontmatter: {}
   id: glossary-001
-  order: 15
+  order: 17
   part_id: null
   title: Glosario
   type: glossary
 - filename: notas.md
   frontmatter: {}
   id: footnotes-001
-  order: 16
+  order: 18
   part_id: null
   title: Notas
   type: footnotes
 - filename: acknowledgement.md
   frontmatter: {}
   id: acknowledgement-001
-  order: 17
+  order: 19
   part_id: null
   title: Agradecimientos
   type: acknowledgement
@@ -148,6 +164,10 @@ drop_cap_enabled: true
 drop_cap_types:
 - chapter
 epub_version: epub3
+figure_numbering: true
+figure_numbering_style: arabic
+table_numbering: true
+table_numbering_style: arabic
 language: es
 name: libro_aprender
 parts: []

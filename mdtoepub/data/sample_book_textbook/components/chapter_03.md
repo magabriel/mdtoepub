@@ -10,6 +10,8 @@ La mentalidad es el filtro a traves del cual interpretas tus experiencias de apr
 
 La psicologa Carol Dweck[^1], de la Universidad de Stanford, dedico decadas a estudiar como nuestras creencias sobre la inteligencia afectan nuestro rendimiento. Identifico dos perfiles:
 
+![Diagrama comparativo entre mentalidad fija y de crecimiento](images/illustrations/mentalidad.png)
+
 **Mentalidad Fija**
 :   Creencia de que la inteligencia y las habilidades son traits fijos e inmutables. Las personas con esta mentalidad evitan desafios, se rinden facilmente y ven el esfuerzo como algo inutil.
 {.definition}
@@ -102,3 +104,12 @@ La mentalidad de crecimiento no es algo que se tenga o no se tenga. Es una pract
 - El fracaso es una fuente de informacion, no un veredicto
 - Busca activamente la dificultad: ahi crece el aprendizaje
 - Lleva un registro de tu proceso para ver tu progreso
+
+<!-- Table: Comparacion entre mentalidad fija y de crecimiento -->
+| Situacion | Mentalidad fija | Mentalidad de crecimiento |
+|-----------|----------------|--------------------------|
+| Ante un desafio | Lo evita | Lo abraza |
+| Ante un obstaculo | Se rinde | Persiste |
+| Ante el esfuerzo | Lo ve inutil | Lo ve como camino a la maestria |
+| Ante la critica | Ignora la retroalimentacion | Aprende de ella |
+| Ante el exito ajeno | Se siente amenazado | Se inspira |

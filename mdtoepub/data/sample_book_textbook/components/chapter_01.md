@@ -43,6 +43,8 @@ A continuacion, presentamos las estrategias mas efectivas respaldadas por la inv
 
 Desarrollada por Francesco Cirillo[^2] en los anos 80, esta tecnica consiste en trabajar en bloques de tiempo concentrado intercalados con descansos breves:
 
+![Ciclo de la tecnica Pomodoro](images/illustrations/pomodoro.png)
+
 ```
 Pomodoro 1: 25 min de trabajo + 5 min de descanso
 Pomodoro 2: 25 min de trabajo + 5 min de descanso
@@ -62,6 +64,7 @@ Tu entorno fisico tiene un impacto directo en tu capacidad de atencion:
 - **Orden:** Un espacio despejado reduce la carga cognitiva
 - **Digital:** El movil en otra habitacion o en modo avion
 
+<!-- Table: Factores ambientales para el estudio optimo -->
 | Factor | Recomendacion | Evitar |
 |--------|---------------|--------|
 | Iluminacion | Luz natural o blanca | Luz fluorescente parpadeante |

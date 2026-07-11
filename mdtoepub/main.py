@@ -600,6 +600,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                 lines.append("")
             lines.append("— Usa {.clase} en markdown para aplicar una clase CSS.")
             lines.append("— Usa #, ##, ### para encabezados.")
+            lines.append("— <!-- Table: titulo --> antes de una tabla para asignarle un titulo.")
             help_buf.set_text("\n".join(lines))
 
         # Temas tab (global classes from style.css + book CSS)
@@ -630,7 +631,16 @@ hr { border: none; border-top: 1px solid #ccc; }
         # Frontmatter tab (per-component frontmatter variables)
         front_buf = self.front_textview.get_buffer()
         if not self.project or component_type is None:
-            front_buf.set_text("Selecciona un componente para ver los metadatos.")
+            front_buf.set_text(
+                "Selecciona un componente para ver los metadatos.\n\n"
+                "Consejos de sintaxis Markdown:\n"
+                "  — Usa {.clase} para aplicar una clase CSS.\n"
+                "  — Usa <!-- Table: titulo --> antes de una tabla para\n"
+                "    asignarle un titulo y que aparezca en la Lista de Tablas.\n"
+                "  — Usa ![alt](ruta) para imagenes. Las imagenes en\n"
+                "    images/illustrations/ se numeran automaticamente.\n"
+                "  — Usa {lang=en} para cambiar idioma del corrector."
+            )
         else:
             comp_label = COMPONENT_TYPE_LABELS.get(component_type, component_type.value)
             type_key = component_type.value
@@ -933,6 +943,15 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                         '<div class="auto-notice">'
                         '<p>Aquí aparecerá automáticamente la '
                         'lista de figuras.</p>'
+                        '</div>\n</section>',
+                        1
+                    )
+                elif component.type == ComponentType.LOT:
+                    html = html.replace(
+                        '</section>',
+                        '<div class="auto-notice">'
+                        '<p>Aquí aparecerá automáticamente la '
+                        'lista de tablas.</p>'
                         '</div>\n</section>',
                         1
                     )
@@ -1256,6 +1275,45 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_app.attach(sep3, 0, row, 2, 1)
         row += 1
 
+        # ── Table numbering ──
+        label_tab = Gtk.Label(label="Numeracion de tablas:")
+        label_tab.set_xalign(1)
+        label_tab.set_valign(Gtk.Align.START)
+        grid_app.attach(label_tab, 0, row, 1, 1)
+
+        tab_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        grid_app.attach(tab_vbox, 1, row, 1, 1)
+        row += 1
+
+        check_table_numbering = Gtk.CheckButton(label="Numerar tablas automaticamente")
+        check_table_numbering.set_active(self.project.table_numbering)
+        tab_vbox.pack_start(check_table_numbering, False, False, 0)
+
+        tab_style_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        tab_style_label = Gtk.Label(label="Estilo:")
+        tab_style_box.pack_start(tab_style_label, False, False, 0)
+        combo_tab_style = Gtk.ComboBoxText()
+        combo_tab_style.append_text("Numeros arabigos")
+        combo_tab_style.append_text("Numeros romanos")
+        tab_style_values = ["arabic", "roman"]
+        tab_style_index = 0
+        for i, v in enumerate(tab_style_values):
+            if v == self.project.table_numbering_style:
+                tab_style_index = i
+                break
+        combo_tab_style.set_active(tab_style_index)
+        tab_style_box.pack_start(combo_tab_style, False, False, 0)
+        tab_vbox.pack_start(tab_style_box, False, False, 0)
+
+        def _on_tab_numbering_toggle(cb):
+            combo_tab_style.set_sensitive(cb.get_active())
+        check_table_numbering.connect("toggled", _on_tab_numbering_toggle)
+        _on_tab_numbering_toggle(check_table_numbering)
+
+        sep4 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+        grid_app.attach(sep4, 0, row, 2, 1)
+        row += 1
+
         # ── Spell check language ──
         label_lang = Gtk.Label(label="Corrector ortografico:")
         label_lang.set_xalign(1)
@@ -1294,6 +1352,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 fig_style_idx = combo_fig_style.get_active()
                 if 0 <= fig_style_idx < len(fig_style_values):
                     self.project.figure_numbering_style = fig_style_values[fig_style_idx]
+                self.project.table_numbering = check_table_numbering.get_active()
+                tab_style_idx = combo_tab_style.get_active()
+                if 0 <= tab_style_idx < len(tab_style_values):
+                    self.project.table_numbering_style = tab_style_values[tab_style_idx]
                 self.project.export_filename = entry_export.get_text().strip()
                 self.project.edition = entry_edicion.get_text().strip()
                 self.project.publication_date = entry_fecha.get_text().strip()
@@ -1633,6 +1695,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 new_project.epub_version = self.project.epub_version
                 new_project.figure_numbering = self.project.figure_numbering
                 new_project.figure_numbering_style = self.project.figure_numbering_style
+                new_project.table_numbering = self.project.table_numbering
+                new_project.table_numbering_style = self.project.table_numbering_style
                 new_project.edition = self.project.edition
                 new_project.isbn = self.project.isbn
                 new_project.publisher = self.project.publisher

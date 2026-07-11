@@ -72,24 +72,10 @@ components:
   part_id: null
   title: Indice
   type: toc
-- filename: lof.md
-  frontmatter: {}
-  id: lof-001
-  order: 7
-  part_id: null
-  title: Lista de figuras
-  type: lof
-- filename: lot.md
-  frontmatter: {}
-  id: lot-001
-  order: 8
-  part_id: null
-  title: Lista de tablas
-  type: lot
 - filename: foreword.md
   frontmatter: {}
   id: foreword-001
-  order: 9
+  order: 7
   part_id: null
   title: Prologo
   type: foreword
@@ -97,28 +83,28 @@ components:
   frontmatter:
     date: Lisboa, 1885
   id: prologue-001
-  order: 10
+  order: 8
   part_id: null
   title: Prologo (II)
   type: prologue
 - filename: preface.md
   frontmatter: {}
   id: preface-001
-  order: 11
+  order: 9
   part_id: null
   title: Prefacio
   type: preface
 - filename: acknowledgement.md
   frontmatter: {}
   id: acknowledgement-001
-  order: 12
+  order: 10
   part_id: null
   title: Agradecimientos
   type: acknowledgement
 - filename: introduction.md
   frontmatter: {}
   id: introduction-001
-  order: 13
+  order: 11
   part_id: null
   title: Introduccion
   type: introduction
@@ -126,7 +112,7 @@ components:
   frontmatter:
     location: Oporto, 1897
   id: chapter-001
-  order: 14
+  order: 12
   part_id: part-001
   title: El Despertar
   type: chapter
@@ -134,7 +120,7 @@ components:
   frontmatter:
     location: Coimbra, 1897
   id: chapter-002
-  order: 15
+  order: 13
   part_id: part-001
   title: La Carta Sellada
   type: chapter
@@ -142,7 +128,7 @@ components:
   frontmatter:
     location: Lisboa, 1898
   id: chapter-003
-  order: 16
+  order: 14
   part_id: part-001
   title: El Archivo Perdido
   type: chapter
@@ -150,7 +136,7 @@ components:
   frontmatter:
     location: Sintra, 1898
   id: chapter-004
-  order: 17
+  order: 15
   part_id: part-002
   title: La Biblioteca Secreta
   type: chapter
@@ -158,42 +144,42 @@ components:
   frontmatter:
     location: Evora, 1899
   id: chapter-005
-  order: 18
+  order: 16
   part_id: part-002
   title: El Mapa de las Estrellas
   type: chapter
 - filename: conclusion.md
   frontmatter: {}
   id: conclusion-001
-  order: 19
+  order: 17
   part_id: null
   title: Conclusion
   type: conclusion
 - filename: epilogue.md
   frontmatter: {}
   id: epilogue-001
-  order: 20
+  order: 18
   part_id: null
   title: Epilogo
   type: epilogue
 - filename: afterword.md
   frontmatter: {}
   id: afterword-001
-  order: 21
+  order: 19
   part_id: null
   title: Nota final
   type: afterword
 - filename: appendix.md
   frontmatter: {}
   id: appendix-001
-  order: 22
+  order: 20
   part_id: null
   title: Notas Historicas
   type: appendix
 - filename: glossary.md
   frontmatter: {}
   id: glossary-001
-  order: 23
+  order: 21
   part_id: null
   title: Glosario
   type: glossary
@@ -203,7 +189,6 @@ drop_cap_types:
 - preface
 edition: 1ª edicion
 epub_version: epub3
-export_filename: el-vestigio-de-los-siglos
 isbn: 978-989-555-123-4
 language: es
 name: libro_ejemplo
@@ -211,6 +196,6 @@ publication_date: '2024'
 publisher: Ediciones del Atlantico
 spell_lang: es_ES
 spell_words: []
+subtitle: Una novela de archivos y memoria
 theme_id: classic
 title: El Vestigio de los Siglos
-subtitle: Una novela de archivos y memoria

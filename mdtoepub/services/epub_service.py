@@ -215,6 +215,25 @@ class EpubService:
                                 running_fig_total += 1
                                 figure_info.append((running_fig_total, alt, component.filename))
 
+            # Pre-scan table info for LOT generation and table numbering
+            table_info = []
+            table_start: Dict[str, int] = {}
+            running_tab_total = 0
+            if self.project.table_numbering:
+                for component in self.project.get_ordered_components():
+                    if component.type in (ComponentType.PART, ComponentType.FOOTNOTES,
+                                          ComponentType.LOT, ComponentType.TOC, ComponentType.COVER):
+                        continue
+                    content = FileService.load_component(self.project.path, component)
+                    if content:
+                        _, md_text = YamlService.parse_frontmatter(content)
+                        captions = MarkdownService.extract_table_captions(md_text)
+                        if captions:
+                            table_start[component.id] = running_tab_total + 1
+                            for caption, _ in captions:
+                                running_tab_total += 1
+                                table_info.append((running_tab_total, caption, component.filename))
+
             chapter_count = 0
             for component in self.project.get_ordered_components():
                 if component.type in (ComponentType.PART, ComponentType.FOOTNOTES):
@@ -232,12 +251,17 @@ class EpubService:
 
                 fig_start = figure_start.get(component.id, 0)
 
+                tab_start = table_start.get(component.id, 0)
+
                 chapter = self._create_chapter(component, chapter_styles, chapter_count if component.type == ComponentType.CHAPTER else None,
                                                footnotes_comp=footnotes_comp, collected_footnotes=collected_footnotes,
                                                start_number=start_num,
                                                figure_num_start=fig_start,
                                                figure_num_style=self.project.figure_numbering_style,
-                                               figure_info=figure_info if component.type == ComponentType.LOF else None)
+                                               figure_info=figure_info if component.type == ComponentType.LOF else None,
+                                               table_num_start=tab_start,
+                                               table_num_style=self.project.table_numbering_style,
+                                               table_info=table_info if component.type == ComponentType.LOT else None)
                 if chapter:
                     chapter_map[component.id] = chapter
                     book.add_item(chapter)
@@ -617,6 +641,27 @@ class EpubService:
         lines.append('</div>')
         return "\n".join(lines)
 
+    def _generate_lot_html(self, table_info: list) -> str:
+        """Generate the List of Tables HTML from collected table info."""
+        if not table_info:
+            return ""
+        use_roman = self.project.table_numbering_style == "roman"
+        lines = ['<div class="lot-list">', '<ul>']
+        for tab_num, caption, filename in table_info:
+            href = f"{filename.replace('.md', '.xhtml')}#tab_{tab_num}"
+            if use_roman:
+                num_str = MarkdownService._to_roman(tab_num)
+            else:
+                num_str = str(tab_num)
+            if caption:
+                text = f"Tabla {num_str} - {caption}"
+            else:
+                text = f"Tabla {num_str}"
+            lines.append(f'<li class="lot-entry"><a href="{href}">{text}</a></li>')
+        lines.append('</ul>')
+        lines.append('</div>')
+        return "\n".join(lines)
+
     def _toc_class_for_type(self, comp_type: ComponentType) -> str:
         return "toc-entry"
 
@@ -629,10 +674,13 @@ class EpubService:
         figure_num_start: int = 0,
         figure_num_style: str = "arabic",
         figure_info: Optional[list] = None,
+        table_num_start: int = 0,
+        table_num_style: str = "arabic",
+        table_info: Optional[list] = None,
     ) -> Optional[epub.EpubHtml]:
         content = FileService.load_component(self.project.path, component)
         if not content:
-            if component.type in (ComponentType.LOF, ComponentType.TOC):
+            if component.type in (ComponentType.LOF, ComponentType.LOT, ComponentType.TOC):
                 frontmatter = {}
                 markdown_content = f"# {component.get_display_name()}\n\n"
             else:
@@ -716,6 +764,16 @@ class EpubService:
             title_html = MarkdownService._add_image_captions(title_html)
             combined = (title_html + "\n" + auto_lof) if title_html else auto_lof
             html_content = self.markdown_service._wrap_in_section(combined, component.type, component.id)
+        elif component.type == ComponentType.LOT:
+            auto_lot = self._generate_lot_html(table_info) if table_info else ""
+            import markdown
+            md = markdown.Markdown(extensions=self.markdown_service.extensions,
+                                   extension_configs=self.markdown_service.get_extension_configs())
+            title_html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content)) if markdown_content.strip() else ""
+            title_html = MarkdownService._add_image_captions(title_html)
+            title_html = MarkdownService._add_table_captions(title_html)
+            combined = (title_html + "\n" + auto_lot) if title_html else auto_lot
+            html_content = self.markdown_service._wrap_in_section(combined, component.type, component.id)
         else:
             header_html = self._build_header_html(number_part, subtitle_part, title_part)
             show_title = frontmatter.get("show_title", True)
@@ -732,7 +790,8 @@ class EpubService:
                     markdown_content = f"# {component.get_display_name()}\n\n{markdown_content}"
             # else show_title=False, no header: just render content as-is
             html_content = self.markdown_service.render(markdown_content, component.type, component.id, start_number,
-                                                         figure_num_start, figure_num_style)
+                                                         figure_num_start, figure_num_style,
+                                                         table_num_start, table_num_style)
 
         # Apply drop cap to non-TOC components
         if (component.type != ComponentType.TOC
