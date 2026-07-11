@@ -2276,8 +2276,6 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         if path_info is None:
             return False
         path, column, cell_x, cell_y = path_info
-        if self._read_only:
-            return False
 
         selection = tree.get_selection()
         if not selection.path_is_selected(path):
@@ -2371,6 +2369,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             menu.append(item_delete)
         else:
             return False
+
+        if self._read_only:
+            menu.foreach(lambda item: item.set_sensitive(False))
 
         menu.show_all()
         menu.popup_at_pointer(event)
