@@ -704,6 +704,20 @@ hr { border: none; border-top: 1px solid #ccc; }
             "  * En YAML, entre --- al inicio del archivo.",
             "  * Variables comunes: show_title, toc_deep,",
             "    toc_include, split_title.",
+            "",
+            "— Variables del proyecto —  (interpolacion)",
+            "",
+            "  {{title}}       {{subtitle}}",
+            "  {{author}}      {{publisher}}",
+            "  {{isbn}}        {{edition}}",
+            "  {{publication_date}}",
+            "  {{publication_date:year}}",
+            "",
+            "  * Se sustituyen por los valores de la configuracion",
+            "    del proyecto (Archivo → Configuracion).",
+            "  * {{publication_date:year}} extrae solo el año",
+            "    (ej: 2025-01-15 → 2025).",
+            "  * Los campos no definidos quedan como {{clave}}.",
         ]
         buf.set_text("\n".join(lines))
 
@@ -994,6 +1008,14 @@ hr { border: none; border-top: 1px solid #ccc; }
             if component:
                 component.frontmatter = editor_fm
 
+            variables = {}
+            if self.project:
+                for k in ("title", "subtitle", "author", "isbn", "publisher",
+                          "edition", "publication_date", "language"):
+                    v = getattr(self.project, k, None)
+                    if v:
+                        variables[k] = v
+
             # Apply header and drop cap when project is loaded
             if self.project and component:
                 from .services.epub_service import EpubService as _EpubService
@@ -1054,13 +1076,15 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 elif not default_title and editor_fm.get("show_title", True):
                     md_text = f"# {component.get_display_name()}\n\n{md_text}"
 
-                html = self.md_service.render(md_text, component_type, component_id)
+                html = self.md_service.render(md_text, component_type, component_id,
+                                              variables=variables)
 
                 if (self.project.drop_cap_enabled
                         and component_type.value in self.project.drop_cap_types):
                     html = epub_svc._apply_drop_cap(html)
             else:
-                html = self.md_service.render(md_text, component_type, component_id)
+                html = self.md_service.render(md_text, component_type, component_id,
+                                              variables=variables)
 
             # Preview notices for auto-generated components
             if self.project and component:
@@ -1174,23 +1198,35 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         row = 0
 
-        label = Gtk.Label(label="Titulo:")
+        label = Gtk.Label(label="Titulo *:")
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_title = Gtk.Entry()
         entry_title.set_text(self.project.title)
         entry_title.set_hexpand(True)
-        grid_book.attach(entry_title, 1, row, 1, 1)
+        title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        title_box.pack_start(entry_title, True, True, 0)
+        hint = Gtk.Label(label="{{title}}")
+        hint.set_opacity(0.55)
+        hint.set_tooltip_text("Usa {{title}} en el texto para insertar este valor")
+        title_box.pack_start(hint, False, False, 0)
+        grid_book.attach(title_box, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Subtitulo:")
+        label = Gtk.Label(label="Subtitulo *:")
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_subtitle = Gtk.Entry()
         entry_subtitle.set_text(self.project.subtitle)
         entry_subtitle.set_hexpand(True)
         entry_subtitle.set_placeholder_text("Subtitulo del libro")
-        grid_book.attach(entry_subtitle, 1, row, 1, 1)
+        sub_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        sub_box.pack_start(entry_subtitle, True, True, 0)
+        hint = Gtk.Label(label="{{subtitle}}")
+        hint.set_opacity(0.55)
+        hint.set_tooltip_text("Usa {{subtitle}} en el texto para insertar este valor")
+        sub_box.pack_start(hint, False, False, 0)
+        grid_book.attach(sub_box, 1, row, 1, 1)
         row += 1
 
         label = Gtk.Label(label="Archivo EPUB:")
@@ -1214,13 +1250,19 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_book.attach(entry_export, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Autor:")
+        label = Gtk.Label(label="Autor *:")
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_author = Gtk.Entry()
         entry_author.set_text(self.project.author)
         entry_author.set_hexpand(True)
-        grid_book.attach(entry_author, 1, row, 1, 1)
+        aut_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        aut_box.pack_start(entry_author, True, True, 0)
+        hint = Gtk.Label(label="{{author}}")
+        hint.set_opacity(0.55)
+        hint.set_tooltip_text("Usa {{author}} en el texto para insertar este valor")
+        aut_box.pack_start(hint, False, False, 0)
+        grid_book.attach(aut_box, 1, row, 1, 1)
         row += 1
 
         label = Gtk.Label(label="Idioma:")
@@ -1246,44 +1288,81 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_book.attach(combo_epub, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Edicion:")
+        label = Gtk.Label(label="Edicion *:")
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_edicion = Gtk.Entry()
         entry_edicion.set_text(self.project.edition)
         entry_edicion.set_hexpand(True)
         entry_edicion.set_placeholder_text("1ª edicion")
-        grid_book.attach(entry_edicion, 1, row, 1, 1)
+        edi_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        edi_box.pack_start(entry_edicion, True, True, 0)
+        hint = Gtk.Label(label="{{edition}}")
+        hint.set_opacity(0.55)
+        hint.set_tooltip_text("Usa {{edition}} en el texto para insertar este valor")
+        edi_box.pack_start(hint, False, False, 0)
+        grid_book.attach(edi_box, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Fecha de publicacion:")
+        label = Gtk.Label(label="Fecha de publicacion *:")
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_fecha = Gtk.Entry()
         entry_fecha.set_text(self.project.publication_date)
         entry_fecha.set_hexpand(True)
         entry_fecha.set_placeholder_text("2025-01-15")
-        grid_book.attach(entry_fecha, 1, row, 1, 1)
+        fec_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        fec_box.pack_start(entry_fecha, True, True, 0)
+        hint = Gtk.Label(label="{{publication_date}}  {{publication_date:year}}")
+        hint.set_opacity(0.55)
+        hint.set_tooltip_text("Usa {{publication_date}} o {{publication_date:year}} (solo año) en el texto")
+        fec_box.pack_start(hint, False, False, 0)
+        grid_book.attach(fec_box, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="ISBN:")
+        label = Gtk.Label(label="ISBN *:")
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_isbn = Gtk.Entry()
         entry_isbn.set_text(self.project.isbn)
         entry_isbn.set_hexpand(True)
         entry_isbn.set_placeholder_text("978-84-999-9999-9")
-        grid_book.attach(entry_isbn, 1, row, 1, 1)
+        isbn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        isbn_box.pack_start(entry_isbn, True, True, 0)
+        hint = Gtk.Label(label="{{isbn}}")
+        hint.set_opacity(0.55)
+        hint.set_tooltip_text("Usa {{isbn}} en el texto para insertar este valor")
+        isbn_box.pack_start(hint, False, False, 0)
+        grid_book.attach(isbn_box, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Editorial:")
+        label = Gtk.Label(label="Editorial *:")
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_editorial = Gtk.Entry()
         entry_editorial.set_text(self.project.publisher)
         entry_editorial.set_hexpand(True)
         entry_editorial.set_placeholder_text("Ediciones Aprender")
-        grid_book.attach(entry_editorial, 1, row, 1, 1)
+        pub_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        pub_box.pack_start(entry_editorial, True, True, 0)
+        hint = Gtk.Label(label="{{publisher}}")
+        hint.set_opacity(0.55)
+        hint.set_tooltip_text("Usa {{publisher}} en el texto para insertar este valor")
+        pub_box.pack_start(hint, False, False, 0)
+        grid_book.attach(pub_box, 1, row, 1, 1)
+        row += 1
+
+        note = Gtk.Label()
+        note.set_markup(
+            '<span size="small" foreground="#555">'
+            '* Los campos marcados pueden insertarse en el texto '
+            'usando <tt>{{nombre}}</tt>. Ejemplo: <tt>{{title}}</tt>, '
+            '<tt>{{isbn}}</tt>, <tt>{{publisher}}</tt>.'
+            '</span>'
+        )
+        note.set_xalign(0)
+        note.set_line_wrap(True)
+        grid_book.attach(note, 0, row, 2, 1)
         row += 1
 
         # ── Tab 2: Appearance ──
