@@ -19,6 +19,7 @@ TABLE_CAPTION_HTML_RE = re.compile(
     r'(<table\b.*?</table>)',
     re.DOTALL | re.IGNORECASE,
 )
+INTERP_RE = re.compile(r'\{\{(\w+)\}\}')
 
 
 class MarkdownService:
@@ -50,8 +51,10 @@ class MarkdownService:
 
     def render(self, markdown_text: str, component_type: ComponentType = ComponentType.CHAPTER, component_id: str = "", start_number: int = 1,
                figure_num_start: int = 0, figure_num_style: str = "arabic",
-               table_num_start: int = 0, table_num_style: str = "arabic") -> str:
-        cleaned = re.sub(r'\{lang=\w+(?:[_-]\w+)*\}', '', markdown_text)
+               table_num_start: int = 0, table_num_style: str = "arabic",
+               variables: Optional[Dict[str, str]] = None) -> str:
+        cleaned = self._interpolate_variables(markdown_text, variables)
+        cleaned = re.sub(r'\{lang=\w+(?:[_-]\w+)*\}', '', cleaned)
         cleaned = self._renumber_footnotes(cleaned, start_number)
         md = markdown.Markdown(extensions=self.extensions,
                                extension_configs=self._extension_configs)
@@ -306,6 +309,18 @@ class MarkdownService:
         html = TABLE_CAPTION_HTML_RE.sub(_wrap, html)
         html = re.sub(r'<p>\s*(<figure.*?</figure>)\s*</p>', r'\1', html, flags=re.DOTALL)
         return html
+
+    @staticmethod
+    def _interpolate_variables(text: str, variables: Optional[Dict[str, str]] = None) -> str:
+        """Replace {{key}} placeholders with values from the given dict."""
+        if not variables:
+            return text
+
+        def _replacer(m):
+            key = m.group(1)
+            return variables.get(key, m.group(0))
+
+        return INTERP_RE.sub(_replacer, text)
 
     def extract_title(self, markdown_text: str) -> Optional[str]:
         for line in markdown_text.split("\n"):

@@ -138,6 +138,19 @@ class EpubService:
             book.add_metadata("DC", "publisher", self.project.publisher or "MDToEPUB")
             book.add_metadata("DC", "date", self.project.publication_date or datetime.now().isoformat())
 
+            variables = {
+                "title": self.project.title,
+                "subtitle": self.project.subtitle,
+                "author": self.project.author,
+                "isbn": self.project.isbn,
+                "publisher": self.project.publisher,
+                "edition": self.project.edition,
+                "publication_date": self.project.publication_date,
+                "language": self.project.language,
+            }
+            # Strip empty values so {{key}} passes through as-is
+            variables = {k: v for k, v in variables.items() if v}
+
             self._toc_filter = self._get_toc_include_filter()
             stylesheet = self._load_stylesheet()
             style_items = []
@@ -261,7 +274,8 @@ class EpubService:
                                                figure_info=figure_info if component.type == ComponentType.LOF else None,
                                                table_num_start=tab_start,
                                                table_num_style=self.project.table_numbering_style,
-                                               table_info=table_info if component.type == ComponentType.LOT else None)
+                                               table_info=table_info if component.type == ComponentType.LOT else None,
+                                               variables=variables)
                 if chapter:
                     chapter_map[component.id] = chapter
                     book.add_item(chapter)
@@ -277,7 +291,7 @@ class EpubService:
                 if fn_comp_item:
                     fn_styles.append(fn_comp_item)
                 fn_chapter = self._build_footnotes_chapter(
-                    footnotes_comp, collected_footnotes, fn_styles
+                    footnotes_comp, collected_footnotes, fn_styles, variables
                 )
                 if fn_chapter:
                     chapter_map[footnotes_comp.id] = fn_chapter
@@ -677,6 +691,7 @@ class EpubService:
         table_num_start: int = 0,
         table_num_style: str = "arabic",
         table_info: Optional[list] = None,
+        variables: Optional[Dict[str, str]] = None,
     ) -> Optional[epub.EpubHtml]:
         content = FileService.load_component(self.project.path, component)
         if not content:
@@ -791,7 +806,8 @@ class EpubService:
             # else show_title=False, no header: just render content as-is
             html_content = self.markdown_service.render(markdown_content, component.type, component.id, start_number,
                                                          figure_num_start, figure_num_style,
-                                                         table_num_start, table_num_style)
+                                                         table_num_start, table_num_style,
+                                                         variables=variables)
 
         # Apply drop cap to non-TOC components
         if (component.type != ComponentType.TOC
@@ -872,6 +888,7 @@ class EpubService:
     def _build_footnotes_chapter(
         self, component: Component, collected: Dict[str, dict],
         style_items: List[epub.EpubItem] = None,
+        variables: Optional[Dict[str, str]] = None,
     ) -> Optional[epub.EpubHtml]:
         """Build the footnotes chapter with user content + collected footnotes."""
         content = FileService.load_component(self.project.path, component)
@@ -898,7 +915,8 @@ class EpubService:
         elif show_title and not default_title:
             markdown_content = f"# {display_title}\n\n{markdown_content}"
 
-        user_html = self.markdown_service.render(markdown_content, component.type, component.id)
+        user_html = self.markdown_service.render(markdown_content, component.type, component.id,
+                                                  variables=variables)
 
         # Build flat footnotes collection in document order, no chapter grouping
         if collected:
