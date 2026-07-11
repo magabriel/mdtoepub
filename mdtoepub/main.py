@@ -1005,6 +1005,14 @@ hr { border: none; border-top: 1px solid #ccc; }
             if component:
                 component.frontmatter = editor_fm
 
+            variables = {}
+            if self.project:
+                for k in ("title", "subtitle", "author", "isbn", "publisher",
+                          "edition", "publication_date", "language"):
+                    v = getattr(self.project, k, None)
+                    if v:
+                        variables[k] = v
+
             # Apply header and drop cap when project is loaded
             if self.project and component:
                 from .services.epub_service import EpubService as _EpubService
@@ -1065,13 +1073,15 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 elif not default_title and editor_fm.get("show_title", True):
                     md_text = f"# {component.get_display_name()}\n\n{md_text}"
 
-                html = self.md_service.render(md_text, component_type, component_id)
+                html = self.md_service.render(md_text, component_type, component_id,
+                                              variables=variables)
 
                 if (self.project.drop_cap_enabled
                         and component_type.value in self.project.drop_cap_types):
                     html = epub_svc._apply_drop_cap(html)
             else:
-                html = self.md_service.render(md_text, component_type, component_id)
+                html = self.md_service.render(md_text, component_type, component_id,
+                                              variables=variables)
 
             # Preview notices for auto-generated components
             if self.project and component:
