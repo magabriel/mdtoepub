@@ -1487,13 +1487,16 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self._show_info("No hay proyecto abierto")
             return
 
+        read_only = self._read_only
+
         dialog = Gtk.Dialog(
-            title="Configuracion del Proyecto",
+            title="Configuracion del Proyecto" + (" [SOLO LECTURA]" if read_only else ""),
             transient_for=self.window,
             modal=True,
         )
         dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+        if not read_only:
+            dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
         dialog.set_default_size(520, 420)
 
         content = dialog.get_content_area()
@@ -1502,6 +1505,14 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         content.set_margin_bottom(12)
         content.set_margin_start(12)
         content.set_margin_end(12)
+
+        if read_only:
+            note_rw = Gtk.Label()
+            note_rw.set_markup('<span foreground="#c00"><b>Este proyecto es de solo lectura. No se pueden guardar cambios.</b></span>')
+            note_rw.set_xalign(0)
+            content.pack_start(note_rw, False, False, 0)
+
+        interactive_widgets = []
 
         notebook = Gtk.Notebook()
         content.add(notebook)
@@ -1524,6 +1535,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_title = Gtk.Entry()
+        interactive_widgets.append(entry_title)
         entry_title.set_text(self.project.title)
         entry_title.set_hexpand(True)
         title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -1539,6 +1551,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_subtitle = Gtk.Entry()
+        interactive_widgets.append(entry_subtitle)
         entry_subtitle.set_text(self.project.subtitle)
         entry_subtitle.set_hexpand(True)
         entry_subtitle.set_placeholder_text("Subtitulo del libro")
@@ -1555,6 +1568,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_export = Gtk.Entry()
+        interactive_widgets.append(entry_export)
         from .services.file_service import slugify
         def _update_export_filename(*_a):
             current = entry_export.get_text().strip()
@@ -1576,6 +1590,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_author = Gtk.Entry()
+        interactive_widgets.append(entry_author)
         entry_author.set_text(self.project.author)
         entry_author.set_hexpand(True)
         aut_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -1591,6 +1606,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_lang = Gtk.Entry()
+        interactive_widgets.append(entry_lang)
         entry_lang.set_text(self.project.language)
         entry_lang.set_hexpand(True)
         entry_lang.set_placeholder_text("es")
@@ -1601,6 +1617,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         combo_epub = Gtk.ComboBoxText()
+        interactive_widgets.append(combo_epub)
         combo_epub.append_text("epub2")
         combo_epub.append_text("epub3")
         if self.project.epub_version == "epub2":
@@ -1614,6 +1631,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_edicion = Gtk.Entry()
+        interactive_widgets.append(entry_edicion)
         entry_edicion.set_text(self.project.edition)
         entry_edicion.set_hexpand(True)
         entry_edicion.set_placeholder_text("1ª edicion")
@@ -1630,6 +1648,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_fecha = Gtk.Entry()
+        interactive_widgets.append(entry_fecha)
         entry_fecha.set_text(self.project.publication_date)
         entry_fecha.set_hexpand(True)
         entry_fecha.set_placeholder_text("2025-01-15")
@@ -1646,6 +1665,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_isbn = Gtk.Entry()
+        interactive_widgets.append(entry_isbn)
         entry_isbn.set_text(self.project.isbn)
         entry_isbn.set_hexpand(True)
         entry_isbn.set_placeholder_text("978-84-999-9999-9")
@@ -1662,6 +1682,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_book.attach(label, 0, row, 1, 1)
         entry_editorial = Gtk.Entry()
+        interactive_widgets.append(entry_editorial)
         entry_editorial.set_text(self.project.publisher)
         entry_editorial.set_hexpand(True)
         entry_editorial.set_placeholder_text("Ediciones Aprender")
@@ -1704,6 +1725,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label.set_xalign(1)
         grid_app.attach(label, 0, row, 1, 1)
         combo_auto_title = Gtk.ComboBoxText()
+        interactive_widgets.append(combo_auto_title)
         combo_auto_title.append_text("No")
         combo_auto_title.append_text("Capitulo <n>")
         combo_auto_title.append_text("<n>")
@@ -1723,6 +1745,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         label_part.set_xalign(1)
         grid_app.attach(label_part, 0, row, 1, 1)
         combo_auto_part = Gtk.ComboBoxText()
+        interactive_widgets.append(combo_auto_part)
         combo_auto_part.append_text("No")
         combo_auto_part.append_text("Parte <n>")
         combo_auto_part.append_text("<n>")
@@ -1746,6 +1769,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         available_themes = [(t.id, t.name) for t in themes_list]
 
         combo_theme = Gtk.ComboBoxText()
+        interactive_widgets.append(combo_theme)
         theme_index = 0
         for i, (tid, tname) in enumerate(available_themes):
             combo_theme.append_text(tname)
@@ -1769,6 +1793,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         row += 1
 
         check_drop_cap = Gtk.CheckButton(label="Activar")
+        interactive_widgets.append(check_drop_cap)
         check_drop_cap.set_active(self.project.drop_cap_enabled)
         right_vbox.pack_start(check_drop_cap, False, False, 0)
 
@@ -1815,6 +1840,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         row += 1
 
         check_figure_numbering = Gtk.CheckButton(label="Numerar figuras automaticamente")
+        interactive_widgets.append(check_figure_numbering)
         check_figure_numbering.set_active(self.project.figure_numbering)
         fig_vbox.pack_start(check_figure_numbering, False, False, 0)
 
@@ -1822,6 +1848,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         fig_style_label = Gtk.Label(label="Estilo:")
         fig_style_box.pack_start(fig_style_label, False, False, 0)
         combo_fig_style = Gtk.ComboBoxText()
+        interactive_widgets.append(combo_fig_style)
         combo_fig_style.append_text("Numeros arabigos")
         combo_fig_style.append_text("Numeros romanos")
         fig_style_values = ["arabic", "roman"]
@@ -1855,6 +1882,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         row += 1
 
         check_table_numbering = Gtk.CheckButton(label="Numerar tablas automaticamente")
+        interactive_widgets.append(check_table_numbering)
         check_table_numbering.set_active(self.project.table_numbering)
         tab_vbox.pack_start(check_table_numbering, False, False, 0)
 
@@ -1862,6 +1890,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         tab_style_label = Gtk.Label(label="Estilo:")
         tab_style_box.pack_start(tab_style_label, False, False, 0)
         combo_tab_style = Gtk.ComboBoxText()
+        interactive_widgets.append(combo_tab_style)
         combo_tab_style.append_text("Numeros arabigos")
         combo_tab_style.append_text("Numeros romanos")
         tab_style_values = ["arabic", "roman"]
@@ -1889,6 +1918,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_app.attach(label_lang, 0, row, 1, 1)
 
         combo_lang = Gtk.ComboBoxText()
+        interactive_widgets.append(combo_lang)
         langs = self.spell_service.get_language_list()
         lang_index = 0
         for i, l in enumerate(langs):
@@ -1928,9 +1958,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             top_row.pack_start(combo_label_lang, False, False, 0)
 
             btn_new_lang = Gtk.Button(label="Nuevo idioma...")
+            interactive_widgets.append(btn_new_lang)
             top_row.pack_start(btn_new_lang, False, False, 0)
 
             btn_reset = Gtk.Button(label="Restablecer predeterminados")
+            interactive_widgets.append(btn_reset)
             top_row.pack_start(btn_reset, False, False, 0)
             top_row.pack_start(Gtk.Label(label=""), True, True, 0)
 
@@ -2098,6 +2130,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             d.destroy()
 
         dialog.connect("response", on_config_response)
+        
+        if read_only:
+            for w in interactive_widgets:
+                w.set_sensitive(False)
         dialog.show_all()
 
     def _on_global_config(self, action, param):
