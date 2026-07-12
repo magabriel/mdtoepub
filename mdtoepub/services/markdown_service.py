@@ -32,7 +32,6 @@ class MarkdownService:
             "markdown.extensions.codehilite",
             "markdown.extensions.toc",
             "markdown.extensions.meta",
-            "markdown.extensions.nl2br",
             "markdown.extensions.attr_list",
             "markdown.extensions.def_list",
             "markdown.extensions.footnotes",
