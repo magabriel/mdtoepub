@@ -230,3 +230,216 @@ class TestProcessMarkdownImages:
             saved = FileService.load_component(tmp, comp)
             assert "images/illustrations/nueva.jpg" in saved
             assert "images/illustrations/vieja.jpg" not in saved
+
+
+class TestParseImportedEpub:
+    def test_parse_simple_epub(self):
+        """Parse an EPUB with a single chapter."""
+        from ebooklib import epub
+
+        with tempfile.TemporaryDirectory() as tmp:
+            epub_path = Path(tmp) / "test.epub"
+
+            book = epub.EpubBook()
+            book.set_identifier("test-id")
+            book.set_title("Test Book")
+            book.set_language("en")
+
+            c1 = epub.EpubHtml(
+                title="Chapter 1", file_name="chap1.xhtml", lang="en"
+            )
+            c1.content = (
+                "<html><body>"
+                "<h1>Chapter 1</h1>"
+                "<p>Hello world.</p>"
+                "</body></html>"
+            )
+            book.add_item(c1)
+            book.spine = [c1]
+            book.toc = []
+            book.add_item(epub.EpubNcx())
+            book.add_item(epub.EpubNav())
+
+            epub.write_epub(str(epub_path), book, {})
+
+            # Re-read directly
+            components, images = FileService.parse_imported_epub(str(epub_path))
+            assert len(components) >= 1
+            titles = [t for _, t, _ in components if t]
+            assert any("Chapter 1" in t for t in titles)
+            assert len(images) == 0
+
+    def test_parse_epub_with_images(self):
+        """Parse an EPUB containing embedded images."""
+        from ebooklib import epub
+
+        with tempfile.TemporaryDirectory() as tmp:
+            epub_path = Path(tmp) / "test_img.epub"
+
+            book = epub.EpubBook()
+            book.set_identifier("test-img")
+            book.set_title("Test with Images")
+            book.set_language("en")
+
+            c1 = epub.EpubHtml(
+                title="Chapter", file_name="chap1.xhtml", lang="en"
+            )
+            c1.content = (
+                "<html><body>"
+                "<h1>Images</h1>"
+                '<p><img src="img/photo.jpg" alt="Photo"/></p>'
+                "</body></html>"
+            )
+            book.add_item(c1)
+
+            img_data = b"\xff\xd8\xff\xe0\x00\x10JFIF"
+            img_item = epub.EpubItem(
+                uid="img1",
+                file_name="img/photo.jpg",
+                media_type="image/jpeg",
+                content=img_data,
+            )
+            book.add_item(img_item)
+
+            book.spine = []
+            book.toc = []
+            book.add_item(epub.EpubNcx())
+            book.add_item(epub.EpubNav())
+
+            epub.write_epub(str(epub_path), book, {})
+
+            components, images = FileService.parse_imported_epub(str(epub_path))
+            assert len(images) >= 1
+            assert images[0][0] == "photo.jpg"
+            assert images[0][1] == img_data
+
+    def test_parse_multiple_chapters(self):
+        """Parse an EPUB with multiple chapters."""
+        from ebooklib import epub
+
+        with tempfile.TemporaryDirectory() as tmp:
+            epub_path = Path(tmp) / "test_multi.epub"
+
+            book = epub.EpubBook()
+            book.set_identifier("test-multi")
+            book.set_title("Multi Chapter")
+            book.set_language("en")
+
+            chapters = []
+            for i in range(3):
+                ch = epub.EpubHtml(
+                    title=f"Chapter {i+1}",
+                    file_name=f"chap{i+1}.xhtml",
+                    lang="en",
+                )
+                ch.content = (
+                    "<html><body>"
+                    f"<h1>Chapter {i+1}</h1>"
+                    f"<p>Content {i+1}.</p>"
+                    "</body></html>"
+                )
+                book.add_item(ch)
+                chapters.append(ch)
+
+            book.spine = chapters
+            book.toc = []
+            book.add_item(epub.EpubNcx())
+            book.add_item(epub.EpubNav())
+
+            epub.write_epub(str(epub_path), book, {})
+
+            components, images = FileService.parse_imported_epub(str(epub_path))
+            assert len(components) >= 3
+
+    def test_html_to_markdown_headings(self):
+        html = "<html><body><h1>Title</h1><h2>Sub</h2><p>Text.</p></body></html>"
+        md = FileService._html_to_markdown(html)
+        assert "# Title" in md
+        assert "## Sub" in md
+        assert "Text." in md
+
+    def test_html_to_markdown_formatting(self):
+        html = "<body><p><strong>Bold</strong> and <em>italic</em>.</p></body>"
+        md = FileService._html_to_markdown(html)
+        assert "**Bold**" in md
+        assert "*italic*" in md
+
+    def test_html_to_markdown_image(self):
+        html = '<body><img src="photo.jpg" alt="Photo"/></body>'
+        md = FileService._html_to_markdown(html)
+        assert "![Photo](images/illustrations/photo.jpg)" in md
+
+    def test_html_to_markdown_links(self):
+        html = '<body><a href="http://example.com">Link</a></body>'
+        md = FileService._html_to_markdown(html)
+        assert "[Link](http://example.com)" in md
+
+    def test_html_to_markdown_lists(self):
+        html = "<body><ul><li>A</li><li>B</li></ul></body>"
+        md = FileService._html_to_markdown(html)
+        assert "- A" in md
+        assert "- B" in md
+
+    def test_html_entity_decoding(self):
+        html = "<body><p>Hello &amp; welcome &lt;3</p></body>"
+        md = FileService._html_to_markdown(html)
+        assert "Hello & welcome <3" in md
+
+    def test_import_epub_to_project(self):
+        """End-to-end EPUB import into a project."""
+        from ebooklib import epub
+
+        with tempfile.TemporaryDirectory() as tmp:
+            epub_path = Path(tmp) / "test_import.epub"
+
+            book = epub.EpubBook()
+            book.set_identifier("test-import")
+            book.set_title("Imported")
+            book.set_language("en")
+
+            c1 = epub.EpubHtml(
+                title="Intro", file_name="intro.xhtml", lang="en"
+            )
+            c1.content = (
+                "<html><body>"
+                "<h1>Introduction</h1>"
+                "<p>Welcome.</p>"
+                "</body></html>"
+            )
+            book.add_item(c1)
+
+            img_data = b"\x89PNG\r\n\x1a\n"
+            img_item = epub.EpubItem(
+                uid="img1",
+                file_name="img/cover.png",
+                media_type="image/png",
+                content=img_data,
+            )
+            book.add_item(img_item)
+
+            book.spine = [c1]
+            book.toc = []
+            book.add_item(epub.EpubNcx())
+            book.add_item(epub.EpubNav())
+
+            epub.write_epub(str(epub_path), book, {})
+
+            proj = Project(name="test", path=tmp)
+            FileService.save_project(proj)
+
+            count = FileService.import_epub(tmp, proj, str(epub_path))
+            assert count >= 1
+            assert len(proj.components) == count
+
+            for c in proj.components:
+                content = FileService.load_component(tmp, c)
+                assert content, f"Missing content for {c.filename}"
+
+            images_dir = Path(tmp) / "images" / "illustrations"
+            assert images_dir.exists()
+            cover_path = images_dir / "cover.png"
+            assert cover_path.exists()
+            assert cover_path.read_bytes() == img_data
+
+            import shutil
+            shutil.rmtree(tmp)

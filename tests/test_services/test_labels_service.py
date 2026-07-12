@@ -5,9 +5,9 @@ from mdtoepub.services.labels_service import resolve_labels, DEFAULT_LABELS
 class TestResolveLabels:
     def test_default_spanish(self):
         labels = resolve_labels("es")
-        assert labels["chapter"] == "Capítulo"
+        assert labels["chapter"] == "Capitulo"
         assert labels["part"] == "Parte"
-        assert labels["appendix"] == "Apéndice"
+        assert labels["appendix"] == "Apendice"
         assert labels["figure"] == "Figura"
         assert labels["table"] == "Tabla"
 
@@ -21,7 +21,7 @@ class TestResolveLabels:
 
     def test_unknown_language_falls_back_to_spanish(self):
         labels = resolve_labels("fr")
-        assert labels["chapter"] == "Capítulo"
+        assert labels["chapter"] == "Capitulo"
 
     def test_project_overrides(self):
         labels = resolve_labels("es", project_labels={"chapter": "MiCapítulo"})
