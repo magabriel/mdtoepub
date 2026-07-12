@@ -38,7 +38,7 @@ class YamlService:
 
         try:
             frontmatter = yaml.safe_load(frontmatter_yaml)
-            return frontmatter if frontmatter else {}, markdown_content
+            return frontmatter if isinstance(frontmatter, dict) else {}, markdown_content
         except yaml.YAMLError:
             return {}, content
 

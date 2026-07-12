@@ -317,7 +317,7 @@ class EpubService:
                     cc = FileService.load_component(self.project.path, c)
                     if cc:
                         fm, _ = YamlService.parse_frontmatter(cc)
-                        reader_toc_deep = fm.get("toc_deep", 2)
+                        reader_toc_deep = self._normalize_toc_deep(fm.get("toc_deep", 2))
                     break
 
             book.toc = []
@@ -357,9 +357,6 @@ class EpubService:
                 ch = chapter_map[comp.id]
                 part = self.project.get_part(comp.part_id) if comp.part_id else None
 
-                sub_children = []
-                _add_heading_toc_children(comp, sub_children, reader_toc_deep)
-
                 if part and comp.type == ComponentType.CHAPTER:
                     if comp.part_id != current_part_id:
                         if current_section is not None:
@@ -369,13 +366,20 @@ class EpubService:
                         current_part_id = part.id
                         current_section = epub.Section(part.title, href)
                         current_children = []
-                    current_children.append((ch, sub_children))
+                    # Chapter is at depth 2 (part is depth 1)
+                    if reader_toc_deep >= 2:
+                        sub_children = []
+                        comp_deep = reader_toc_deep - 1
+                        _add_heading_toc_children(comp, sub_children, comp_deep)
+                        current_children.append((ch, sub_children))
                 else:
                     if current_section is not None:
                         book.toc.append((current_section, current_children))
                         current_part_id = None
                         current_section = None
                         current_children = []
+                    sub_children = []
+                    _add_heading_toc_children(comp, sub_children, reader_toc_deep)
                     book.toc.append((ch, sub_children))
 
             if current_section is not None:
@@ -500,6 +504,14 @@ class EpubService:
         s = s.strip('-')
         return s
 
+    @staticmethod
+    def _normalize_toc_deep(value, default: int = 2) -> int:
+        try:
+            v = int(value)
+        except (ValueError, TypeError):
+            return default
+        return max(1, min(v, 6))
+
     def _parse_headings_from_md(self, md_text: str, max_depth: int) -> List[Tuple[int, str, str]]:
         """Parse headings from markdown text.
 
@@ -526,6 +538,7 @@ class EpubService:
         return result
 
     def _generate_toc_html(self, toc_include: Optional[List[str]] = None, toc_deep: int = 2) -> str:
+        toc_deep = self._normalize_toc_deep(toc_deep)
         part_map = {p.id: p for p in self.project.get_parts()}
         # Precompute which parts have at least one chapter
         parts_with_chapters = set()
@@ -564,12 +577,17 @@ class EpubService:
                     target = f"{part.filename.replace('.md', '.xhtml')}" if part.filename else "#"
                     lines.append(f'<p class="toc-part-heading"><a href="{target}">{part.title}</a></p>')
                     current_part_id = comp.part_id
-                target = f"{comp.filename.replace('.md', '.xhtml')}#ch_{comp.id}"
-                css_class = self._toc_class_for_type(comp.type)
-                lines.append(f'<p class="{css_class}"><a href="{target}">{title}</a></p>')
-                has_entries = True
-                if toc_deep > 1:
-                    lines.extend(self._get_heading_toc_entries(comp, toc_deep))
+                    has_entries = True
+                # Chapter is at depth 2 (part is depth 1)
+                if toc_deep >= 2:
+                    target = f"{comp.filename.replace('.md', '.xhtml')}#ch_{comp.id}"
+                    css_class = self._toc_class_for_type(comp.type)
+                    lines.append(f'<p class="{css_class}"><a href="{target}">{title}</a></p>')
+                    has_entries = True
+                    # Chapter consumes one level; sub-headings start at depth 3+
+                    part_deep = toc_deep - 1
+                    if part_deep > 1:
+                        lines.extend(self._get_heading_toc_entries(comp, part_deep))
             else:
                 if current_part_id is not None:
                     lines.append('</div>')
@@ -761,7 +779,7 @@ class EpubService:
             display_title = default_title or component.get_display_name()
 
         if component.type == ComponentType.TOC:
-            toc_deep = frontmatter.get("toc_deep", 2)
+            toc_deep = self._normalize_toc_deep(frontmatter.get("toc_deep", 2))
             auto_toc = self._generate_toc_html(self._toc_filter, toc_deep)
             import markdown
             md = markdown.Markdown(extensions=self.markdown_service.extensions,
