@@ -22,6 +22,7 @@ from .markdown_service import MarkdownService, ERROR_BASE_KEY
 from .file_service import FileService
 from .yaml_service import YamlService
 from .theme_service import ThemeService
+from .labels_service import resolve_labels
 
 
 class EpubService:
@@ -74,6 +75,15 @@ class EpubService:
     def __init__(self, project: Project):
         self.project = project
         self.markdown_service = MarkdownService()
+        self._labels: Dict[str, str] = {}
+
+    def _resolve_labels(self, global_config: Optional[Dict] = None) -> Dict[str, str]:
+        self._labels = resolve_labels(
+            self.project.language,
+            self.project.labels,
+            global_config,
+        )
+        return self._labels
 
     def _create_css_item(self, uid: str, filename: str, css_text: str) -> epub.EpubItem:
         return epub.EpubItem(
@@ -126,8 +136,10 @@ class EpubService:
             book.add_item(img_item)
             embedded.add(src)
 
-    def generate(self, output_path: str, epub_version: str = "epub3") -> Optional[str]:
+    def generate(self, output_path: str, epub_version: str = "epub3",
+                 global_config: Optional[Dict] = None) -> Optional[str]:
         try:
+            self._resolve_labels(global_config)
             book = epub.EpubBook()
 
             book.set_identifier(str(uuid.uuid4()))
@@ -189,8 +201,10 @@ class EpubService:
             footnotes_comp = self._get_footnotes_component()
             collected_footnotes: Dict[str, dict] = {}
 
+            part_count_for_header = 0
             for part_comp in self.project.get_parts():
-                part_ch = self._create_part_chapter(part_comp, style_items)
+                part_count_for_header += 1
+                part_ch = self._create_part_chapter(part_comp, style_items, part_count_for_header)
                 if part_ch:
                     part_chapters[part_comp.id] = part_ch
                     book.add_item(part_ch)
@@ -249,9 +263,11 @@ class EpubService:
 
             chapter_count = 0
             for component in self.project.get_ordered_components():
-                if component.type in (ComponentType.PART, ComponentType.FOOTNOTES):
+                if component.type == ComponentType.PART:
                     continue
-                if component.type == ComponentType.CHAPTER:
+                if component.type == ComponentType.FOOTNOTES:
+                    continue
+                if component.should_use_numbering():
                     chapter_count += 1
                 chapter_styles = list(style_items)
                 type_item = type_css_items.get(component.type.value)
@@ -266,7 +282,7 @@ class EpubService:
 
                 tab_start = table_start.get(component.id, 0)
 
-                chapter = self._create_chapter(component, chapter_styles, chapter_count if component.type == ComponentType.CHAPTER else None,
+                chapter = self._create_chapter(component, chapter_styles, chapter_count if component.should_use_numbering() else None,
                                                footnotes_comp=footnotes_comp, collected_footnotes=collected_footnotes,
                                                start_number=start_num,
                                                figure_num_start=fig_start,
@@ -413,16 +429,53 @@ class EpubService:
 
         mode = self.project.auto_chapter_title
         if mode != "none" and show_title:
-            if component.type == ComponentType.CHAPTER and chapter_number is not None:
+            if component.should_use_numbering() and chapter_number is not None:
+                label = self._labels.get("chapter", "Capítulo") if component.type == ComponentType.CHAPTER else self._labels.get("appendix", "Apéndice")
                 if mode == "chapter_number":
-                    number_part = f"Capítulo {chapter_number}"
+                    number_part = f"{label} {chapter_number}"
                 elif mode == "number":
                     number_part = str(chapter_number)
                 elif mode == "chapter_number_with_title":
-                    number_part = f"Capítulo {chapter_number}"
+                    number_part = f"{label} {chapter_number}"
                     title_part = component.get_display_name()
                 elif mode == "number_with_title":
                     number_part = str(chapter_number)
+                    title_part = component.get_display_name()
+
+        if show_title and not number_part and not title_part:
+            title_part = component.get_display_name()
+
+        if number_part and title_part:
+            display_title = f"{number_part}: {title_part}"
+        elif number_part:
+            display_title = number_part
+        elif title_part:
+            display_title = title_part
+        else:
+            display_title = ""
+        return number_part, title_part, display_title
+
+    def _get_part_header(
+        self, component: Component, part_number: Optional[int] = None
+    ) -> Tuple[str, str, str]:
+        """Returns (number_part, title_part, display_title) for a part component."""
+        show_title = component.frontmatter.get("show_title", True)
+        number_part = ""
+        title_part = ""
+
+        mode = self.project.auto_part_title
+        if mode != "none" and show_title:
+            if part_number is not None:
+                label = self._labels.get("part", "Parte")
+                if mode == "part_number":
+                    number_part = f"{label} {part_number}"
+                elif mode == "number":
+                    number_part = str(part_number)
+                elif mode == "part_number_with_title":
+                    number_part = f"{label} {part_number}"
+                    title_part = component.get_display_name()
+                elif mode == "number_with_title":
+                    number_part = str(part_number)
                     title_part = component.get_display_name()
 
         if show_title and not number_part and not title_part:
@@ -550,6 +603,7 @@ class EpubService:
         lines = []
         has_entries = False
         chapter_count = 0
+        part_toc_count = 0
 
         for comp in self.project.get_ordered_components():
             include = toc_include is None or comp.type.value in toc_include
@@ -560,9 +614,9 @@ class EpubService:
             if comp.type == ComponentType.PART and comp.id in parts_with_chapters:
                 continue
 
-            if comp.type == ComponentType.CHAPTER:
+            if comp.should_use_numbering():
                 chapter_count += 1
-            _, _, display_title = self._get_component_header(comp, chapter_count if comp.type == ComponentType.CHAPTER else None)
+            _, _, display_title = self._get_component_header(comp, chapter_count if comp.should_use_numbering() else None)
             title = display_title or comp.get_display_name()
 
             belongs_to_part = (comp.part_id in part_map
@@ -573,9 +627,12 @@ class EpubService:
                     if current_part_id is not None:
                         lines.append('</div>')
                     part = part_map[comp.part_id]
+                    part_toc_count += 1
+                    _, _, part_display_title = self._get_part_header(part, part_toc_count)
+                    part_title = part_display_title or part.get_display_name()
                     lines.append('<div class="toc-part">')
                     target = f"{part.filename.replace('.md', '.xhtml')}" if part.filename else "#"
-                    lines.append(f'<p class="toc-part-heading"><a href="{target}">{part.title}</a></p>')
+                    lines.append(f'<p class="toc-part-heading"><a href="{target}">{part_title}</a></p>')
                     current_part_id = comp.part_id
                     has_entries = True
                 # Chapter is at depth 2 (part is depth 1)
@@ -594,6 +651,9 @@ class EpubService:
                     current_part_id = None
                 # PART without chapters: standalone entry
                 if comp.type == ComponentType.PART:
+                    part_toc_count += 1
+                    _, _, part_display_title = self._get_part_header(comp, part_toc_count)
+                    title = part_display_title or comp.get_display_name()
                     css_class = "toc-part-standalone"
                 else:
                     css_class = self._toc_class_for_type(comp.type)
@@ -657,6 +717,7 @@ class EpubService:
         if not figure_info:
             return ""
         use_roman = self.project.figure_numbering_style == "roman"
+        figure_label = self._labels.get("figure", "Figura")
         lines = ['<div class="lof-list">', '<ul>']
         for fig_num, caption, filename in figure_info:
             href = f"{filename.replace('.md', '.xhtml')}#fig_{fig_num}"
@@ -665,9 +726,9 @@ class EpubService:
             else:
                 num_str = str(fig_num)
             if caption:
-                text = f"Figura {num_str} - {caption}"
+                text = f"{figure_label} {num_str} - {caption}"
             else:
-                text = f"Figura {num_str}"
+                text = f"{figure_label} {num_str}"
             lines.append(f'<li class="lof-entry"><a href="{href}">{text}</a></li>')
         lines.append('</ul>')
         lines.append('</div>')
@@ -678,6 +739,7 @@ class EpubService:
         if not table_info:
             return ""
         use_roman = self.project.table_numbering_style == "roman"
+        table_label = self._labels.get("table", "Tabla")
         lines = ['<div class="lot-list">', '<ul>']
         for tab_num, caption, filename in table_info:
             href = f"{filename.replace('.md', '.xhtml')}#tab_{tab_num}"
@@ -686,9 +748,9 @@ class EpubService:
             else:
                 num_str = str(tab_num)
             if caption:
-                text = f"Tabla {num_str} - {caption}"
+                text = f"{table_label} {num_str} - {caption}"
             else:
-                text = f"Tabla {num_str}"
+                text = f"{table_label} {num_str}"
             lines.append(f'<li class="lot-entry"><a href="{href}">{text}</a></li>')
         lines.append('</ul>')
         lines.append('</div>')
@@ -785,7 +847,7 @@ class EpubService:
             md = markdown.Markdown(extensions=self.markdown_service.extensions,
                                    extension_configs=self.markdown_service.get_extension_configs())
             title_html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content)) if markdown_content.strip() else ""
-            title_html = MarkdownService._add_image_captions(title_html)
+            title_html = MarkdownService._add_image_captions(title_html, labels=self._labels)
             combined = (title_html + "\n" + auto_toc) if title_html else auto_toc
             html_content = self.markdown_service._wrap_in_section(combined, component.type, component.id)
         elif component.type == ComponentType.LOF:
@@ -794,7 +856,7 @@ class EpubService:
             md = markdown.Markdown(extensions=self.markdown_service.extensions,
                                    extension_configs=self.markdown_service.get_extension_configs())
             title_html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content)) if markdown_content.strip() else ""
-            title_html = MarkdownService._add_image_captions(title_html)
+            title_html = MarkdownService._add_image_captions(title_html, labels=self._labels)
             combined = (title_html + "\n" + auto_lof) if title_html else auto_lof
             html_content = self.markdown_service._wrap_in_section(combined, component.type, component.id)
         elif component.type == ComponentType.LOT:
@@ -803,8 +865,8 @@ class EpubService:
             md = markdown.Markdown(extensions=self.markdown_service.extensions,
                                    extension_configs=self.markdown_service.get_extension_configs())
             title_html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content)) if markdown_content.strip() else ""
-            title_html = MarkdownService._add_image_captions(title_html)
-            title_html = MarkdownService._add_table_captions(title_html)
+            title_html = MarkdownService._add_image_captions(title_html, labels=self._labels)
+            title_html = MarkdownService._add_table_captions(title_html, labels=self._labels)
             combined = (title_html + "\n" + auto_lot) if title_html else auto_lot
             html_content = self.markdown_service._wrap_in_section(combined, component.type, component.id)
         else:
@@ -823,9 +885,10 @@ class EpubService:
                     markdown_content = f"# {component.get_display_name()}\n\n{markdown_content}"
             # else show_title=False, no header: just render content as-is
             html_content = self.markdown_service.render(markdown_content, component.type, component.id, start_number,
-                                                         figure_num_start, figure_num_style,
-                                                         table_num_start, table_num_style,
-                                                         variables=variables)
+                                                          figure_num_start, figure_num_style,
+                                                          table_num_start, table_num_style,
+                                                          variables=variables,
+                                                          labels=self._labels)
 
         # Apply drop cap to non-TOC components
         if (component.type != ComponentType.TOC
@@ -934,7 +997,7 @@ class EpubService:
             markdown_content = f"# {display_title}\n\n{markdown_content}"
 
         user_html = self.markdown_service.render(markdown_content, component.type, component.id,
-                                                  variables=variables)
+                                                  variables=variables, labels=self._labels)
 
         # Build flat footnotes collection in document order, no chapter grouping
         if collected:
@@ -983,14 +1046,45 @@ class EpubService:
         return chapter
 
     def _create_part_chapter(
-        self, component: Component, style_items: List[epub.EpubItem] = None
+        self, component: Component, style_items: List[epub.EpubItem] = None,
+        part_number: Optional[int] = None,
     ) -> Optional[epub.EpubHtml]:
         content = FileService.load_component(self.project.path, component)
         markdown_content = f"# {component.title}"
+        frontmatter = {}
         if content:
-            _, md_text = YamlService.parse_frontmatter(content)
+            frontmatter, md_text = YamlService.parse_frontmatter(content)
             if md_text.strip():
                 markdown_content = md_text
+
+        number_part, title_part, display_title = self._get_part_header(
+            component, part_number
+        )
+
+        show_title = frontmatter.get("show_title", True)
+        h1_match = re.search(r'^# (.+)$', markdown_content, re.MULTILINE)
+        default_title = h1_match.group(1).strip() if h1_match else ""
+
+        if show_title:
+            replaces_title = self.project.auto_part_title in ("part_number", "number")
+            if default_title and not title_part and not replaces_title:
+                title_part = default_title
+            if default_title and title_part and default_title != component.get_display_name():
+                title_part = default_title
+
+        subtitle_part = ""
+        if title_part:
+            subtitle_part, title_part = EpubService._split_title(title_part, frontmatter)
+
+        header_html = self._build_header_html(number_part, subtitle_part, title_part)
+        if header_html:
+            if h1_match:
+                markdown_content = (markdown_content[:h1_match.start()]
+                                    + markdown_content[h1_match.end():])
+                markdown_content = markdown_content.strip()
+            markdown_content = header_html + markdown_content
+        elif show_title and not default_title:
+            markdown_content = f"# {component.get_display_name()}\n\n{markdown_content}"
 
         import markdown
         md = markdown.Markdown(extensions=self.markdown_service.extensions,
@@ -998,7 +1092,7 @@ class EpubService:
         html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content))
 
         chapter = epub.EpubHtml(
-            title=component.get_display_name(),
+            title=display_title or component.get_display_name(),
             file_name=f"{component.filename.replace('.md', '.xhtml')}",
             lang=self.project.language,
         )
@@ -1007,7 +1101,7 @@ class EpubService:
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
 <head>
-    <title>{component.get_display_name()}</title>
+    <title>{display_title or component.get_display_name()}</title>
 </head>
 <body>
 <section class="component-part">

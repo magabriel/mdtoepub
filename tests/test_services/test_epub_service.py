@@ -2,6 +2,7 @@ import pytest
 from pathlib import Path
 from ebooklib import epub
 from mdtoepub.services.epub_service import EpubService
+from mdtoepub.services.markdown_service import MarkdownService
 from mdtoepub.models.project import Project
 from mdtoepub.models.component import Component, ComponentType
 
@@ -44,7 +45,7 @@ class TestChapterAutoTitle:
     def test_non_chapter_type_ignored(self):
         p = Project(auto_chapter_title="chapter_number")
         svc = EpubService(p)
-        for ctype in (ComponentType.FOREWORD, ComponentType.APPENDIX, ComponentType.TOC):
+        for ctype in (ComponentType.FOREWORD, ComponentType.TOC):
             c = Component(type=ctype, title="")
             num, _, _ = svc._get_component_header(c, 1)
             assert num == "", f"should not auto-title {ctype}"
@@ -448,3 +449,113 @@ class TestFootnotes:
                 assert "Mis Notas" in notas_content
                 assert 'id="fn:cap-1"' in notas_content
             Path(output).unlink()
+
+
+class TestAppendixAutoTitle:
+    def test_appendix_chapter_number_format(self):
+        p = Project(auto_chapter_title="chapter_number")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.APPENDIX, title="")
+        num1, _, _ = svc._get_component_header(c, 1)
+        assert num1 == "Apéndice 1"
+
+    def test_appendix_number_format(self):
+        p = Project(auto_chapter_title="number")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.APPENDIX, title="")
+        num1, _, _ = svc._get_component_header(c, 42)
+        assert num1 == "42"
+
+    def test_appendix_with_title_mode(self):
+        p = Project(auto_chapter_title="chapter_number_with_title")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.APPENDIX, title="Datos")
+        num, title_part, _ = svc._get_component_header(c, 3)
+        assert num == "Apéndice 3"
+        assert title_part == "Datos"
+
+
+class TestPartAutoTitle:
+    def test_disabled_none(self):
+        p = Project(auto_part_title="none")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.PART, title="Introduccion")
+        num, title_part, display = svc._get_part_header(c, 1)
+        assert num == ""
+        assert title_part == "Introduccion"
+
+    def test_part_number_format(self):
+        p = Project(auto_part_title="part_number")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.PART, title="")
+        num1, _, _ = svc._get_part_header(c, 1)
+        assert num1 == "Parte 1"
+        num5, _, _ = svc._get_part_header(c, 5)
+        assert num5 == "Parte 5"
+
+    def test_number_format(self):
+        p = Project(auto_part_title="number")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.PART, title="")
+        num1, _, _ = svc._get_part_header(c, 1)
+        assert num1 == "1"
+
+    def test_with_title_mode(self):
+        p = Project(auto_part_title="part_number_with_title")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.PART, title="Mi Parte")
+        num, title_part, _ = svc._get_part_header(c, 2)
+        assert num == "Parte 2"
+        assert title_part == "Mi Parte"
+
+    def test_number_with_title_mode(self):
+        p = Project(auto_part_title="number_with_title")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.PART, title="Mi Parte")
+        num, title_part, _ = svc._get_part_header(c, 3)
+        assert num == "3"
+        assert title_part == "Mi Parte"
+
+    def test_show_title_false(self):
+        p = Project(auto_part_title="part_number_with_title")
+        svc = EpubService(p)
+        c = Component(type=ComponentType.PART, title="Mi Parte")
+        c.frontmatter = {"show_title": False}
+        num, title_part, _ = svc._get_part_header(c, 1)
+        assert num == ""
+        assert title_part == ""
+
+
+class TestLocalizedLabels:
+    def test_english_chapter_label(self):
+        p = Project(auto_chapter_title="chapter_number", language="en",
+                     labels={"chapter": "Chapter"})
+        svc = EpubService(p)
+        svc._resolve_labels()
+        c = Component(type=ComponentType.CHAPTER, title="")
+        num, _, _ = svc._get_component_header(c, 1)
+        assert num == "Chapter 1"
+
+    def test_english_figure_label(self):
+        html = '<p><img alt="Photo" src="img.jpg" /></p>'
+        labels = {"figure": "Figure"}
+        result = MarkdownService._add_image_captions(html, figure_num_start=1,
+                                                      labels=labels)
+        assert '<figcaption>Figure 1 - Photo</figcaption>' in result
+
+    def test_english_table_label(self):
+        html = '<!-- Table: My Table --><table><tr><td>Data</td></tr></table>'
+        labels = {"table": "Table"}
+        result = MarkdownService._add_table_captions(html, table_num_start=1,
+                                                      labels=labels)
+        assert '<figcaption>Table 1 - My Table</figcaption>' in result
+
+    def test_figure_fallback_spanish(self):
+        html = '<p><img alt="Foto" src="img.jpg" /></p>'
+        result = MarkdownService._add_image_captions(html, figure_num_start=1)
+        assert '<figcaption>Figura 1 - Foto</figcaption>' in result
+
+    def test_table_fallback_spanish(self):
+        html = '<!-- Table: Mi Tabla --><table><tr><td>Dato</td></tr></table>'
+        result = MarkdownService._add_table_captions(html, table_num_start=1)
+        assert '<figcaption>Tabla 1 - Mi Tabla</figcaption>' in result

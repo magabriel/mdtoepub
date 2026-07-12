@@ -20,6 +20,8 @@ TABLE_CAPTION_HTML_RE = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 INTERP_RE = re.compile(r'\{\{(\w+)(?::(\w+))?\}\}')
+DEFAULT_LABEL_FIGURE = "Figura"
+DEFAULT_LABEL_TABLE = "Tabla"
 
 
 class MarkdownService:
@@ -52,7 +54,8 @@ class MarkdownService:
     def render(self, markdown_text: str, component_type: ComponentType = ComponentType.CHAPTER, component_id: str = "", start_number: int = 1,
                figure_num_start: int = 0, figure_num_style: str = "arabic",
                table_num_start: int = 0, table_num_style: str = "arabic",
-               variables: Optional[Dict[str, str]] = None) -> str:
+               variables: Optional[Dict[str, str]] = None,
+               labels: Optional[Dict[str, str]] = None) -> str:
         cleaned = self._interpolate_variables(markdown_text, variables)
         cleaned = re.sub(r'\{lang=\w+(?:[_-]\w+)*\}', '', cleaned)
         cleaned = self._renumber_footnotes(cleaned, start_number)
@@ -60,8 +63,8 @@ class MarkdownService:
                                extension_configs=self._extension_configs)
         html = md.convert(cleaned)
         html = self._fix_footnote_display_numbers(html)
-        html = self._add_image_captions(html, figure_num_start, figure_num_style)
-        html = self._add_table_captions(html, table_num_start, table_num_style)
+        html = self._add_image_captions(html, figure_num_start, figure_num_style, labels=labels)
+        html = self._add_table_captions(html, table_num_start, table_num_style, labels=labels)
         return self._wrap_in_section(html, component_type, component_id)
 
     @staticmethod
@@ -197,13 +200,15 @@ class MarkdownService:
         return ''.join(result)
 
     @staticmethod
-    def _add_image_captions(html: str, figure_num_start: int = 0, figure_num_style: str = "arabic") -> str:
+    def _add_image_captions(html: str, figure_num_start: int = 0, figure_num_style: str = "arabic",
+                            labels: Optional[Dict[str, str]] = None) -> str:
         """Wrap <img> tags that have alt text in <figure>/<figcaption>.
         
         When figure_num_start > 0, figures are numbered starting from that value.
         Decorative images (path containing '/decorative/') are never numbered.
         """
         DECORATIVE_HTML_RE = re.compile(r'(?:^|/)decorative/', re.IGNORECASE)
+        figure_label = (labels or {}).get("figure", DEFAULT_LABEL_FIGURE)
         next_num = figure_num_start
 
         def _wrap(m):
@@ -221,9 +226,9 @@ class MarkdownService:
                     else:
                         num_str = str(num)
                     if alt.strip():
-                        caption = f"Figura {num_str} - {alt}"
+                        caption = f"{figure_label} {num_str} - {alt}"
                     else:
-                        caption = f"Figura {num_str}"
+                        caption = f"{figure_label} {num_str}"
                     return f'<figure id="fig_{num}">\n{tag}\n<figcaption>{caption}</figcaption>\n</figure>'
                 else:
                     return f'<figure>\n{tag}\n<figcaption>{alt}</figcaption>\n</figure>'
@@ -279,12 +284,14 @@ class MarkdownService:
         return results
 
     @staticmethod
-    def _add_table_captions(html: str, table_num_start: int = 0, table_num_style: str = "arabic") -> str:
+    def _add_table_captions(html: str, table_num_start: int = 0, table_num_style: str = "arabic",
+                            labels: Optional[Dict[str, str]] = None) -> str:
         """Wrap <!-- Table: caption --><table>...</table> in <figure>/<figcaption>.
 
         When table_num_start > 0, captioned tables are numbered starting from that value.
         Tables without a <!-- Table: --> comment stay as-is.
         """
+        table_label = (labels or {}).get("table", DEFAULT_LABEL_TABLE)
         next_num = table_num_start
 
         def _wrap(m):
@@ -299,9 +306,9 @@ class MarkdownService:
                 else:
                     num_str = str(num)
                 if caption:
-                    cap_text = f"Tabla {num_str} - {caption}"
+                    cap_text = f"{table_label} {num_str} - {caption}"
                 else:
-                    cap_text = f"Tabla {num_str}"
+                    cap_text = f"{table_label} {num_str}"
                 return f'<figure id="tab_{num}">\n{table}\n<figcaption>{cap_text}</figcaption>\n</figure>'
             else:
                 return f'<figure>\n{table}\n<figcaption>{caption}</figcaption>\n</figure>'

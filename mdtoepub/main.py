@@ -27,6 +27,7 @@ from .services.image_service import ImageService
 from .services.style_doc_service import StyleDocService
 from .services.spell_service import SpellCheckService
 from .services.theme_service import ThemeService
+from .services.labels_service import resolve_labels
 
 
 FRONTMATTER_DOCS = {
@@ -95,6 +96,7 @@ class MDToEPUBApp(Gtk.Application):
         self._drag_component_ids = []
         self._last_epub_path = None
         self._recent_projects = []
+        self._in_cursor_change = False
         self._read_only = False
         self._dev_mode = os.environ.get("MDTOEPUB_DEV") == "1"
         self._toolbar_save_btn = None
@@ -1304,6 +1306,9 @@ hr { border: none; border-top: 1px solid #ccc; }
             if self.project and component:
                 from .services.epub_service import EpubService as _EpubService
                 epub_svc = _EpubService(self.project)
+                _, config_file = self._get_config_path()
+                global_config = YamlService.load(config_file)
+                epub_svc._resolve_labels(global_config)
 
                 # Special handling for COVER with only one image
                 if (component.type == ComponentType.COVER
@@ -1323,23 +1328,39 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                         self.webview.load_html(preview_html, self._get_base_uri())
                         return
                 chapter_number = None
-                if component.type == ComponentType.CHAPTER:
+                part_number = None
+                if component.should_use_numbering():
                     count = 0
                     for c in self.project.get_ordered_components():
-                        if c.type == ComponentType.CHAPTER:
+                        if c.should_use_numbering():
                             count += 1
                         if c.id == component.id:
                             chapter_number = count
+                            break
+                elif component.type == ComponentType.PART:
+                    count = 0
+                    for c in self.project.get_ordered_components():
+                        if c.type == ComponentType.PART:
+                            count += 1
+                        if c.id == component.id:
+                            part_number = count
                             break
 
                 h1_match = re.search(r'^# (.+)$', md_text, re.MULTILINE)
                 default_title = h1_match.group(1).strip() if h1_match else ""
                 show_title = editor_fm.get("show_title", True)
-                num_part, title_part, _ = epub_svc._get_component_header(
-                    component, chapter_number
-                )
-                if show_title:
+
+                if component.type == ComponentType.PART:
+                    num_part, title_part, _ = epub_svc._get_part_header(
+                        component, part_number
+                    )
+                    replaces = self.project.auto_part_title in ("part_number", "number")
+                else:
+                    num_part, title_part, _ = epub_svc._get_component_header(
+                        component, chapter_number
+                    )
                     replaces = self.project.auto_chapter_title in ("chapter_number", "number")
+                if show_title:
                     if default_title and not title_part and not replaces:
                         title_part = default_title
                     if default_title and title_part and default_title != component.title:
@@ -1361,7 +1382,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     md_text = f"# {component.get_display_name()}\n\n{md_text}"
 
                 html = self.md_service.render(md_text, component_type, component_id,
-                                              variables=variables)
+                                              variables=variables,
+                                              labels=epub_svc._labels)
 
                 if (self.project.drop_cap_enabled
                         and component_type.value in self.project.drop_cap_types):
@@ -1422,19 +1444,25 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
     def _save_current_component(self):
         if self._read_only:
-            return
+            return False
         text = self._get_editor_text()
         frontmatter, markdown_content = YamlService.parse_frontmatter(text)
-        if self.current_part:
-            if self.current_part not in self.project.components:
-                return
-            self.current_part.frontmatter = frontmatter
-            FileService.save_component(self.project.path, self.current_part, text)
-        elif self.current_component:
-            if self.current_component not in self.project.components:
-                return
-            self.current_component.frontmatter = frontmatter
-            FileService.save_component(self.project.path, self.current_component, text)
+
+        component = self.current_part or self.current_component
+        if component is None or component not in self.project.components:
+            return False
+
+        component.frontmatter = frontmatter
+        FileService.save_component(self.project.path, component, text)
+
+        h1_match = re.search(r'^#\s+(.+)$', markdown_content, re.MULTILINE)
+        new_title = h1_match.group(1).strip() if h1_match else ""
+        if new_title and new_title != component.title:
+            component.title = new_title
+            FileService.save_project(self.project)
+            return True
+
+        return False
 
     def _load_component_content(self, component: Component) -> str:
         content = FileService.load_component(self.project.path, component)
@@ -1681,6 +1709,25 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_app.attach(combo_auto_title, 1, row, 1, 1)
         row += 1
 
+        label_part = Gtk.Label(label="Titulo auto de partes:")
+        label_part.set_xalign(1)
+        grid_app.attach(label_part, 0, row, 1, 1)
+        combo_auto_part = Gtk.ComboBoxText()
+        combo_auto_part.append_text("No")
+        combo_auto_part.append_text("Parte <n>")
+        combo_auto_part.append_text("<n>")
+        combo_auto_part.append_text("Parte <n> + titulo")
+        combo_auto_part.append_text("<n> + titulo")
+        auto_part_values = ["none", "part_number", "number", "part_number_with_title", "number_with_title"]
+        auto_part_index = 0
+        for i, v in enumerate(auto_part_values):
+            if v == self.project.auto_part_title:
+                auto_part_index = i
+                break
+        combo_auto_part.set_active(auto_part_index)
+        grid_app.attach(combo_auto_part, 1, row, 1, 1)
+        row += 1
+
         label = Gtk.Label(label="Tema:")
         label.set_xalign(1)
         grid_app.attach(label, 0, row, 1, 1)
@@ -1853,6 +1900,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 auto_idx = combo_auto_title.get_active()
                 if 0 <= auto_idx < len(auto_title_values):
                     self.project.auto_chapter_title = auto_title_values[auto_idx]
+                auto_part_idx = combo_auto_part.get_active()
+                if 0 <= auto_part_idx < len(auto_part_values):
+                    self.project.auto_part_title = auto_part_values[auto_part_idx]
                 theme_idx = combo_theme.get_active()
                 if theme_idx >= 0 and theme_idx < len(available_themes):
                     self.project.theme_id = available_themes[theme_idx][0]
@@ -2351,9 +2401,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if response == Gtk.ResponseType.ACCEPT:
                 title = entry_title.get_text().strip()
                 if not title:
-                    self._show_error("El titulo de la parte es obligatorio")
-                    d.destroy()
-                    return
+                    title = COMPONENT_TYPE_LABELS[ComponentType.PART]
                 import uuid
                 component_id = str(uuid.uuid4())
                 part = Component(
@@ -2401,7 +2449,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if not self._confirm(f"El archivo ya existe:\n{epub_path}\n\n¿Sobrescribirlo?"):
                 return
         epub_service = EpubService(self.project)
-        result = epub_service.generate(epub_path, self.project.epub_version)
+        _, config_file = self._get_config_path()
+        global_config = YamlService.load(config_file)
+        result = epub_service.generate(epub_path, self.project.epub_version, global_config=global_config)
         if result:
             self._last_epub_path = result
             self._update_status(f"EPUB exportado: {result}")
@@ -2510,12 +2560,12 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         for comp in self.project.get_ordered_components():
             if comp.type == ComponentType.PART:
-                part_iters[comp.id] = self.project_store.append(project_iter, [comp.title, comp])
+                part_iters[comp.id] = self.project_store.append(project_iter, [comp.get_display_name(), comp])
                 continue
             part = self.project.get_part(comp.part_id) if comp.part_id else None
             if part and comp.type == ComponentType.CHAPTER:
                 if part.id not in part_iters:
-                    part_iters[part.id] = self.project_store.append(project_iter, [part.title, part])
+                    part_iters[part.id] = self.project_store.append(project_iter, [part.get_display_name(), part])
                 self.project_store.append(part_iters[part.id], [_component_label(comp), comp])
             else:
                 self.project_store.append(project_iter, [_component_label(comp), comp])
@@ -2523,37 +2573,33 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         self.project_tree.expand_all()
 
     def _on_tree_cursor_changed(self, tree):
-        path, column = tree.get_cursor()
-        if path is None:
+        if self._in_cursor_change:
             return
+        self._in_cursor_change = True
+        try:
+            path, column = tree.get_cursor()
+            if path is None:
+                return
 
-        iter = self.project_store.get_iter(path)
-        obj = self.project_store.get_value(iter, 1)
+            iter = self.project_store.get_iter(path)
+            obj = self.project_store.get_value(iter, 1)
 
-        if isinstance(obj, Component):
-            self._save_current_component()
-            self.current_component = obj
-            self.current_part = None
-            self._styles_current_component = obj
-            content = self._load_component_content(obj)
-            buffer = self.text_view.get_buffer()
-            buffer.set_text(content)
-            self._update_status(f"Editando: {obj.get_display_name()}")
-            self._update_styles_panel(obj.type)
-            self._update_preview()
-        elif isinstance(obj, Component) and obj.type == ComponentType.PART:
-            self._save_current_component()
-            self.current_part = obj
-            self.current_component = None
-            self._styles_current_component = None
-            content = FileService.load_component(self.project.path, obj)
-            if not content:
-                content = f"# {obj.title}\n\n"
-            buffer = self.text_view.get_buffer()
-            buffer.set_text(content)
-            self._update_status(f"Editando parte: {obj.title}")
-            self._update_styles_panel(None)
-            self._update_preview()
+            if isinstance(obj, Component):
+                title_changed = self._save_current_component()
+                self.current_component = obj
+                self.current_part = None
+                self._styles_current_component = obj
+                if title_changed:
+                    self._refresh_project_tree()
+                    self.project_tree.expand_all()
+                content = self._load_component_content(obj)
+                buffer = self.text_view.get_buffer()
+                buffer.set_text(content)
+                self._update_status(f"Editando: {obj.get_display_name()}")
+                self._update_styles_panel(obj.type)
+                self._update_preview()
+        finally:
+            self._in_cursor_change = False
 
     def _on_tree_button_press(self, tree, event):
         if event.button != 3:
@@ -3576,11 +3622,12 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         def on_response(d, response):
             if response == Gtk.ResponseType.ACCEPT:
                 new_title = entry.get_text().strip()
-                if new_title:
-                    part.title = new_title
-                    self.project_store.set_value(iter_, 0, new_title)
-                    FileService.save_project(self.project)
-                    self._update_status(f"Parte renombrada: {new_title}")
+                if not new_title:
+                    new_title = COMPONENT_TYPE_LABELS[ComponentType.PART]
+                part.title = new_title
+                self.project_store.set_value(iter_, 0, part.get_display_name())
+                FileService.save_project(self.project)
+                self._update_status(f"Parte renombrada: {new_title}")
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -3594,7 +3641,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             buttons=Gtk.ButtonsType.YES_NO,
             text="Eliminar parte",
         )
-        dialog.format_secondary_text(f"Se eliminara la parte \"{part.title}\" y sus componentes quedaran sin agrupar.")
+        dialog.format_secondary_text(f"Se eliminara la parte \"{part.get_display_name()}\" y sus componentes quedaran sin agrupar.")
 
         def on_response(d, response):
             if response == Gtk.ResponseType.YES:
@@ -3604,7 +3651,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 self.project.remove_component(part.id)
                 FileService.save_project(self.project)
                 self._refresh_project_tree()
-                self._update_status(f"Parte eliminada: {part.title}")
+                self._update_status(f"Parte eliminada: {part.get_display_name()}")
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -3674,7 +3721,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         component.part_id = part.id
         FileService.save_project(self.project)
         self._refresh_project_tree()
-        self._update_status(f"{component.get_display_name()} movido a {part.title}")
+        self._update_status(f"{component.get_display_name()} movido a {part.get_display_name()}")
 
     def _on_detach_from_part(self, menu_item, component):
         if not component.part_id:

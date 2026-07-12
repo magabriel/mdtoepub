@@ -27,10 +27,12 @@ class Project:
     isbn: str = ""
     publisher: str = ""
     subtitle: str = ""
+    auto_part_title: str = "none"
     figure_numbering: bool = False
     figure_numbering_style: str = "arabic"
     table_numbering: bool = False
     table_numbering_style: str = "arabic"
+    labels: Dict[str, str] = field(default_factory=dict)
 
     def add_component(self, component: Component) -> None:
         component.order = len(self.components)
