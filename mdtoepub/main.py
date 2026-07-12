@@ -2300,7 +2300,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         content.set_margin_end(12)
 
         folder_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        folder_label = Gtk.Label(label="Carpeta:")
+        folder_label = Gtk.Label(label="Carpeta padre:")
         folder_label.set_size_request(80, -1)
         folder_box.pack_start(folder_label, False, False, 0)
 
