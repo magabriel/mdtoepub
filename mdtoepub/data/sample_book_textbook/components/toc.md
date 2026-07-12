@@ -1,7 +1,5 @@
 ---
 toc_include:
-  - cover
-  - title
   - author
   - dedication
   - foreword
