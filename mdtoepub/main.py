@@ -163,6 +163,9 @@ class MDToEPUBApp(Gtk.Application):
         item = Gtk.MenuItem(label="Importar libro...")
         item.connect("activate", self._on_import_book)
         archivo_menu.append(item)
+        item = Gtk.MenuItem(label="Importar libro EPUB...")
+        item.connect("activate", self._on_import_epub)
+        archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label="Salir")
         item.connect("activate", lambda w: self.window.destroy())
@@ -748,10 +751,16 @@ hr { border: none; border-top: 1px solid #ccc; }
             "",
             "  * Genera un indice local dentro del propio componente.",
             "",
-            "— Saltos de linea —  (nl2br)",
+            "— Saltos de linea —  (estandar CommonMark)",
             "",
-            "  * Un solo salto de linea dentro de un parrafo",
-            "    se convierte en <br> en el HTML.",
+            "  * Una linea en blanco entre bloques de texto",
+            "    crea un nuevo parrafo.",
+            "  * Un salto de linea simple une el texto en",
+            "    el mismo parrafo (soft break).",
+            "  * Dos espacios al final de una linea + salto",
+            "    de linea crea un <br> explicito (hard break).",
+            "  * Barra invertida al final de una linea +",
+            "    salto de linea tambien crea un hard break.",
             "",
             "Sintaxis personalizada",
             "",
@@ -2728,6 +2737,79 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if confirm.run() == Gtk.ResponseType.YES:
                 confirm.destroy()
                 count = FS.import_book(self.project.path, self.project, content, file_path)
+                self._update_status(f"Importados {count} componentes")
+                self._refresh_project_tree()
+                self._update_preview()
+                self._show_info(f"Se importaron {count} componentes correctamente.")
+            else:
+                confirm.destroy()
+        else:
+            dialog.destroy()
+
+    def _on_import_epub(self, button):
+        if not self.project:
+            self._show_info("No hay proyecto abierto")
+            return
+        if self._read_only:
+            self._show_info("No se puede importar en el libro de ejemplo")
+            return
+
+        dialog = Gtk.FileChooserNative(
+            title="Importar libro EPUB",
+            transient_for=self.window,
+            action=Gtk.FileChooserAction.OPEN,
+            accept_label="_Importar",
+            cancel_label="_Cancelar",
+        )
+
+        f_filter = Gtk.FileFilter()
+        f_filter.set_name("Archivos EPUB (*.epub)")
+        f_filter.add_pattern("*.epub")
+        dialog.add_filter(f_filter)
+        f_filter = Gtk.FileFilter()
+        f_filter.set_name("Todos los archivos")
+        f_filter.add_pattern("*")
+        dialog.add_filter(f_filter)
+
+        if dialog.run() == Gtk.ResponseType.ACCEPT:
+            file_path = dialog.get_filename()
+            dialog.destroy()
+
+            from .services.file_service import FileService as FS
+
+            try:
+                components, images = FS.parse_imported_epub(file_path)
+            except Exception as e:
+                self._show_error(f"Error al leer el EPUB: {e}")
+                return
+
+            if not components:
+                self._show_info("El EPUB no contiene documentos importables.")
+                return
+
+            total_chars = sum(len(md) for _, _, md in components)
+            desc_lines = [f"Se van a importar {len(components)} componentes:"]
+            for ctype, title, md in components:
+                title_str = f' — "{title}"' if title else ""
+                desc_lines.append(f"  - {ctype}{title_str} ({len(md)} chars)")
+            desc_lines.append("")
+            desc_lines.append(f"Imagenes encontradas: {len(images)}")
+            desc_lines.append(f"Total: {total_chars} caracteres en {len(components)} componentes.")
+            desc_lines.append("")
+            desc_lines.append("Los nuevos componentes se anyadiran a los existentes.")
+
+            confirm = Gtk.MessageDialog(
+                parent=self.window,
+                modal=True,
+                type=Gtk.MessageType.QUESTION,
+                buttons=Gtk.ButtonsType.YES_NO,
+                text="Confirmar importacion",
+            )
+            confirm.format_secondary_text("\n".join(desc_lines))
+
+            if confirm.run() == Gtk.ResponseType.YES:
+                confirm.destroy()
+                count = FS.import_epub(self.project.path, self.project, file_path)
                 self._update_status(f"Importados {count} componentes")
                 self._refresh_project_tree()
                 self._update_preview()

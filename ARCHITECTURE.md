@@ -107,7 +107,7 @@ Each component represents a section of the book.
 `services/markdown_service.py:7`
 
 Converts Markdown to HTML using Python-Markdown with extensions:
-- `tables`, `fenced_code`, `codehilite`, `toc`, `meta`, `nl2br`, `attr_list`
+- `tables`, `fenced_code`, `codehilite`, `toc`, `meta`, `attr_list`
 
 Key methods:
 - `render(text, component_type, component_id)` — strips `{lang=xx}` markers, renders Markdown, wraps in `<section class="component-{type}">`.
