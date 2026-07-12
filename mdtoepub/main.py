@@ -1339,12 +1339,15 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 chapter_number = None
                 part_number = None
                 if component.should_use_numbering():
-                    count = 0
+                    ch_count = 0
+                    ap_count = 0
                     for c in self.project.get_ordered_components():
-                        if c.should_use_numbering():
-                            count += 1
+                        if c.type == ComponentType.CHAPTER:
+                            ch_count += 1
+                        elif c.type == ComponentType.APPENDIX:
+                            ap_count += 1
                         if c.id == component.id:
-                            chapter_number = count
+                            chapter_number = ch_count if component.type == ComponentType.CHAPTER else ap_count
                             break
                 elif component.type == ComponentType.PART:
                     count = 0
