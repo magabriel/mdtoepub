@@ -4,6 +4,7 @@ from .yaml_service import YamlService
 from .file_service import FileService
 from .image_service import ImageService
 from .theme_service import ThemeService
+from .labels_service import resolve_labels
 
 __all__ = [
     "MarkdownService",
@@ -12,4 +13,5 @@ __all__ = [
     "FileService",
     "ImageService",
     "ThemeService",
+    "resolve_labels",
 ]

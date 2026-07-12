@@ -101,6 +101,7 @@ class FileService:
             "theme_id": project.theme_id,
             "epub_version": project.epub_version,
             "auto_chapter_title": "none",
+            "auto_part_title": "none",
             "drop_cap_enabled": True,
             "drop_cap_types": ["chapter"],
             "spell_lang": "es_ES",
@@ -114,6 +115,7 @@ class FileService:
             "figure_numbering_style": "arabic",
             "table_numbering": False,
             "table_numbering_style": "arabic",
+            "labels": {},
             "components": [],
             "parts": [],
         }
@@ -136,6 +138,7 @@ class FileService:
             theme_id=data.get("theme_id", "classic"),
             epub_version=data.get("epub_version", "epub3"),
             auto_chapter_title=data.get("auto_chapter_title", "none"),
+            auto_part_title=data.get("auto_part_title", "none"),
             custom_css="",
             type_css_overrides=None,
             drop_cap_enabled=data.get("drop_cap_enabled", True),
@@ -153,6 +156,7 @@ class FileService:
             figure_numbering_style=data.get("figure_numbering_style", "arabic"),
             table_numbering=data.get("table_numbering", False),
             table_numbering_style=data.get("table_numbering_style", "arabic"),
+            labels=data.get("labels", {}),
         )
 
         for comp_data in data.get("components", []):
@@ -193,6 +197,7 @@ class FileService:
             "theme_id": project.theme_id,
             "epub_version": project.epub_version,
             "auto_chapter_title": project.auto_chapter_title,
+            "auto_part_title": project.auto_part_title,
             "drop_cap_enabled": project.drop_cap_enabled,
             "drop_cap_types": project.drop_cap_types,
             "export_filename": project.export_filename,
@@ -207,6 +212,7 @@ class FileService:
             "figure_numbering_style": project.figure_numbering_style,
             "table_numbering": project.table_numbering,
             "table_numbering_style": project.table_numbering_style,
+            "labels": project.labels if project.labels else {},
             "components": [
                 {
                     "id": c.id,
