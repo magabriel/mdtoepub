@@ -268,13 +268,19 @@ class EpubService:
                                 table_info.append((running_tab_total, caption, component.filename))
 
             chapter_count = 0
+            appendix_count = 0
             for component in self.project.get_ordered_components():
                 if component.type == ComponentType.PART:
                     continue
                 if component.type == ComponentType.FOOTNOTES:
                     continue
-                if component.should_use_numbering():
+                if component.type == ComponentType.CHAPTER:
                     chapter_count += 1
+                elif component.type == ComponentType.APPENDIX:
+                    appendix_count += 1
+                comp_number = None
+                if component.should_use_numbering():
+                    comp_number = chapter_count if component.type == ComponentType.CHAPTER else appendix_count
                 chapter_styles = list(style_items)
                 type_item = type_css_items.get(component.type.value)
                 if type_item:
@@ -288,7 +294,7 @@ class EpubService:
 
                 tab_start = table_start.get(component.id, 0)
 
-                chapter = self._create_chapter(component, chapter_styles, chapter_count if component.should_use_numbering() else None,
+                chapter = self._create_chapter(component, chapter_styles, comp_number,
                                                footnotes_comp=footnotes_comp, collected_footnotes=collected_footnotes,
                                                start_number=start_num,
                                                figure_num_start=fig_start,
@@ -611,6 +617,7 @@ class EpubService:
         lines = []
         has_entries = False
         chapter_count = 0
+        appendix_count = 0
         part_toc_count = 0
 
         for comp in self.project.get_ordered_components():
@@ -622,9 +629,14 @@ class EpubService:
             if comp.type == ComponentType.PART and comp.id in parts_with_chapters:
                 continue
 
-            if comp.should_use_numbering():
+            if comp.type == ComponentType.CHAPTER:
                 chapter_count += 1
-            _, _, display_title = self._get_component_header(comp, chapter_count if comp.should_use_numbering() else None)
+            elif comp.type == ComponentType.APPENDIX:
+                appendix_count += 1
+            comp_number = None
+            if comp.should_use_numbering():
+                comp_number = chapter_count if comp.type == ComponentType.CHAPTER else appendix_count
+            _, _, display_title = self._get_component_header(comp, comp_number)
             title = display_title or self._component_label(comp)
 
             belongs_to_part = (comp.part_id in part_map
