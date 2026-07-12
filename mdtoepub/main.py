@@ -73,7 +73,10 @@ def _component_icon(comp: Component) -> str:
     return mapping.get(comp.type, "text-x-generic")
 
 
-def _component_label(comp: Component) -> str:
+def _component_label(comp: Component, labels=None) -> str:
+    if labels:
+        span = labels.get(comp.type.value, COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value))
+        return f"{comp.get_display_name(labels)} ({span} — {comp.type.value})"
     span = COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value)
     return f"{comp.get_display_name()} ({span} — {comp.type.value})"
 
@@ -102,6 +105,12 @@ class MDToEPUBApp(Gtk.Application):
         self._toolbar_save_btn = None
         self._styles_current_component = None
         self._styles_current_comp_type = None
+
+    def _resolve_labels(self):
+        from .services.labels_service import resolve_labels
+        if self.project:
+            return resolve_labels(self.project.language)
+        return resolve_labels("es")
 
     def do_activate(self):
         settings = Gtk.Settings.get_default()
@@ -822,7 +831,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                 "  — Usa {lang=en} para cambiar idioma del corrector."
             )
         else:
-            comp_label = COMPONENT_TYPE_LABELS.get(component_type, component_type.value)
+            comp_label = self._resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, component_type.value))
             type_key = component_type.value
             fm_lines = [
                 f"Metadatos para {comp_label}:",
@@ -887,7 +896,7 @@ hr { border: none; border-top: 1px solid #ccc; }
             if component_type is not None:
                 type_value = component_type.value
                 type_file = theme_config.get("styles", {}).get(type_value, "")
-                type_label = COMPONENT_TYPE_LABELS.get(component_type, type_value)
+                type_label = self._resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, type_value))
                 if type_file:
                     row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
                     row2.pack_start(Gtk.Label(label=f"Tipo {type_label}: {type_file}", xalign=0), True, True, 0)
@@ -921,7 +930,7 @@ hr { border: none; border-top: 1px solid #ccc; }
 
             if component_type is not None:
                 type_value = component_type.value
-                type_label = COMPONENT_TYPE_LABELS.get(component_type, type_value)
+                type_label = self._resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, type_value))
                 has_override = type_value in self.project.type_css_overrides
                 row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
                 row2.pack_start(Gtk.Label(label=f"Tipo: {type_label}", xalign=0), True, True, 0)
@@ -942,7 +951,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         if self._styles_current_component and component_type is not None:
             comp = self._styles_current_component
             self._comp_frame_label.set_markup(
-                f"<b>Componente: {comp.get_display_name()}</b>  <small>(solo este componente)</small>"
+                f"<b>Componente: {comp.get_display_name(self._resolve_labels())}</b>  <small>(solo este componente)</small>"
             )
             self._comp_frame.set_visible(True)
 
@@ -998,7 +1007,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         ct = component_type
         type_key = ct.value
         current = self.project.type_css_overrides.get(type_key, "")
-        label = COMPONENT_TYPE_LABELS[ct]
+        label = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
         css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
         if css is None:
             return
@@ -1014,7 +1023,7 @@ hr { border: none; border-top: 1px solid #ccc; }
     def _on_styles_reset_type_css(self, component_type):
         ct = component_type
         type_key = ct.value
-        label = COMPONENT_TYPE_LABELS[ct]
+        label = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
         if type_key not in self.project.type_css_overrides:
             return
         if not self._confirm(f"Restablecer estilos del tipo «{label}»?\nSe perderan los cambios personalizados."):
@@ -1379,7 +1388,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                         md_text = md_text.strip()
                     md_text = header_html + md_text
                 elif not default_title and editor_fm.get("show_title", True):
-                    md_text = f"# {component.get_display_name()}\n\n{md_text}"
+                    display = component.title or epub_svc._labels.get(component.type.value, component.get_display_name())
+                    md_text = f"# {display}\n\n{md_text}"
 
                 html = self.md_service.render(md_text, component_type, component_id,
                                               variables=variables,
@@ -1777,7 +1787,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         for ct in ComponentType:
             if ct in skip_types:
                 continue
-            label_text = COMPONENT_TYPE_LABELS.get(ct, ct.value)
+            label_text = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS.get(ct, ct.value))
             cb = Gtk.CheckButton(label=label_text)
             cb.set_active(ct.value in self.project.drop_cap_types)
             self._drop_cap_checkbuttons[ct.value] = cb
@@ -1930,6 +1940,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 FileService.save_project(self.project)
                 self._update_spell_lang()
                 self._update_window_title()
+                self._refresh_project_tree()
+                if self.current_component:
+                    self._update_styles_panel(self.current_component.type)
+                elif self.current_part:
+                    self._update_styles_panel(self.current_part.type)
                 self._update_status("Configuracion del proyecto guardada")
                 self._update_preview()
             d.destroy()
@@ -2323,7 +2338,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         combo_type = Gtk.ComboBoxText()
         for ct in ComponentType:
-            combo_type.append_text(COMPONENT_TYPE_LABELS[ct])
+            combo_type.append_text(self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct]))
         combo_type.set_active(0)
         type_box.pack_start(combo_type, True, True, 0)
         content_area.add(type_box)
@@ -2358,7 +2373,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 FileService.save_component(self.project.path, component, initial_content)
                 FileService.save_project(self.project)
                 self._refresh_project_tree()
-                self._update_status(f"Componente anadido: {component.get_display_name()}")
+                self._update_status(f"Componente anadido: {component.get_display_name(self._resolve_labels())}")
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -2401,7 +2416,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if response == Gtk.ResponseType.ACCEPT:
                 title = entry_title.get_text().strip()
                 if not title:
-                    title = COMPONENT_TYPE_LABELS[ComponentType.PART]
+                    from .services.labels_service import resolve_labels
+                    labels = resolve_labels(self.project.language)
+                    title = labels.get("part", "Parte")
                 import uuid
                 component_id = str(uuid.uuid4())
                 part = Component(
@@ -2555,20 +2572,25 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         if not self.project:
             return
 
+        labels = self._resolve_labels()
         project_iter = self.project_store.append(None, [self.project.name, self.project])
         part_iters = {}
 
         for comp in self.project.get_ordered_components():
             if comp.type == ComponentType.PART:
-                part_iters[comp.id] = self.project_store.append(project_iter, [comp.get_display_name(), comp])
+                part_iters[comp.id] = self.project_store.append(
+                    project_iter, [comp.get_display_name(labels), comp]
+                )
                 continue
             part = self.project.get_part(comp.part_id) if comp.part_id else None
             if part and comp.type == ComponentType.CHAPTER:
                 if part.id not in part_iters:
-                    part_iters[part.id] = self.project_store.append(project_iter, [part.get_display_name(), part])
-                self.project_store.append(part_iters[part.id], [_component_label(comp), comp])
+                    part_iters[part.id] = self.project_store.append(
+                        project_iter, [part.get_display_name(labels), part]
+                    )
+                self.project_store.append(part_iters[part.id], [_component_label(comp, labels), comp])
             else:
-                self.project_store.append(project_iter, [_component_label(comp), comp])
+                self.project_store.append(project_iter, [_component_label(comp, labels), comp])
 
         self.project_tree.expand_all()
 
@@ -2595,7 +2617,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 content = self._load_component_content(obj)
                 buffer = self.text_view.get_buffer()
                 buffer.set_text(content)
-                self._update_status(f"Editando: {obj.get_display_name()}")
+                self._update_status(f"Editando: {obj.get_display_name(self._resolve_labels())}")
                 self._update_styles_panel(obj.type)
                 self._update_preview()
         finally:
@@ -2668,7 +2690,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             item_change_type = Gtk.MenuItem(label="Cambiar tipo")
             change_type_menu = Gtk.Menu()
             for ct in ComponentType:
-                ct_item = Gtk.MenuItem(label=COMPONENT_TYPE_LABELS[ct])
+                ct_item = Gtk.MenuItem(label=self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct]))
                 ct_item.connect("activate", self._on_change_component_type, obj, ct)
                 change_type_menu.append(ct_item)
             item_change_type.set_submenu(change_type_menu)
@@ -2691,11 +2713,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             menu.append(Gtk.SeparatorMenuItem())
             item_styles = Gtk.MenuItem(label="Estilos")
             styles_menu = Gtk.Menu()
-            type_label = COMPONENT_TYPE_LABELS.get(obj.type, obj.type.value)
+            type_label = self._resolve_labels().get(obj.type.value, COMPONENT_TYPE_LABELS.get(obj.type, obj.type.value))
             s1 = Gtk.MenuItem(label=f"Del tipo «{type_label}»")
             s1.connect("activate", self._on_edit_type_css, obj)
             styles_menu.append(s1)
-            s2 = Gtk.MenuItem(label=f"Del componente «{obj.get_display_name()}»")
+            s2 = Gtk.MenuItem(label=f"Del componente «{obj.get_display_name(self._resolve_labels())}»")
             s2.connect("activate", self._on_edit_component_css, obj)
             styles_menu.append(s2)
             item_styles.set_submenu(styles_menu)
@@ -3623,9 +3645,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if response == Gtk.ResponseType.ACCEPT:
                 new_title = entry.get_text().strip()
                 if not new_title:
-                    new_title = COMPONENT_TYPE_LABELS[ComponentType.PART]
+                    from .services.labels_service import resolve_labels
+                    labels = resolve_labels(self.project.language)
+                    new_title = labels.get("part", "Parte")
                 part.title = new_title
-                self.project_store.set_value(iter_, 0, part.get_display_name())
+                self.project_store.set_value(iter_, 0, part.get_display_name(self._resolve_labels()))
                 FileService.save_project(self.project)
                 self._update_status(f"Parte renombrada: {new_title}")
             d.destroy()
@@ -3641,7 +3665,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             buttons=Gtk.ButtonsType.YES_NO,
             text="Eliminar parte",
         )
-        dialog.format_secondary_text(f"Se eliminara la parte \"{part.get_display_name()}\" y sus componentes quedaran sin agrupar.")
+        dialog.format_secondary_text(f"Se eliminara la parte \"{part.get_display_name(self._resolve_labels())}\" y sus componentes quedaran sin agrupar.")
 
         def on_response(d, response):
             if response == Gtk.ResponseType.YES:
@@ -3651,7 +3675,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 self.project.remove_component(part.id)
                 FileService.save_project(self.project)
                 self._refresh_project_tree()
-                self._update_status(f"Parte eliminada: {part.get_display_name()}")
+                self._update_status(f"Parte eliminada: {part.get_display_name(self._resolve_labels())}")
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -3683,7 +3707,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 new_title = entry.get_text().strip()
                 if new_title:
                     component.title = new_title
-                    self.project_store.set_value(iter_, 0, component.get_display_name())
+                    self.project_store.set_value(iter_, 0, component.get_display_name(self._resolve_labels()))
                     FileService.save_project(self.project)
                     self._update_status(f"Componente renombrado: {new_title}")
             d.destroy()
@@ -3713,7 +3737,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         FileService.save_component(self.project.path, new_comp, content or "")
         FileService.save_project(self.project)
         self._refresh_project_tree()
-        self._update_status(f"Componente duplicado: {new_comp.get_display_name()}")
+        self._update_status(f"Componente duplicado: {new_comp.get_display_name(self._resolve_labels())}")
 
     def _on_move_to_part(self, menu_item, component, part):
         if component.part_id == part.id:
@@ -3721,17 +3745,17 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         component.part_id = part.id
         FileService.save_project(self.project)
         self._refresh_project_tree()
-        self._update_status(f"{component.get_display_name()} movido a {part.get_display_name()}")
+        self._update_status(f"{component.get_display_name(self._resolve_labels())} movido a {part.get_display_name(self._resolve_labels())}")
 
     def _on_detach_from_part(self, menu_item, component):
         if not component.part_id:
             return
-        if not self._confirm(f"Separar «{component.get_display_name()}» de su parte?"):
+        if not self._confirm(f"Separar «{component.get_display_name(self._resolve_labels())}» de su parte?"):
             return
         component.part_id = None
         FileService.save_project(self.project)
         self._refresh_project_tree()
-        self._update_status(f"{component.get_display_name()} separado de la parte")
+        self._update_status(f"{component.get_display_name(self._resolve_labels())} separado de la parte")
 
     def _on_delete_component(self, menu_item, component):
         dialog = Gtk.MessageDialog(
@@ -3741,7 +3765,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             buttons=Gtk.ButtonsType.YES_NO,
             text="Eliminar componente",
         )
-        dialog.format_secondary_text(f"Se eliminara el componente \"{component.get_display_name()}\".")
+        dialog.format_secondary_text(f"Se eliminara el componente \"{component.get_display_name(self._resolve_labels())}\".")
 
         def on_response(d, response):
             if response == Gtk.ResponseType.YES:
@@ -3752,7 +3776,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 self.project.remove_component(component.id)
                 FileService.save_project(self.project)
                 self._refresh_project_tree()
-                self._update_status(f"Componente eliminado: {component.get_display_name()}")
+                self._update_status(f"Componente eliminado: {component.get_display_name(self._resolve_labels())}")
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -3770,7 +3794,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         return comps
 
     def _on_delete_multiple_components(self, menu_item, components):
-        names = "\n".join(f"  - {c.get_display_name()}" for c in components)
+        names = "\n".join(f"  - {c.get_display_name(self._resolve_labels())}" for c in components)
         dialog = Gtk.MessageDialog(
             transient_for=self.window,
             modal=True,
@@ -3803,7 +3827,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             component.title = ""
         FileService.save_project(self.project)
         self._refresh_project_tree()
-        self._update_status(f"Tipo cambiado a: {COMPONENT_TYPE_LABELS[new_type]}")
+        self._update_status(f"Tipo cambiado a: {self._resolve_labels().get(new_type.value, COMPONENT_TYPE_LABELS[new_type])}")
         self._update_preview()
 
     def _edit_css_dialog(self, title: str, initial_css: str) -> str:
@@ -3858,7 +3882,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             return
         type_key = component.type.value
         current = self.project.type_css_overrides.get(type_key, "")
-        label = COMPONENT_TYPE_LABELS.get(component.type, type_key)
+        label = self._resolve_labels().get(component.type.value, COMPONENT_TYPE_LABELS.get(component.type, type_key))
         css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
         if css is None:
             return
@@ -3875,7 +3899,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         if not self.project:
             return
         css = self._edit_css_dialog(
-            f"Estilos del componente: {component.get_display_name()}",
+            f"Estilos del componente: {component.get_display_name(self._resolve_labels())}",
             component.custom_css,
         )
         if css is None:
@@ -3884,7 +3908,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         FileService.save_project(self.project)
         self._update_preview()
         self._update_styles_panel(component.type)
-        self._update_status(f"Estilos del componente '{component.get_display_name()}' actualizados")
+        self._update_status(f"Estilos del componente '{component.get_display_name(self._resolve_labels())}' actualizados")
 
     def _on_manage_type_css(self, widget):
         if not self.project:
@@ -3901,7 +3925,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         store = Gtk.ListStore(str, str, str)
         for ct in ComponentType:
-            label = COMPONENT_TYPE_LABELS[ct]
+            label = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             has_css = ct.value in self.project.type_css_overrides
             status = "Editado" if has_css else "Por defecto del tema"
             store.append([label, status, ct.value])
@@ -3943,7 +3967,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if not type_key:
                 return
             ct = ComponentType(type_key)
-            label = COMPONENT_TYPE_LABELS[ct]
+            label = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             current = self.project.type_css_overrides.get(type_key, "")
             css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
             if css is None:
@@ -3964,7 +3988,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             if not type_key:
                 return
             ct = ComponentType(type_key)
-            label = COMPONENT_TYPE_LABELS[ct]
+            label = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             if type_key not in self.project.type_css_overrides:
                 return
             if not self._confirm(f"Restablecer estilos del tipo «{label}»?\nSe perderán los cambios personalizados."):
@@ -3980,7 +4004,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         def _refresh_list():
             store.clear()
             for ct in ComponentType:
-                label = COMPONENT_TYPE_LABELS[ct]
+                label = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
                 has_css = ct.value in self.project.type_css_overrides
                 status = "Editado" if has_css else "Por defecto del tema"
                 store.append([label, status, ct.value])

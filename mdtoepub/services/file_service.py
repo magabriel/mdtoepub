@@ -1,8 +1,10 @@
+import html
 import re
 import shutil
 from pathlib import Path
 from typing import Optional, Dict, List, Tuple
 from urllib.parse import urlparse
+import ebooklib
 from ..models.project import Project
 from ..models.component import Component, ComponentType
 from .yaml_service import YamlService
@@ -431,6 +433,175 @@ class FileService:
 
         FileService.save_project(project)
         return len(parsed)
+
+    @staticmethod
+    def _html_to_markdown(html_content: str) -> str:
+        """Convert basic HTML to markdown."""
+        text = html_content
+
+        body_match = re.search(
+            r'<body[^>]*>(.*?)</body>', text, flags=re.DOTALL | re.IGNORECASE
+        )
+        if body_match:
+            text = body_match.group(1)
+
+        text = re.sub(
+            r'<(script|style)[^>]*>.*?</\1>', '', text, flags=re.DOTALL | re.IGNORECASE
+        )
+
+        for level in range(6, 0, -1):
+            pattern = rf'<h{level}[^>]*>(.*?)</h{level}>'
+            replacement = '#' * level + r' \1\n\n'
+            text = re.sub(pattern, replacement, text, flags=re.DOTALL | re.IGNORECASE)
+
+        text = re.sub(
+            r'<(strong|b)[^>]*>(.*?)</\1>', r'**\2**', text,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+        text = re.sub(
+            r'<(em|i)[^>]*>(.*?)</\1>', r'*\2*', text,
+            flags=re.DOTALL | re.IGNORECASE,
+        )
+
+        def _img_to_md(m):
+            alt = ""
+            src = ""
+            alt_match = re.search(r'alt="([^"]*)"', m.group(0))
+            if alt_match:
+                alt = alt_match.group(1)
+            src_match = re.search(r'src="([^"]*)"', m.group(0))
+            if src_match:
+                src = src_match.group(1)
+                basename = Path(src).name
+            return f'![{alt}](images/illustrations/{basename})'
+
+        text = re.sub(r'<img[^>]*/?>', _img_to_md, text, flags=re.IGNORECASE)
+
+        text = re.sub(
+            r'<p[^>]*>(.*?)</p>', r'\1\n\n', text, flags=re.DOTALL | re.IGNORECASE
+        )
+        text = re.sub(r'<br\s*/?>', '\n', text, flags=re.IGNORECASE)
+
+        text = re.sub(
+            r'<(div|span|section|article|header|footer|nav|main|aside)[^>]*>(.*?)</\1>',
+            r'\2\n', text, flags=re.DOTALL | re.IGNORECASE,
+        )
+
+        # Links
+        text = re.sub(
+            r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>',
+            r'[\2](\1)', text, flags=re.DOTALL | re.IGNORECASE,
+        )
+
+        # Lists
+        text = re.sub(
+            r'<li[^>]*>(.*?)</li>',
+            r'- \1\n', text, flags=re.DOTALL | re.IGNORECASE,
+        )
+        text = re.sub(
+            r'<(ul|ol)[^>]*>', '', text, flags=re.IGNORECASE,
+        )
+        text = re.sub(
+            r'</(ul|ol)>', '\n', text, flags=re.IGNORECASE,
+        )
+
+        # Remove remaining tags
+        text = re.sub(r'<[^>]+>', '', text)
+
+        text = html.unescape(text)
+
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        text = text.strip()
+
+        return text
+
+    @staticmethod
+    def parse_imported_epub(
+        epub_path: str,
+    ) -> Tuple[List[Tuple[str, str, str]], List[Tuple[str, bytes]]]:
+        """Parse an EPUB file into components and images.
+
+        Returns (components, images) where:
+        - components: List of (component_type, title, markdown_content)
+        - images: List of (filename, data_bytes)
+        """
+        book = ebooklib.epub.read_epub(epub_path)
+
+        images: List[Tuple[str, bytes]] = []
+        for item in book.get_items_of_type(ebooklib.ITEM_IMAGE):
+            name = Path(item.file_name).name
+            images.append((name, item.content))
+
+        components: List[Tuple[str, str, str]] = []
+        for item_id, __ in book.spine:
+            item = book.get_item_with_id(item_id)
+            if not item or item.get_type() != ebooklib.ITEM_DOCUMENT:
+                continue
+
+            try:
+                html_content = item.content.decode('utf-8', errors='replace')
+            except Exception:
+                continue
+
+            md_content = FileService._html_to_markdown(html_content)
+            if not md_content.strip():
+                continue
+
+            title = ""
+            h1_match = re.search(r'^#\s+(.*)', md_content, re.MULTILINE)
+            if h1_match:
+                title = h1_match.group(1).strip()
+            if not title:
+                title = item.get_name() or ""
+
+            components.append(("chapter", title, md_content))
+
+        return components, images
+
+    @staticmethod
+    def import_epub(project_path: str, project: Project, epub_path: str) -> int:
+        """Import an EPUB file into the project, saving components and images.
+
+        Returns count of imported components.
+        """
+        import uuid
+
+        components, images = FileService.parse_imported_epub(epub_path)
+
+        images_dir = Path(project_path) / "images" / "illustrations"
+        images_dir.mkdir(parents=True, exist_ok=True)
+        for filename, data in images:
+            dest = images_dir / filename
+            counter = 1
+            stem = dest.stem
+            suffix = dest.suffix
+            while dest.exists():
+                dest = images_dir / f"{stem}_{counter}{suffix}"
+                counter += 1
+            dest.write_bytes(data)
+
+        base_order = max((c.order for c in project.components), default=-1) + 1
+
+        for i, (ctype, title, md_content) in enumerate(components):
+            try:
+                comp_type = ComponentType(ctype)
+            except ValueError:
+                comp_type = ComponentType.CHAPTER
+
+            comp = Component(
+                id=str(uuid.uuid4()),
+                type=comp_type,
+                title=title,
+                filename=FileService.generate_filename(ctype, title),
+                order=base_order + i,
+                frontmatter={},
+                custom_css="",
+            )
+            project.add_component(comp)
+            FileService.save_component(project_path, comp, md_content)
+
+        FileService.save_project(project)
+        return len(components)
 
     @staticmethod
     def rename_image_references(project_path: str, old_path: str, new_path: str, project) -> int:

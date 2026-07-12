@@ -66,9 +66,11 @@ class Component:
     frontmatter: Dict[str, Any] = field(default_factory=dict)
     custom_css: str = ""
 
-    def get_display_name(self) -> str:
+    def get_display_name(self, labels: Optional[Dict[str, str]] = None) -> str:
         if self.title:
             return self.title
+        if labels:
+            return labels.get(self.type.value, COMPONENT_TYPE_LABELS.get(self.type, self.type.value))
         return COMPONENT_TYPE_LABELS.get(self.type, self.type.value)
 
     def should_use_numbering(self) -> bool:
