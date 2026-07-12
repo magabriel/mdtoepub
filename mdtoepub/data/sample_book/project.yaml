@@ -1,5 +1,6 @@
 author: Ana M. Carvalho
 auto_chapter_title: chapter_number_with_title
+auto_part_title: none
 components:
 - filename: cover.md
   frontmatter:
@@ -189,13 +190,19 @@ drop_cap_types:
 - preface
 edition: 1ª edicion
 epub_version: epub3
+export_filename: el-vestigio-de-los-siglos
+figure_numbering: false
+figure_numbering_style: arabic
 isbn: 978-989-555-123-4
-language: es
+labels: {}
+language: en
 name: libro_ejemplo
 publication_date: '2024'
 publisher: Ediciones del Atlantico
 spell_lang: es_ES
 spell_words: []
 subtitle: Una novela de archivos y memoria
+table_numbering: false
+table_numbering_style: arabic
 theme_id: classic
 title: El Vestigio de los Siglos

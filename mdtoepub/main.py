@@ -1900,6 +1900,152 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         grid_app.attach(combo_lang, 1, row, 1, 1)
         row += 1
 
+        # ── Tab 3: Labels ──
+        from .services.labels_service import DEFAULT_LABELS
+
+        labels_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+        labels_page.set_margin_top(12)
+        labels_page.set_margin_bottom(12)
+        labels_page.set_margin_start(12)
+        labels_page.set_margin_end(12)
+        notebook.append_page(labels_page, Gtk.Label(label="Etiquetas"))
+
+        _, config_file = self._get_config_path()
+        global_cfg = YamlService.load(config_file) or {}
+        global_labels = global_cfg.get("labels", {})
+        label_keys = [k for k in DEFAULT_LABELS.get("es", {})]
+
+        def _build_labels_page(lang_code):
+            for child in labels_page.get_children():
+                labels_page.remove(child)
+
+            top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            top_row.pack_start(Gtk.Label(label="Idioma:", xalign=0), False, False, 0)
+
+            combo_label_lang = Gtk.ComboBoxText()
+            for lang in sorted(set(list(DEFAULT_LABELS.keys()) + list(global_labels.keys()))):
+                combo_label_lang.append_text(lang)
+            top_row.pack_start(combo_label_lang, False, False, 0)
+
+            btn_new_lang = Gtk.Button(label="Nuevo idioma...")
+            top_row.pack_start(btn_new_lang, False, False, 0)
+
+            btn_reset = Gtk.Button(label="Restablecer predeterminados")
+            top_row.pack_start(btn_reset, False, False, 0)
+            top_row.pack_start(Gtk.Label(label=""), True, True, 0)
+
+            labels_page.pack_start(top_row, False, False, 0)
+
+            grid = Gtk.Grid()
+            grid.set_row_spacing(4)
+            grid.set_column_spacing(8)
+            grid.set_hexpand(True)
+
+            scrolled = Gtk.ScrolledWindow()
+            scrolled.set_vexpand(True)
+            scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scrolled.add(grid)
+            labels_page.pack_start(scrolled, True, True, 0)
+
+            def _populate_grid(current_lang):
+                for child in grid.get_children():
+                    grid.remove(child)
+
+                defaults = DEFAULT_LABELS.get(current_lang, {})
+                current = dict(defaults)
+                current.update(global_labels.get(current_lang, {}))
+
+                note = Gtk.Label(
+                    label="Estas etiquetas sustituyen los nombres de tipos de "
+                          "componente (p.ej. \"Capitulo\", \"Tabla de contenidos\") "
+                          "en el arbol y en el EPUB cuando el componente no tiene titulo."
+                )
+                note.set_line_wrap(True)
+                note.set_xalign(0)
+                note.set_margin_bottom(8)
+                grid.attach(note, 0, 0, 2, 1)
+
+                row_idx = 1
+                for key in label_keys:
+                    lbl = Gtk.Label(label=f"{key}:")
+                    lbl.set_xalign(1)
+                    grid.attach(lbl, 0, row_idx, 1, 1)
+                    entry = Gtk.Entry()
+                    entry.set_text(current.get(key, ""))
+                    entry.set_hexpand(True)
+                    entry.connect("changed", lambda e, k=key, l=current_lang:
+                                  global_labels.setdefault(l, {}).__setitem__(
+                                      k, e.get_text()))
+                    grid.attach(entry, 1, row_idx, 1, 1)
+                    row_idx += 1
+                grid.show_all()
+
+            def _on_lang_changed(combo):
+                new_lang = combo.get_active_text()
+                if new_lang:
+                    _populate_grid(new_lang)
+
+            def _on_new_lang(btn):
+                dlg = Gtk.Dialog(
+                    title="Nuevo idioma",
+                    transient_for=dialog,
+                    modal=True,
+                )
+                dlg.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+                dlg.add_button("Crear", Gtk.ResponseType.ACCEPT)
+                c = dlg.get_content_area()
+                c.set_spacing(8)
+                c.set_margin_top(8)
+                c.set_margin_bottom(8)
+                c.set_margin_start(8)
+                c.set_margin_end(8)
+
+                c.pack_start(Gtk.Label(label="Codigo de idioma (ej. fr, de, it):"), False, False, 0)
+                code_entry = Gtk.Entry()
+                c.pack_start(code_entry, False, False, 0)
+
+                c.pack_start(Gtk.Label(label="Copiar etiquetas de:"), False, False, 0)
+                src_combo = Gtk.ComboBoxText()
+                for lang in sorted(set(list(DEFAULT_LABELS.keys()) + list(global_labels.keys()))):
+                    src_combo.append_text(lang)
+                current_lang = combo_label_lang.get_active_text()
+                src_combo.set_active(0)
+                c.pack_start(src_combo, False, False, 0)
+
+                dlg.show_all()
+                if dlg.run() == Gtk.ResponseType.ACCEPT:
+                    new_code = code_entry.get_text().strip()
+                    src_lang = src_combo.get_active_text()
+                    if new_code and src_lang:
+                        defaults = DEFAULT_LABELS.get(src_lang, {})
+                        custom = global_labels.get(src_lang, {})
+                        global_labels[new_code] = dict(defaults)
+                        global_labels[new_code].update(custom)
+                        combo_label_lang.append_text(new_code)
+                        combo_label_lang.set_active(len(combo_label_lang.get_model()) - 1)
+                dlg.destroy()
+
+            def _on_reset(btn):
+                current_lang = combo_label_lang.get_active_text()
+                if current_lang and current_lang in DEFAULT_LABELS:
+                    global_labels[current_lang] = {}
+                    _populate_grid(current_lang)
+                elif current_lang:
+                    global_labels.pop(current_lang, None)
+                    if combo_label_lang.get_active() >= 0:
+                        combo_label_lang.set_active(0)
+
+            combo_label_lang.connect("changed", _on_lang_changed)
+            btn_new_lang.connect("clicked", _on_new_lang)
+            btn_reset.connect("clicked", _on_reset)
+
+            if lang_code in [r[0] for r in combo_label_lang.get_model()]:
+                combo_label_lang.set_active_id(lang_code)
+            else:
+                combo_label_lang.set_active(0)
+
+        _build_labels_page(self.project.language)
+
         def on_config_response(d, response):
             if response == Gtk.ResponseType.ACCEPT:
                 self.project.title = entry_title.get_text().strip()
@@ -1938,6 +2084,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 if lang_idx >= 0 and lang_idx < len(langs):
                     self.project.spell_lang = langs[lang_idx]
                 FileService.save_project(self.project)
+                global_cfg["labels"] = global_labels
+                YamlService.save(global_cfg, config_file)
                 self._update_spell_lang()
                 self._update_window_title()
                 self._refresh_project_tree()
