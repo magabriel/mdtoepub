@@ -76,9 +76,9 @@ def _component_icon(comp: Component) -> str:
 def _component_label(comp: Component, labels=None) -> str:
     if labels:
         span = labels.get(comp.type.value, COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value))
-        return f"{comp.get_display_name(labels)} ({span} — {comp.type.value})"
+        return f"{comp.get_display_name(labels)} ({span})"
     span = COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value)
-    return f"{comp.get_display_name()} ({span} — {comp.type.value})"
+    return f"{comp.get_display_name()} ({span})"
 
 
 class MDToEPUBApp(Gtk.Application):
@@ -4287,6 +4287,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         dialog.destroy()
 
     def _on_drag_begin(self, treeview, context):
+        if self._read_only:
+            self._drag_component_ids = []
+            return
         selection = treeview.get_selection()
         _, paths = selection.get_selected_rows()
         self._drag_component_ids = []
@@ -4299,6 +4302,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                         self._drag_component_ids.append(obj.id)
 
     def _on_drag_motion(self, treeview, context, x, y, time):
+        if self._read_only:
+            return False
         dest = treeview.get_dest_row_at_pos(int(x), int(y))
         if dest:
             path, pos = dest
@@ -4306,6 +4311,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         return False
 
     def _on_drag_data_get(self, treeview, drag_context, data, info, time_):
+        if self._read_only:
+            return
         if not self._drag_component_ids:
             return
         data.set(Gdk.atom_intern("MOVE_ROW", False), 8, b"x")
