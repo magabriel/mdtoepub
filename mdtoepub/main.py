@@ -1017,7 +1017,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         type_key = ct.value
         current = self.project.type_css_overrides.get(type_key, "")
         label = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
-        css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
+        css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=ct.value)
         if css is None:
             return
         if css.strip():
@@ -4099,7 +4099,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         self._update_status(f"Tipo cambiado a: {self._resolve_labels().get(new_type.value, COMPONENT_TYPE_LABELS[new_type])}")
         self._update_preview()
 
-    def _edit_css_dialog(self, title: str, initial_css: str) -> str:
+    def _edit_css_dialog(self, title: str, initial_css: str, scope_type: str = "", scope_type_value: str = "") -> str:
         dialog = Gtk.Dialog(
             title=title,
             transient_for=self.window,
@@ -4109,18 +4109,79 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         dialog.add_button("Guardar", Gtk.ResponseType.OK)
         dialog.set_default_size(600, 500)
 
+        box = dialog.get_content_area()
+
+        if scope_type:
+            hints = []
+            if scope_type == "book":
+                hints.append("Editando estilos globales del libro (afectan a TODOS los componentes).")
+            elif scope_type == "type" and scope_type_value:
+                hints.append(
+                    f"Selector principal: <b>.component-{scope_type_value}</b>"
+                )
+                hints.append(
+                    f"Sub-elementos: <b>.component-{scope_type_value}</b> h1, h2, p, ul, li, img, blockquote, etc."
+                )
+                hints.append("Usa prefijos de clase (p.ej. <b>.toc-entry</b>) para elementos auto-generados.")
+            elif scope_type == "component" and scope_type_value:
+                hints.append(
+                    f"Selector principal: <b>.component-{scope_type_value}</b>"
+                )
+                hints.append("Estos estilos solo afectan a este componente.")
+            elif scope_type == "theme":
+                hints.append("Editando estilos del tema (afectan a TODOS los libros que usen este tema).")
+
+            if hints:
+                hint_bar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+                hint_bar.set_margin_bottom(8)
+                for h in hints:
+                    lbl = Gtk.Label()
+                    lbl.set_markup(f'<span size="small" foreground="#444">{h}</span>')
+                    lbl.set_xalign(0)
+                    lbl.set_line_wrap(True)
+                    hint_bar.pack_start(lbl, False, False, 0)
+                box.pack_start(hint_bar, False, False, 0)
+
         scrolled = Gtk.ScrolledWindow()
         scrolled.set_vexpand(True)
         buffer = GtkSource.Buffer.new_with_language(
             GtkSource.LanguageManager.get_default().get_language("css")
         )
+        if not initial_css.strip() and scope_type_value:
+            if scope_type == "type":
+                initial_css = (
+                    f"/* Estilos para el tipo «{scope_type_value}»\n"
+                    f" * Selector principal: .component-{scope_type_value}\n"
+                    f" * Ejemplos:\n"
+                    f" *   .component-{scope_type_value} p {{ }}\n"
+                    f" *   .component-{scope_type_value} h1 {{ }}\n"
+                    f" *   .component-{scope_type_value} blockquote {{ }}\n"
+                    f" */\n\n"
+                )
+            elif scope_type == "component":
+                initial_css = (
+                    f"/* Estilos para este componente (tipo «{scope_type_value}»)\n"
+                    f" * Selector principal: .component-{scope_type_value}\n"
+                    f" * Ejemplos:\n"
+                    f" *   .component-{scope_type_value} p {{ }}\n"
+                    f" *   .component-{scope_type_value} img {{ }}\n"
+                    f" */\n\n"
+                )
+            elif scope_type == "book":
+                initial_css = (
+                    "/* Estilos globales del libro\n"
+                    " * Afectan a todos los componentes.\n"
+                    " * Selectores principales:\n"
+                    " *   body { }  p { }  h1, h2, h3 { }\n"
+                    " *   .component-chapter { }  .component-title { }  etc.\n"
+                    " */\n\n"
+                )
         buffer.set_text(initial_css)
         textview = GtkSource.View.new_with_buffer(buffer)
         textview.set_wrap_mode(Gtk.WrapMode.WORD_CHAR)
         textview.set_monospace(True)
         scrolled.add(textview)
 
-        box = dialog.get_content_area()
         box.pack_start(scrolled, True, True, 0)
         dialog.show_all()
 
@@ -4135,7 +4196,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         if not self.project:
             self._show_info("Abre un proyecto primero")
             return
-        css = self._edit_css_dialog("Estilos del libro", self.project.custom_css)
+        css = self._edit_css_dialog("Estilos del libro", self.project.custom_css, scope_type="book")
         if css is None:
             return
         self.project.custom_css = css
@@ -4152,7 +4213,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         type_key = component.type.value
         current = self.project.type_css_overrides.get(type_key, "")
         label = self._resolve_labels().get(component.type.value, COMPONENT_TYPE_LABELS.get(component.type, type_key))
-        css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
+        css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=component.type.value)
         if css is None:
             return
         if css.strip():
@@ -4170,6 +4231,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         css = self._edit_css_dialog(
             f"Estilos del componente: {component.get_display_name(self._resolve_labels())}",
             component.custom_css,
+            scope_type="component",
+            scope_type_value=component.type.value,
         )
         if css is None:
             return
@@ -4238,7 +4301,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             ct = ComponentType(type_key)
             label = self._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             current = self.project.type_css_overrides.get(type_key, "")
-            css = self._edit_css_dialog(f"Estilos del tipo: {label}", current)
+            css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=ct.value)
             if css is None:
                 return
             if css.strip():
