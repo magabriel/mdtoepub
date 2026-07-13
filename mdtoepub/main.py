@@ -225,10 +225,6 @@ class MDToEPUBApp(Gtk.Application):
         item = Gtk.MenuItem(label="Temas")
         item.connect("activate", self._on_theme_manager)
         config_menu.append(item)
-        config_menu.append(Gtk.SeparatorMenuItem())
-        item = Gtk.MenuItem(label="Acerca de")
-        item.connect("activate", self._on_about)
-        config_menu.append(item)
         menubar.append(config)
 
         # Ayuda
@@ -245,6 +241,10 @@ class MDToEPUBApp(Gtk.Application):
         item.connect("activate", self._on_load_sample_book, "sample_book_textbook")
         libros_menu.append(item)
         ayuda_menu.append(libros_ejemplo)
+        ayuda_menu.append(Gtk.SeparatorMenuItem())
+        item = Gtk.MenuItem(label="Acerca de")
+        item.connect("activate", self._on_about)
+        ayuda_menu.append(item)
         menubar.append(ayuda)
 
         container.pack_start(menubar, False, False, 0)
