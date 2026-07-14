@@ -3656,7 +3656,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             modal=True,
         )
         dialog.set_program_name("MDToEPUB")
-        dialog.set_version("1.0")
+        dialog.set_version("1.1")
         dialog.set_comments("Editor de EPUB a partir de Markdown")
         dialog.set_license_type(Gtk.License.GPL_3_0)
         dialog.connect("response", lambda d, r: d.destroy())
