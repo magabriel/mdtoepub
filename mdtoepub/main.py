@@ -3194,6 +3194,16 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         btn_delete.connect("clicked", lambda b: self._on_delete_theme(tree, store, dialog))
         btn_box.pack_start(btn_delete, False, False, 0)
 
+        btn_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL), False, False, 0)
+
+        btn_export = Gtk.Button(label="Exportar")
+        btn_export.connect("clicked", lambda b: self._on_export_theme(tree, store))
+        btn_box.pack_start(btn_export, False, False, 0)
+
+        btn_import = Gtk.Button(label="Importar")
+        btn_import.connect("clicked", lambda b: self._on_import_theme(tree, store))
+        btn_box.pack_start(btn_import, False, False, 0)
+
         content.pack_start(btn_box, False, False, 0)
 
         def on_selection_changed(sel):
@@ -3566,6 +3576,79 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             is_active = "Si" if theme.id == self.project.theme_id else ""
             type_label = "Integrado" if theme.is_builtin else "Personalizado"
             store.append([theme.name, theme.id, is_active, type_label])
+
+    def _on_export_theme(self, tree, store):
+        sel = tree.get_selection()
+        model, iter_ = sel.get_selected()
+        if iter_ is None:
+            self._show_info("Selecciona un tema primero")
+            return
+
+        theme_id = model.get_value(iter_, 1)
+        theme_name = model.get_value(iter_, 0)
+
+        dialog = Gtk.FileChooserNative(
+            title=f"Exportar tema: {theme_name}",
+            transient_for=self.window,
+            action=Gtk.FileChooserAction.SAVE,
+            accept_label="_Exportar",
+            cancel_label="_Cancelar",
+        )
+        dialog.set_current_name(f"{theme_id}.mdtotheme")
+
+        f_filter = Gtk.FileFilter()
+        f_filter.set_name("Archivos de tema (*.mdtotheme)")
+        f_filter.add_pattern("*.mdtotheme")
+        dialog.add_filter(f_filter)
+
+        if dialog.run() == Gtk.ResponseType.ACCEPT:
+            output_path = dialog.get_filename()
+            dialog.destroy()
+            if not output_path.endswith(".mdtotheme"):
+                output_path += ".mdtotheme"
+
+            if ThemeService.export_theme(theme_id, output_path):
+                self._update_status(f"Tema exportado: {output_path}")
+                self._show_info(f"Tema '{theme_name}' exportado correctamente.")
+            else:
+                self._show_error(f"No se pudo exportar el tema '{theme_name}'")
+        else:
+            dialog.destroy()
+
+    def _on_import_theme(self, tree, store):
+        dialog = Gtk.FileChooserNative(
+            title="Importar tema",
+            transient_for=self.window,
+            action=Gtk.FileChooserAction.OPEN,
+            accept_label="_Importar",
+            cancel_label="_Cancelar",
+        )
+
+        f_filter = Gtk.FileFilter()
+        f_filter.set_name("Archivos de tema (*.mdtotheme)")
+        f_filter.add_pattern("*.mdtotheme")
+        dialog.add_filter(f_filter)
+        f_filter = Gtk.FileFilter()
+        f_filter.set_name("Todos los archivos")
+        f_filter.add_pattern("*")
+        dialog.add_filter(f_filter)
+
+        if dialog.run() == Gtk.ResponseType.ACCEPT:
+            file_path = dialog.get_filename()
+            dialog.destroy()
+
+            imported = ThemeService.import_theme(file_path)
+            if imported:
+                self._refresh_theme_store(store)
+                self._update_status(f"Tema importado: {imported.name}")
+                self._show_info(f"Tema '{imported.name}' importado correctamente.")
+            else:
+                self._show_error(
+                    "No se pudo importar el tema.\n"
+                    "Asegurate de que el archivo es un .mdtotheme valido."
+                )
+        else:
+            dialog.destroy()
 
     def _on_about(self, widget):
         dialog = Gtk.AboutDialog(
