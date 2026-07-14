@@ -1,10 +1,15 @@
 """Spell-check service with {lang=xx} region markers."""
 
-import gi
-gi.require_version('GtkSpell', '3.0')
-from gi.repository import GtkSpell
 import re
 from typing import List, Tuple, Dict, Set
+
+try:
+    import gi
+    gi.require_version('GtkSpell', '3.0')
+    from gi.repository import GtkSpell
+    _HAS_GTKSPELL = True
+except (ImportError, ValueError):
+    _HAS_GTKSPELL = False
 
 
 LANG_MARKER_RE = re.compile(r'\{lang=(\w+(?:[_-]\w+)*)\}')
@@ -15,18 +20,32 @@ FENCE_RE = re.compile(r'^[ ]{0,3}```', re.MULTILINE)
 class SpellCheckService:
     def __init__(self, default_lang: str = "es_ES"):
         self.default_lang = default_lang
-        self._checkers: Dict[str, GtkSpell.Checker] = {}
+        self._checkers: Dict = {}
         self._global_words: Set[str] = set()
 
-    def get_language_list(self) -> List[str]:
-        chk = GtkSpell.Checker.new()
-        return chk.get_language_list()
+    @property
+    def available(self) -> bool:
+        return _HAS_GTKSPELL
 
-    def get_checker(self, lang: str) -> GtkSpell.Checker:
-        if lang not in self._checkers:
+    def get_language_list(self) -> List[str]:
+        if not _HAS_GTKSPELL:
+            return [self.default_lang]
+        try:
             chk = GtkSpell.Checker.new()
-            chk.set_language(lang)
-            self._checkers[lang] = chk
+            return chk.get_language_list()
+        except Exception:
+            return [self.default_lang]
+
+    def get_checker(self, lang: str):
+        if not _HAS_GTKSPELL:
+            return None
+        if lang not in self._checkers:
+            try:
+                chk = GtkSpell.Checker.new()
+                chk.set_language(lang)
+                self._checkers[lang] = chk
+            except Exception:
+                self._checkers[lang] = None
         return self._checkers[lang]
 
     @staticmethod
@@ -154,6 +173,8 @@ class SpellCheckService:
         are skipped.
         Returns list of (word_start, word_end, word, lang) for misspelled words.
         """
+        if not _HAS_GTKSPELL:
+            return []
         excluded = self.get_excluded_ranges(text)
         regions = self.parse_regions(text, excluded)
         misspelled = []
@@ -163,6 +184,8 @@ class SpellCheckService:
             region_text = text[r_start:r_end]
             words = self.get_word_positions(region_text)
             checker = self.get_checker(lang)
+            if checker is None:
+                continue
             for w_start, w_end, word in words:
                 abs_start = r_start + w_start
                 abs_end = r_start + w_end
@@ -178,9 +201,21 @@ class SpellCheckService:
     def add_global_word(self, word: str):
         """Add word to the per-user global dictionary (system spell engine)."""
         self._global_words.add(word.lower())
-        for lang, checker in self._checkers.items():
-            checker.add_to_dictionary(word)
+        if _HAS_GTKSPELL:
+            for lang, checker in self._checkers.items():
+                if checker is not None:
+                    try:
+                        checker.add_to_dictionary(word)
+                    except Exception:
+                        pass
 
     def get_suggestions(self, word: str, lang: str) -> List[str]:
+        if not _HAS_GTKSPELL:
+            return []
         checker = self.get_checker(lang)
-        return checker.get_suggestions(word)
+        if checker is None:
+            return []
+        try:
+            return checker.get_suggestions(word)
+        except Exception:
+            return []

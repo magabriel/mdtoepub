@@ -12,6 +12,7 @@ A desktop application for writing and publishing EPUB ebooks from Markdown. Buil
 - **Syntax highlighting**: Code blocks are highlighted with Pygments in both the preview and exported EPUB.
 - **Image management**: Import and manage illustrations and decorative images.
 - **Import from Markdown**: Parse a single large Markdown file into separate components.
+- **Import from EPUB**: Extract chapters and images from existing EPUB files.
 - **Part grouping**: Group chapters into parts with auto-generated part pages.
 
 ## Requirements
@@ -40,19 +41,55 @@ Python packages (installed automatically via pip):
 
 ## Installation
 
-### From source
+### Flatpak (recommended for end users)
+
+```bash
+flatpak-builder --user --install --force-clean build-dir com.github.mdtoepub.yml
+```
+
+After installation, launch from your application menu or run:
+
+```bash
+flatpak run com.github.mdtoepub
+```
+
+### From source (pip)
+
+First, install system dependencies:
+
+```bash
+# Ubuntu / Debian
+sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-webkit2-4.1 \
+  gir1.2-gtksource-4 gir1.2-gtkspell3-3.0 \
+  python3-pip python3-venv hunspell-es hunspell-en-us
+
+# Fedora
+sudo dnf install python3-gobject gtk3 webkit2gtk4.1 \
+  gtksourceview4 gtkspell3 python3-pip hunspell-es hunspell-en
+```
+
+Then install the package:
 
 ```bash
 git clone <repository-url> mdtoepub
 cd mdtoepub
-pip install .
+pip install ".[gui]"
 mdtoepub
+```
+
+A `.desktop` file and icon are included. Copy them for desktop integration:
+
+```bash
+mkdir -p ~/.local/share/applications ~/.local/share/icons/hicolor/scalable/apps
+cp data/com.github.mdtoepub.desktop ~/.local/share/applications/
+cp data/icons/hicolor/scalable/apps/com.github.mdtoepub.svg ~/.local/share/icons/hicolor/scalable/apps/
+update-desktop-database ~/.local/share/applications/
 ```
 
 ### Development install
 
 ```bash
-pip install -e ".[dev]"
+pip install -e ".[dev,gui]"
 ./run.sh
 ```
 

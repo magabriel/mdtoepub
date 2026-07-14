@@ -2657,7 +2657,36 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             output_dir = os.path.join(self.project.path, "output")
             epub_path = os.path.join(output_dir, epub_name)
 
-        os.makedirs(output_dir, exist_ok=True)
+        # Show save dialog so user can choose output location
+        save_dialog = Gtk.FileChooserNative(
+            title="Guardar EPUB como...",
+            transient_for=self.window,
+            action=Gtk.FileChooserAction.SAVE,
+            accept_label="_Guardar",
+            cancel_label="_Cancelar",
+        )
+        save_dialog.set_current_name(epub_name)
+        epub_filter = Gtk.FileFilter()
+        epub_filter.set_name("EPUB (*.epub)")
+        epub_filter.add_pattern("*.epub")
+        save_dialog.add_filter(epub_filter)
+
+        if not self._read_only and os.path.isdir(output_dir):
+            save_dialog.set_current_folder(output_dir)
+        else:
+            save_dialog.set_current_folder(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS) or os.path.expanduser("~"))
+
+        if save_dialog.run() == Gtk.ResponseType.ACCEPT:
+            epub_path = save_dialog.get_filename()
+            save_dialog.destroy()
+        else:
+            save_dialog.destroy()
+            return
+
+        if not epub_path.endswith(".epub"):
+            epub_path += ".epub"
+
+        os.makedirs(os.path.dirname(epub_path) or ".", exist_ok=True)
         if os.path.exists(epub_path):
             if not self._confirm(f"El archivo ya existe:\n{epub_path}\n\n¿Sobrescribirlo?"):
                 return

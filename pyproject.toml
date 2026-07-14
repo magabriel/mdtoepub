@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mdtoepub"
-version = "0.1.0"
+version = "1.0.0"
 description = "Aplicacion para producir libros EPUB a partir de Markdown"
 readme = "README.md"
 license = {text = "GPL-3.0"}
@@ -12,6 +12,7 @@ requires-python = ">=3.10"
 dependencies = [
     "PyYAML>=6.0",
     "markdown>=3.4",
+    "Pygments>=2.0",
     "ebooklib>=0.18",
     "Pillow>=9.0",
 ]
@@ -20,6 +21,10 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+]
+gui = [
+    "PyGObject>=3.42.0",
+    "pycairo>=1.20.0",
 ]
 
 [project.scripts]
@@ -33,3 +38,14 @@ python_functions = ["test_*"]
 
 [tool.setuptools.packages.find]
 include = ["mdtoepub*"]
+
+[tool.setuptools.package-data]
+mdtoepub = [
+    "themes/**/*.css",
+    "themes/**/*.yaml",
+    "data/**/*.md",
+    "data/**/*.yaml",
+    "data/**/*.png",
+    "data/**/*.jpg",
+    "lang-specs/*.lang",
+]

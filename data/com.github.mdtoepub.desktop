@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=MDToEPUB
+Comment=Editor de EPUB a partir de Markdown
+Exec=mdtoepub
+Icon=com.github.mdtoepub
+Categories=Office;WordProcessor;
+Terminal=false
+StartupNotify=true

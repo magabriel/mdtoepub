@@ -1,0 +1,51 @@
+app-id: com.github.mdtoepub
+runtime: org.gnome.Platform
+runtime-version: "48"
+sdk: org.gnome.Sdk
+command: mdtoepub
+finish-args:
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --share=ipc
+  - --filesystem=home
+  - --device=dri
+modules:
+  - name: gtksourceview4
+    buildsystem: meson
+    config-opts:
+      - -Dvapi=false
+      - -Dgtk_doc=false
+    sources:
+      - type: archive
+        url: https://download.gnome.org/sources/gtksourceview/4.8/gtksourceview-4.8.4.tar.xz
+        sha256: 7ec9d18fb283d1f84a3a3eff3b7a72b09a10c9c006597b3fbabbb5958420a87d
+    cleanup:
+      - /include
+      - /lib/pkgconfig
+      - /share/gtk-doc
+
+  - name: python3-deps
+    buildsystem: simple
+    build-options:
+      build-args:
+        - --share=network
+    build-commands:
+      - pip3 install --prefix=/app --no-build-isolation PyGObject pycairo
+      - pip3 install --prefix=/app --no-build-isolation --ignore-installed PyYAML Markdown Pygments lxml ebooklib Pillow
+    sources: []
+
+  - name: mdtoepub
+    buildsystem: simple
+    build-commands:
+      - mkdir -p /app/lib/python3.12/site-packages/mdtoepub
+      - cp -r mdtoepub/* /app/lib/python3.12/site-packages/mdtoepub/
+      - mkdir -p /app/bin
+      - |
+        cat > /app/bin/mdtoepub << 'SCRIPT'
+        #!/bin/sh
+        exec python3 -m mdtoepub.main "$@"
+        SCRIPT
+      - chmod +x /app/bin/mdtoepub
+    sources:
+      - type: dir
+        path: .
