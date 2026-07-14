@@ -186,6 +186,92 @@ class ThemeService:
         YamlService.save(data, str(yaml_path))
         return True
 
+    @classmethod
+    def export_theme(cls, theme_id: str, output_path: str) -> bool:
+        """Export a theme as a .mdtotheme ZIP file."""
+        import tempfile
+        import zipfile
+
+        theme = cls.get_theme(theme_id)
+        if not theme or not theme.path:
+            return False
+
+        theme_dir = Path(theme.path)
+        if not theme_dir.is_dir():
+            return False
+
+        try:
+            with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+                for file_path in sorted(theme_dir.rglob('*')):
+                    if file_path.is_file():
+                        arcname = file_path.relative_to(theme_dir)
+                        zf.write(str(file_path), str(arcname))
+            return True
+        except Exception:
+            return False
+
+    @classmethod
+    def import_theme(cls, archive_path: str) -> Optional[Theme]:
+        """Import a theme from a .mdtotheme ZIP file.
+
+        Returns the imported Theme on success, None on failure.
+        """
+        import tempfile
+        import zipfile
+
+        archive = Path(archive_path)
+        if not archive.is_file():
+            return None
+
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                with zipfile.ZipFile(str(archive), 'r') as zf:
+                    zf.extractall(tmp)
+
+                tmp_path = Path(tmp)
+                yaml_file = tmp_path / "theme.yaml"
+                if not yaml_file.exists():
+                    return None
+
+                data = YamlService.load(str(yaml_file))
+                theme_id = data.get("id", "")
+                if not theme_id:
+                    return None
+                if "name" not in data:
+                    return None
+
+                # Check for ID collision
+                if cls.theme_exists(theme_id):
+                    base_id = theme_id
+                    counter = 1
+                    while cls.theme_exists(theme_id):
+                        theme_id = f"{base_id}-{counter}"
+                        counter += 1
+                    data["id"] = theme_id
+
+                # Ensure custom dir exists
+                cls._ensure_custom_dir()
+                dest_dir = cls.CUSTOM_DIR / theme_id
+                dest_dir.mkdir(parents=True, exist_ok=True)
+
+                # Copy all files
+                for item in tmp_path.glob('*'):
+                    src = tmp_path / item.name
+                    dst = dest_dir / item.name
+                    if src.is_file():
+                        shutil.copy2(str(src), str(dst))
+
+                # Update theme.yaml for imported theme
+                dest_yaml = dest_dir / "theme.yaml"
+                imported = YamlService.load(str(dest_yaml))
+                imported["id"] = theme_id
+                imported.pop("is_builtin", None)
+                YamlService.save(imported, str(dest_yaml))
+
+                return cls.get_theme(theme_id)
+        except Exception:
+            return None
+
     @staticmethod
     def _slugify(text: str) -> str:
         s = text.lower().strip()
