@@ -31,4 +31,7 @@ htmlcov/
 .coverage
 
 # Environment
-.env
+.env*.flatpak
+build-flatpak/
+repo/
+.flatpak-builder/
