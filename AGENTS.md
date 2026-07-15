@@ -38,3 +38,5 @@ Follow Semantic Versioning (SemVer): MAJOR.MINOR.PATCH (e.g., 1.2.0).
 - PATCH: backwards-compatible bug fixes.
 
 Before bumping the version, propose the new version number to the user and wait for their approval before proceeding.
+
+After merging a version bump into main, create an annotated git tag: `git tag -a vX.Y.Z -m "vX.Y.Z"`.
