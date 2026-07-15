@@ -51,8 +51,9 @@ install_runtime() {
 
 build_app() {
     echo "=== Construyendo ${APP_ID} v${VERSION} ==="
-    rm -rf "$BUILD_DIR" "$REPO_DIR"
+    rm -rf "$BUILD_DIR" "$REPO_DIR" "/tmp/mdtoepub/.flatpak-builder"
     flatpak-builder --user --force-clean --disable-rofiles-fuse \
+        --state-dir="/tmp/mdtoepub/.flatpak-builder" \
         --repo="$REPO_DIR" \
         "$BUILD_DIR" \
         "$MANIFEST"

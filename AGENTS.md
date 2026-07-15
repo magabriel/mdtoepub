@@ -28,3 +28,13 @@ Workflow for each fix/feature:
 When the user says they want to start fixing a bug or implementing a feature:
 1. If not on main, switch to main first.
 2. If there are uncommitted changes, warn the user before proceeding so they can commit first.
+
+## Versioning
+
+Follow Semantic Versioning (SemVer): MAJOR.MINOR.PATCH (e.g., 1.2.0).
+
+- MAJOR: incompatible API changes.
+- MINOR: new functionality, backwards-compatible.
+- PATCH: backwards-compatible bug fixes.
+
+Before bumping the version, propose the new version number to the user and wait for their approval before proceeding.
