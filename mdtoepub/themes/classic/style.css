@@ -270,11 +270,14 @@ h1.component-header .header-subtitle {
 /* @doc Ornamento decorativo centrado (imagen o caracter) */
 .ornament {
     display: block;
-    margin: 1.5em auto;
-    max-width: 50%;
     text-align: center;
-    font-size: 2em;
     line-height: 1.2;
+}
+
+p.ornament img {
+    max-width: 50%;
+    height: auto;
+    margin: 0.5em auto;
 }
 
 /* @doc Separador decorativo entre capitulos */
@@ -401,7 +404,7 @@ figcaption {
 }
 
 /* @doc Decoracion de final de capitulo */
-.fin-capitulo {
+.end-chapter {
     text-align: center;
     margin: 2em 0;
     font-size: 1.2em;

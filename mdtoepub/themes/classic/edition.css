@@ -23,12 +23,8 @@
 }
 
 .component-edition p {
-    text-indent: 1.5em;
-    margin: 0.5em 0;
-}
-
-.component-edition p:first-of-type {
     text-indent: 0;
+    margin: 0.5em 0;
 }
 
 .component-edition blockquote {

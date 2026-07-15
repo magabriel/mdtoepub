@@ -564,7 +564,7 @@ figcaption {
 }
 
 /* @doc Decoracion de final de capitulo */
-.fin-capitulo {
+.end-chapter {
     text-align: center;
     margin: 2.5em 0;
     font-size: 1em;
