@@ -413,6 +413,7 @@ class MDToEPUBApp(Gtk.Application):
         buf.connect("changed", _on_buffer_changed)
 
         self.text_view.connect("populate-popup", self._on_spell_popup)
+        self.text_view.connect("populate-popup", self._on_editor_image_popup)
 
         self.webview = WebKit2.WebView()
         self.webview.set_vexpand(True)
@@ -1236,6 +1237,141 @@ hr { border: none; border-top: 1px solid #ccc; }
                 item_global.show()
                 popup.append(item_global)
                 break
+
+    def _on_editor_image_popup(self, textview, popup):
+        if not self.project:
+            return
+
+        images_dir = Path(self.project.path) / "images"
+        has_images = False
+        for cat in ("illustrations", "decorative"):
+            cat_dir = images_dir / cat
+            if cat_dir.exists():
+                for f in cat_dir.iterdir():
+                    if f.is_file() and f.suffix.lower() in ImageService.get_supported_formats():
+                        has_images = True
+                        break
+            if has_images:
+                break
+
+        if not has_images:
+            return
+
+        sep = Gtk.SeparatorMenuItem()
+        sep.show()
+        popup.append(sep)
+
+        item = Gtk.MenuItem(label="Insertar imagen...")
+        item.connect("activate", self._on_insert_image_dialog)
+        item.show()
+        popup.append(item)
+
+    def _on_insert_image_dialog(self, menu_item):
+        if not self.project:
+            return
+
+        images_dir = Path(self.project.path) / "images"
+
+        dialog = Gtk.Dialog(
+            title="Insertar imagen",
+            transient_for=self.window,
+            modal=True,
+        )
+        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Insertar", Gtk.ResponseType.ACCEPT)
+        dialog.set_default_size(600, 450)
+
+        hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        hbox.set_margin_top(12)
+        hbox.set_margin_bottom(12)
+        hbox.set_margin_start(12)
+        hbox.set_margin_end(12)
+        dialog.get_content_area().pack_start(hbox, True, True, 0)
+
+        left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        hbox.pack_start(left_box, True, True, 0)
+
+        scrolled = Gtk.ScrolledWindow()
+        scrolled.set_vexpand(True)
+        left_box.pack_start(scrolled, True, True, 0)
+
+        IMG_COL_NAME = 0
+        IMG_COL_CAT = 1
+        IMG_COL_PATH = 2
+
+        store = Gtk.ListStore(str, str, str)
+        tree_view = Gtk.TreeView(model=store)
+        tree_view.set_headers_visible(True)
+
+        r_name = Gtk.CellRendererText()
+        col_name = Gtk.TreeViewColumn("Nombre", r_name, text=IMG_COL_NAME)
+        col_name.set_resizable(True)
+        col_name.set_expand(True)
+        tree_view.append_column(col_name)
+
+        r_cat = Gtk.CellRendererText()
+        col_cat = Gtk.TreeViewColumn("Categoria", r_cat, text=IMG_COL_CAT)
+        col_cat.set_resizable(True)
+        tree_view.append_column(col_cat)
+
+        for cat_name, cat_label in [("illustrations", "Ilustrativa"), ("decorative", "Decorativa")]:
+            cat_dir = images_dir / cat_name
+            if cat_dir.exists():
+                for f in sorted(cat_dir.iterdir()):
+                    if not f.is_file() or f.suffix.lower() not in ImageService.get_supported_formats():
+                        continue
+                    store.append([f.name, cat_label, str(f)])
+
+        scrolled.add(tree_view)
+
+        right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        right_box.set_size_request(240, -1)
+        hbox.pack_start(right_box, False, False, 0)
+
+        preview_img = Gtk.Image()
+        preview_frame = Gtk.Frame(label="Vista previa")
+        preview_frame.set_size_request(220, 260)
+        preview_frame.add(preview_img)
+        right_box.pack_start(preview_frame, True, True, 0)
+
+        def update_preview():
+            sel = tree_view.get_selection()
+            model, iter_ = sel.get_selected()
+            if iter_ is None:
+                preview_img.clear()
+                return
+            fpath = model.get_value(iter_, IMG_COL_PATH)
+            try:
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(fpath, 200, 240)
+                preview_img.set_from_pixbuf(pixbuf)
+            except Exception:
+                preview_img.clear()
+
+        tree_view.get_selection().connect("changed", lambda *a: update_preview())
+        tree_view.connect("row-activated", lambda tv, path, col: dialog.response(Gtk.ResponseType.ACCEPT))
+
+        dialog.show_all()
+        response = dialog.run()
+
+        if response == Gtk.ResponseType.ACCEPT:
+            sel = tree_view.get_selection()
+            model, iter_ = sel.get_selected()
+            if iter_ is not None:
+                name = model.get_value(iter_, IMG_COL_NAME)
+                cat_label = model.get_value(iter_, IMG_COL_CAT)
+                cat_name = "illustrations" if cat_label == "Ilustrativa" else "decorative"
+                rel_path = f"images/{cat_name}/{name}"
+
+                buf = self.text_view.get_buffer()
+                sel_bounds = buf.get_selection_bounds()
+                alt_text = ""
+                if sel_bounds:
+                    alt_text = buf.get_text(sel_bounds[0], sel_bounds[1], True)
+                    buf.delete(sel_bounds[0], sel_bounds[1])
+                cursor = buf.get_iter_at_mark(buf.get_insert())
+                buf.insert(cursor, f"![{alt_text}]({rel_path})")
+
+        dialog.destroy()
 
     def _get_base_uri(self) -> str:
         if self.project and self.project.path:
@@ -2089,6 +2225,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 combo_label_lang.set_active(0)
 
         _build_labels_page(self.project.language)
+
+        images_page = self._build_image_manager_widget(dialog)
+        if images_page:
+            notebook.append_page(images_page, Gtk.Label(label="Imagenes"))
 
         def on_config_response(d, response):
             if response == Gtk.ResponseType.ACCEPT:
@@ -2966,17 +3106,6 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             item_add_comp = Gtk.MenuItem(label="Anadir componente")
             item_add_comp.connect("activate", self._on_add_component)
             menu.append(item_add_comp)
-            menu.append(Gtk.SeparatorMenuItem())
-            item_import_img = Gtk.MenuItem(label="Importar imagen")
-            item_import_img.connect("activate", self._on_import_image)
-            menu.append(item_import_img)
-            item_manage_img = Gtk.MenuItem(label="Gestionar imagenes")
-            item_manage_img.connect("activate", self._on_manage_images)
-            menu.append(item_manage_img)
-            menu.append(Gtk.SeparatorMenuItem())
-            item_css = Gtk.MenuItem(label="Editar estilos del libro")
-            item_css.connect("activate", self._on_edit_book_css)
-            menu.append(item_css)
         elif isinstance(obj, Component):
             item_duplicate = Gtk.MenuItem(label="Duplicar componente")
             item_duplicate.connect("activate", self._on_duplicate_component, obj)
@@ -3715,17 +3844,20 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         dialog.connect("response", on_response)
 
-    def _on_import_image(self, menu_item):
+    def _on_import_image(self, menu_item, parent_window=None, on_imported=None):
         if not self.project:
             return
 
+        parent = parent_window or self.window
+
         dialog = Gtk.FileChooserDialog(
             title="Seleccionar imagen",
-            transient_for=self.window,
+            transient_for=parent,
             action=Gtk.FileChooserAction.OPEN,
         )
         dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
         dialog.add_button("Importar", Gtk.ResponseType.ACCEPT)
+        dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
         img_filter = Gtk.FileFilter()
         img_filter.set_name("Imagenes (JPEG, PNG, GIF)")
@@ -3734,78 +3866,64 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             img_filter.add_pattern(f"*{ext.upper()}")
         dialog.add_filter(img_filter)
 
-        def on_response(d, response):
-            if response == Gtk.ResponseType.ACCEPT:
-                src_path = d.get_filename()
-                if src_path:
-                    category_dialog = Gtk.Dialog(
-                        title="Tipo de imagen",
-                        transient_for=self.window,
-                        modal=True,
-                    )
-                    category_dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-                    category_dialog.add_button("Importar", Gtk.ResponseType.ACCEPT)
-
-                    cat_content = category_dialog.get_content_area()
-                    cat_content.set_spacing(12)
-                    cat_content.set_margin_top(12)
-                    cat_content.set_margin_bottom(12)
-                    cat_content.set_margin_start(12)
-                    cat_content.set_margin_end(12)
-
-                    cat_label = Gtk.Label(label="Selecciona el tipo de imagen:")
-                    cat_content.add(cat_label)
-
-                    combo_cat = Gtk.ComboBoxText()
-                    combo_cat.append_text("Ilustrativa (figuras, diagramas)")
-                    combo_cat.append_text("Decorativa (separadores, adornos)")
-                    combo_cat.set_active(0)
-                    cat_content.add(combo_cat)
-
-                    category_dialog.show_all()
-
-                    def on_cat_response(cd, cat_response):
-                        if cat_response == Gtk.ResponseType.ACCEPT:
-                            category = "illustrations" if combo_cat.get_active() == 0 else "decorative"
-                            images_dir = os.path.join(self.project.path, "images")
-                            result = ImageService.copy_to_project(src_path, images_dir, category)
-                            if result:
-                                self._update_status(f"Imagen importada: {os.path.basename(src_path)}")
-                            else:
-                                self._show_error("Error al importar la imagen")
-                        cd.destroy()
-
-                    category_dialog.connect("response", on_cat_response)
-            d.destroy()
-
-        dialog.connect("response", on_response)
         dialog.show_all()
+        dialog.present()
+        response = dialog.run()
 
-    def _on_manage_images(self, menu_item):
-        if not self.project:
-            return
+        if response == Gtk.ResponseType.ACCEPT:
+            src_path = dialog.get_filename()
+            dialog.destroy()
+            if src_path:
+                category_dialog = Gtk.Dialog(
+                    title="Tipo de imagen",
+                    transient_for=parent,
+                    modal=True,
+                )
+                category_dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+                category_dialog.add_button("Importar", Gtk.ResponseType.ACCEPT)
 
+                cat_content = category_dialog.get_content_area()
+                cat_content.set_spacing(12)
+                cat_content.set_margin_top(12)
+                cat_content.set_margin_bottom(12)
+                cat_content.set_margin_start(12)
+                cat_content.set_margin_end(12)
+
+                cat_label = Gtk.Label(label="Selecciona el tipo de imagen:")
+                cat_content.add(cat_label)
+
+                combo_cat = Gtk.ComboBoxText()
+                combo_cat.append_text("Ilustrativa (figuras, diagramas)")
+                combo_cat.append_text("Decorativa (separadores, adornos)")
+                combo_cat.set_active(0)
+                cat_content.add(combo_cat)
+
+                category_dialog.show_all()
+                cat_response = category_dialog.run()
+
+                if cat_response == Gtk.ResponseType.ACCEPT:
+                    category = "illustrations" if combo_cat.get_active() == 0 else "decorative"
+                    images_dir = os.path.join(self.project.path, "images")
+                    result = ImageService.copy_to_project(src_path, images_dir, category)
+                    if result:
+                        self._update_status(f"Imagen importada: {os.path.basename(src_path)}")
+                        if on_imported:
+                            on_imported()
+                    else:
+                        self._show_error("Error al importar la imagen")
+                category_dialog.destroy()
+        else:
+            dialog.destroy()
+
+    def _build_image_manager_widget(self, parent_window):
         images_dir = Path(self.project.path) / "images"
-        if not images_dir.exists():
-            self._show_info("No hay imagenes en el proyecto")
-            return
-
-        dialog = Gtk.Dialog(
-            title="Gestionar imagenes",
-            transient_for=self.window,
-            modal=True,
-        )
-        dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
-        dialog.set_default_size(820, 520)
 
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         hbox.set_margin_top(12)
         hbox.set_margin_bottom(12)
         hbox.set_margin_start(12)
         hbox.set_margin_end(12)
-        dialog.get_content_area().pack_start(hbox, True, True, 0)
 
-        # --- Left: tree + buttons ---
         left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         hbox.pack_start(left_box, True, True, 0)
 
@@ -3855,9 +3973,12 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         scrolled.add(tree_view)
 
-        # Button row below tree
         btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         left_box.pack_start(btn_box, False, False, 0)
+
+        btn_import = Gtk.Button(label="Importar")
+        btn_import.connect("clicked", lambda b: self._on_import_image(b, parent_window=parent_window, on_imported=populate_store))
+        btn_box.pack_start(btn_import, False, False, 0)
 
         btn_delete = Gtk.Button(label="Eliminar")
         btn_box.pack_start(btn_delete, False, False, 0)
@@ -3865,7 +3986,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         btn_rename = Gtk.Button(label="Renombrar")
         btn_box.pack_start(btn_rename, False, False, 0)
 
-        # --- Right: preview ---
+        btn_change_type = Gtk.Button(label="Cambiar tipo")
+        btn_box.pack_start(btn_change_type, False, False, 0)
+
         right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         right_box.set_size_request(280, -1)
         hbox.pack_start(right_box, False, False, 0)
@@ -3892,7 +4015,6 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         tree_view.get_selection().connect("changed", lambda *a: update_preview())
 
-        # --- Delete ---
         def on_delete(_btn):
             sel = tree_view.get_selection()
             model, paths = sel.get_selected_rows()
@@ -3904,7 +4026,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 iter_ = model.get_iter(p)
                 names.append(model.get_value(iter_, IMG_COL_NAME))
             confirm = Gtk.MessageDialog(
-                transient_for=dialog, modal=True,
+                transient_for=parent_window, modal=True,
                 message_type=Gtk.MessageType.QUESTION,
                 buttons=Gtk.ButtonsType.YES_NO,
                 text=f"Eliminar {len(names)} imagenes",
@@ -3923,7 +4045,6 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         btn_delete.connect("clicked", on_delete)
 
-        # --- Rename ---
         def on_rename(_btn):
             sel = tree_view.get_selection()
             model, paths = sel.get_selected_rows()
@@ -3938,7 +4059,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
             rename_dialog = Gtk.Dialog(
                 title="Renombrar imagen",
-                transient_for=dialog, modal=True,
+                transient_for=parent_window, modal=True,
             )
             rename_dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
             rename_dialog.add_button("Renombrar", Gtk.ResponseType.ACCEPT)
@@ -3967,7 +4088,6 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 old_path = f"images/{cat_name}/{old_name}"
                 new_path = f"images/{cat_name}/{new_name}"
 
-                # Check extension matches
                 src_suffix = Path(old_name).suffix.lower()
                 new_suffix = Path(new_name).suffix.lower()
                 if new_suffix != src_suffix:
@@ -3979,12 +4099,10 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     self._show_error(f"No se pudo renombrar (¿ya existe '{new_name}'?)")
                     return
 
-                # Update references in all component files
                 updated = FileService.rename_image_references(
                     self.project.path, old_path, new_path, self.project
                 )
 
-                # Refresh editor if current component was affected
                 if self.current_component:
                     content = FileService.load_component(self.project.path, self.current_component)
                     if content:
@@ -3999,8 +4117,54 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
         btn_rename.connect("clicked", on_rename)
 
-        dialog.show_all()
-        dialog.connect("response", lambda d, r: d.destroy())
+        def on_change_type(_btn):
+            sel = tree_view.get_selection()
+            model, paths = sel.get_selected_rows()
+            if len(paths) != 1:
+                self._show_info("Selecciona una sola imagen para cambiar de tipo")
+                return
+            iter_ = model.get_iter(paths[0])
+            name = model.get_value(iter_, IMG_COL_NAME)
+            fpath = model.get_value(iter_, IMG_COL_PATH)
+            current_cat_label = model.get_value(iter_, IMG_COL_CAT)
+            current_cat = "illustrations" if current_cat_label == "Ilustrativa" else "decorative"
+            new_cat = "decorative" if current_cat == "illustrations" else "illustrations"
+            new_cat_label = "Decorativa" if new_cat == "decorative" else "Ilustrativa"
+
+            new_dir = images_dir / new_cat
+            new_dir.mkdir(parents=True, exist_ok=True)
+            new_path = new_dir / name
+
+            if new_path.exists():
+                self._show_error(f"Ya existe una imagen con ese nombre en '{new_cat_label}'")
+                return
+
+            try:
+                shutil.move(str(fpath), str(new_path))
+            except OSError:
+                self._show_error("No se pudo mover la imagen")
+                return
+
+            old_rel = f"images/{current_cat}/{name}"
+            new_rel = f"images/{new_cat}/{name}"
+            updated = FileService.rename_image_references(
+                self.project.path, old_rel, new_rel, self.project
+            )
+
+            if self.current_component:
+                content = FileService.load_component(self.project.path, self.current_component)
+                if content:
+                    buf = self.text_view.get_buffer()
+                    buf.set_text(content)
+                    self._update_preview()
+
+            populate_store()
+            update_preview()
+            self._update_status(f"Imagen movida a '{new_cat_label}' ({updated} componente(s) actualizados)")
+
+        btn_change_type.connect("clicked", on_change_type)
+
+        return hbox
 
     def _on_rename_part(self, menu_item, part, iter_):
         dialog = Gtk.Dialog(
