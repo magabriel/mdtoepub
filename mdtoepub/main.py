@@ -3235,6 +3235,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
             self.project.theme_id = theme_id
             FileService.save_project(self.project)
             self._style_doc_svc = None
+            self._refresh_theme_store(store)
             self._update_preview()
             self._update_styles_panel(
                 self.current_component.type if self.current_component else None

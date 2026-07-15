@@ -24,5 +24,5 @@ Las ultimas palabras del diario de Almeida, escritas la noche antes de su desapa
 <small class="muted">Oporto — Coimbra — Lisboa — Evora — Sintra, 1897-1901</small>
 {.center}
 
-- ◆ -
-{.fin-capitulo}
+\- ◆ \-
+{.end-chapter}
