@@ -2,52 +2,76 @@
 
 ## Overview
 
-MDToEPUB is a monolithic GTK3 application with a service-oriented architecture. The entire UI and application logic resides in a single file (`main.py`, ~3150 lines), while business logic is separated into service classes and data models.
+MDToEPUB is a GTK3 desktop application with a modular architecture. The UI is split across view classes in `views/`, dialog functions in `views/dialogs/`, and controllers in `controllers/`. The `MDToEPUBApp` class in `main.py` (~500 lines) serves as a thin coordinator that wires everything together, holds shared state, and delegates to subordinate modules.
 
 ```
-┌─────────────────────────────────────────────────┐
-│                  main.py                         │
-│  MDToEPUBApp (Gtk.Application)                  │
-│    ├── UI setup (_setup_ui, _setup_menubar)     │
-│    ├── Event handlers (_on_*)                   │
-│    ├── Dialogs (_on_project_config, etc.)       │
-│    └── Preview system (_update_preview)         │
-├─────────────────────────────────────────────────┤
-│                  services/                       │
-│  MarkdownService   EpubService   FileService       │
-│  YamlService       ImageService  SpellCheckService  │
-│  StyleDocService   ThemeService                    │
-├─────────────────────────────────────────────────┤
-│                  models/                         │
-│  Project    Component    ComponentType    Theme   │
-└─────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│                       main.py                             │
+│  MDToEPUBApp (Gtk.Application) — thin coordinator         │
+│    ├── Project lifecycle (new/open/save/close)           │
+│    ├── Global config & recent projects                   │
+│    └── Delegation to views/controllers                   │
+├──────────────────────────────────────────────────────────┤
+│                       views/                              │
+│  main_window.py   EditorView + preview                    │
+│  editor_view.py   GtkSource editor + WebKit2 preview      │
+│  styles_panel.py  CSS cascade hierarchy panel             │
+│  project_tree.py  Tree navigator + component CRUD         │
+│  dialogs/                                                │
+│    project_config.py  Project settings (book/apariencia)  │
+│    theme_manager.py   Theme CRUD (create/clone/delete)   │
+│    image_manager.py   Image import/categorize widgets     │
+├──────────────────────────────────────────────────────────┤
+│                    controllers/                            │
+│  export_import.py  EPUB export, Markdown/EPUB import      │
+├──────────────────────────────────────────────────────────┤
+│                      services/                             │
+│  MarkdownService   EpubService   FileService              │
+│  YamlService       ImageService  SpellCheckService        │
+│  StyleDocService   ThemeService  LabelsService            │
+├──────────────────────────────────────────────────────────┤
+│                      models/                               │
+│  Project    Component    ComponentType    Theme            │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ## Directory layout
 
 ```
 mdtoepub/
-├── main.py                 # Application entry point, UI, controllers
+├── main.py                      # Entry point, thin app coordinator
+├── views/
+│   ├── main_window.py           # Menubar, toolbar, statusbar, paned layout
+│   ├── editor_view.py           # GtkSource editor + WebKit2 preview
+│   ├── styles_panel.py          # CSS 4-level cascade panel
+│   ├── project_tree.py          # Project navigator tree + component CRUD
+│   └── dialogs/
+│       ├── project_config.py    # Project configuration dialog
+│       ├── theme_manager.py     # Theme lifecycle manager
+│       └── image_manager.py     # Image import & categorization
+├── controllers/
+│   └── export_import.py         # EPUB export/import operations
 ├── models/
-│   ├── component.py        # Component dataclass, ComponentType enum
-│   ├── project.py          # Project dataclass (aggregate root)
-│   └── theme.py            # Theme dataclass
+│   ├── component.py             # Component dataclass, ComponentType enum
+│   ├── project.py               # Project dataclass (aggregate root)
+│   └── theme.py                 # Theme dataclass
 ├── services/
-│   ├── markdown_service.py  # Markdown → HTML rendering
-│   ├── epub_service.py      # EPUB generation pipeline
-│   ├── file_service.py      # File I/O, project structure management
-│   ├── yaml_service.py      # YAML load/save/frontmatter parsing
-│   ├── image_service.py     # Image validation and optimization
-│   ├── spell_service.py     # Multi-language spell-check
-│   ├── style_doc_service.py # CSS @doc comment extraction
-│   └── theme_service.py     # Theme discovery, CRUD, clone
+│   ├── markdown_service.py      # Markdown → HTML rendering
+│   ├── epub_service.py          # EPUB generation pipeline
+│   ├── file_service.py          # File I/O, project structure management
+│   ├── yaml_service.py          # YAML load/save/frontmatter parsing
+│   ├── image_service.py         # Image validation and optimization
+│   ├── spell_service.py         # Multi-language spell-check
+│   ├── style_doc_service.py     # CSS @doc comment extraction
+│   ├── theme_service.py         # Theme discovery, CRUD, clone
+│   └── labels_service.py        # Multi-language component labels
 ├── themes/
-│   └── classic/             # Built-in CSS theme
+│   └── classic/                 # Built-in CSS theme
 ├── data/
-│   └── sample_book/         # Demo project
+│   └── sample_book/             # Demo project
 ├── lang-specs/
-│   └── mdtoepub-help.lang   # GtkSource language for help panels
-└── tests/                   # pytest test suite
+│   └── mdtoepub-help.lang       # GtkSource language for help panels
+└── tests/                       # pytest test suite
 ```
 
 ## Data models
