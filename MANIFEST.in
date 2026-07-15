@@ -1,5 +1,6 @@
 include README.md ARCHITECTURE.md AGENTS.md LICENSE
 include data/com.github.mdtoepub.desktop
+include data/com.github.mdtoepub.metainfo.xml
 recursive-include mdtoepub/themes *.css *.yaml
 recursive-include mdtoepub/data *.md *.yaml *.png *.jpg *.jpeg
 include mdtoepub/lang-specs/*.lang

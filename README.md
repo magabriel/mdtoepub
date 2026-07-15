@@ -43,8 +43,31 @@ Python packages (installed automatically via pip):
 
 ### Flatpak (recommended for end users)
 
+#### Automated build with `build.sh`
+
 ```bash
-flatpak-builder --user --install --force-clean build-dir com.github.mdtoepub.yml
+# Full pipeline: check deps, install runtime, build, bundle, cleanup
+./build.sh all
+
+# Install the generated .flatpak bundle
+./build.sh install-local
+```
+
+Available commands:
+
+| Command | Description |
+|---------|-------------|
+| `all` | Full pipeline: deps → runtime → build → bundle → cleanup |
+| `build` | Build only (no bundle) |
+| `bundle` | Create `.flatpak` bundle from existing build |
+| `clean` | Remove all build artifacts |
+| `install-local` | Uninstall old version and install the bundle |
+| `reinstall` | Uninstall current version and reinstall from bundle |
+
+#### Manual build
+
+```bash
+flatpak-builder --user --install --force-clean --disable-rofiles-fuse build-dir com.github.mdtoepub.yml
 ```
 
 After installation, launch from your application menu or run:
