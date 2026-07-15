@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.github.mdtoepub</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <name>MDToEPUB</name>
+  <summary>Create EPUB ebooks from Markdown</summary>
+
+  <description>
+    <p>
+      A desktop application for writing and publishing EPUB ebooks from Markdown.
+      Built with GTK3 and Python.
+    </p>
+    <ul>
+      <li>Project-based workflow with drag-and-drop reordering of chapters</li>
+      <li>Live Markdown-to-HTML preview updated as you type</li>
+      <li>EPUB 2/3 export with embedded images and CSS</li>
+      <li>Customizable CSS theme system with drop-cap support</li>
+      <li>Multi-language spell-check with inline language markers</li>
+      <li>Syntax highlighting for code blocks via Pygments</li>
+      <li>Import from Markdown files and existing EPUBs</li>
+      <li>Part grouping with auto-generated part pages</li>
+    </ul>
+  </description>
+
+  <screenshots>
+    <screenshot type="default">
+      <caption>The main editor window</caption>
+    </screenshot>
+  </screenshots>
+
+  <url type="homepage">https://github.com/mdtoepub</url>
+
+  <categories>
+    <category>Office</category>
+    <category>WordProcessor</category>
+  </categories>
+
+  <launchable type="desktop-id">com.github.mdtoepub.desktop</launchable>
+
+  <releases>
+    <release version="1.1.0" date="2025-07-15">
+      <description>
+        <p>Initial public release.</p>
+      </description>
+    </release>
+  </releases>
+
+  <project_group>mdtoepub</project_group>
+  <developer_name>MDToEPUB Team</developer_name>
+</component>

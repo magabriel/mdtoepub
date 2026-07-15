@@ -46,6 +46,12 @@ modules:
         exec python3 -m mdtoepub.main "$@"
         SCRIPT
       - chmod +x /app/bin/mdtoepub
+      - mkdir -p /app/share/applications
+      - install -m 644 data/com.github.mdtoepub.desktop /app/share/applications/
+      - mkdir -p /app/share/icons/hicolor/scalable/apps
+      - install -m 644 data/icons/hicolor/scalable/apps/com.github.mdtoepub.svg /app/share/icons/hicolor/scalable/apps/
+      - mkdir -p /app/share/metainfo
+      - install -m 644 data/com.github.mdtoepub.metainfo.xml /app/share/metainfo/
     sources:
       - type: dir
         path: .

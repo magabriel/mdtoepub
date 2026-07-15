@@ -3,10 +3,10 @@ set -uo pipefail
 
 APP_ID="com.github.mdtoepub"
 MANIFEST="com.github.mdtoepub.yml"
-BUILD_DIR="build-flatpak"
-REPO_DIR="repo"
+BUILD_DIR="/tmp/mdtoepub/build-flatpak"
+REPO_DIR="/tmp/mdtoepub/repo"
 VERSION="${VERSION:-$(grep '^version' pyproject.toml | head -1 | cut -d'"' -f2)}"
-BUNDLE="mdtoepub-v${VERSION}.flatpak"
+BUNDLE="dist/mdtoepub-v${VERSION}.flatpak"
 RUNTIME="org.gnome.Platform"
 RUNTIME_VERSION="48"
 
@@ -52,13 +52,14 @@ install_runtime() {
 build_app() {
     echo "=== Construyendo ${APP_ID} v${VERSION} ==="
     rm -rf "$BUILD_DIR" "$REPO_DIR"
-    flatpak-builder --user --force-clean \
+    flatpak-builder --user --force-clean --disable-rofiles-fuse \
         --repo="$REPO_DIR" \
         "$BUILD_DIR" \
         "$MANIFEST"
 }
 
 create_bundle() {
+    mkdir -p dist
     echo "=== Generando bundle ${BUNDLE} ==="
     flatpak build-bundle "$REPO_DIR" "$BUNDLE" "$APP_ID"
     echo ""
@@ -68,7 +69,7 @@ create_bundle() {
 
 cleanup() {
     rm -rf "$BUILD_DIR"
-    echo "Build temporal eliminado (${BUILD_DIR})."
+    echo "Build temporal eliminado."
 }
 
 show_help() {
@@ -100,13 +101,13 @@ main() {
             create_bundle
             ;;
         clean)
-            rm -rf "$BUILD_DIR" "$REPO_DIR" "$BUNDLE" 2>/dev/null || true
+            rm -rf /tmp/mdtoepub "$BUNDLE" 2>/dev/null || true
             echo "Limpieza completada."
             ;;
         install-local)
         if [ -f "$BUNDLE" ]; then
             flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
-            flatpak install --user "$BUNDLE"
+            flatpak install --user -y "$BUNDLE"
         else
             echo "ERROR: $BUNDLE no encontrado. Ejecuta './build.sh' primero."
             exit 1
@@ -115,7 +116,7 @@ main() {
         reinstall)
         flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
         if [ -f "$BUNDLE" ]; then
-            flatpak install --user "$BUNDLE"
+            flatpak install --user -y "$BUNDLE"
         else
             echo "ERROR: $BUNDLE no encontrado. Ejecuta './build.sh' primero."
             exit 1
