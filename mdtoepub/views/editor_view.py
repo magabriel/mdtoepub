@@ -650,12 +650,12 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 show_title = editor_fm.get("show_title", True)
 
                 if component.type == ComponentType.PART:
-                    num_part, title_part, _ = epub_svc._get_part_header(
+                    num_part, title_part, _dp = epub_svc._get_part_header(
                         component, part_number
                     )
                     replaces = self.app.project.auto_part_title in ("part_number", "number")
                 else:
-                    num_part, title_part, _ = epub_svc._get_component_header(
+                    num_part, title_part, _dp = epub_svc._get_component_header(
                         component, chapter_number
                     )
                     replaces = self.app.project.auto_chapter_title in ("chapter_number", "number")
