@@ -1,4 +1,3 @@
-import gettext
 import os
 import re
 from pathlib import Path
@@ -17,7 +16,7 @@ from ..services.image_service import ImageService
 from ..services.markdown_service import MarkdownService
 from ..services.spell_service import SpellCheckService
 
-_ = gettext.gettext
+from ..i18n import _
 
 
 class EditorView:

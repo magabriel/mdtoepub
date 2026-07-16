@@ -6,12 +6,7 @@ _translator = None
 
 
 def setup_i18n(config=None):
-    """Initialize the i18n system. Call once at startup, before any UI code.
-
-    Args:
-        config: global config dict. If config["ui_language"] is set,
-                use that language instead of auto-detecting.
-    """
+    """Initialize the i18n system. Call once at startup, before any UI code."""
     global _translator
 
     locale_dir = os.path.join(os.path.dirname(__file__), "locale")
@@ -38,12 +33,10 @@ def setup_i18n(config=None):
 
 
 def get_translator():
-    """Return the current gettext translator object."""
     return _translator
 
 
 def get_language():
-    """Return the currently active UI language code."""
     if _translator:
         info = _translator.info()
         if info and "language" in info:
@@ -52,9 +45,20 @@ def get_language():
 
 
 def _detect_system_language():
-    """Detect the system language from environment variables."""
     for var in ("LANGUAGE", "LC_ALL", "LC_MESSAGES", "LANG"):
         val = os.environ.get(var, "")
         if val and val != "C" and val != "POSIX":
             return val.split(":")[0]
     return None
+
+
+def _(text):
+    """Translate text using the current UI language.
+
+    Uses the installed translator from setup_i18n().
+    Falls back to English if setup hasn't been called yet.
+    """
+    import builtins
+    if hasattr(builtins, '_'):
+        return builtins._(text)
+    return text

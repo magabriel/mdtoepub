@@ -1,4 +1,3 @@
-import gettext
 import os
 
 import gi
@@ -10,7 +9,7 @@ from ...services.file_service import FileService
 from ...services.theme_service import ThemeService
 from ...services.yaml_service import YamlService
 
-_ = gettext.gettext
+from ...i18n import _
 
 
 def show_theme_manager(app):

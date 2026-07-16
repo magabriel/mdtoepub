@@ -1,4 +1,3 @@
-import gettext
 import os
 
 import gi
@@ -12,7 +11,7 @@ from ..services.theme_service import ThemeService
 from ..services.yaml_service import YamlService
 from ..services.style_doc_service import StyleDocService
 
-_ = gettext.gettext
+from ..i18n import _
 
 FRONTMATTER_DOCS = {
     "toc": [

@@ -1,5 +1,4 @@
 from ...utils.dialogs import show_error, show_info, confirm
-import gettext
 import os
 import shutil
 from pathlib import Path
@@ -13,7 +12,7 @@ from gi.repository import Gtk, GdkPixbuf
 from ...services.file_service import FileService
 from ...services.image_service import ImageService
 
-_ = gettext.gettext
+from ...i18n import _
 
 
 def _show_info(parent, message):

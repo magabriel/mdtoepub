@@ -1,4 +1,3 @@
-import gettext
 import uuid
 
 import gi
@@ -11,7 +10,7 @@ from ..models.component import Component, ComponentType, COMPONENT_TYPE_LABELS
 from ..services.file_service import FileService
 from ..services.labels_service import resolve_labels
 
-_ = gettext.gettext
+from ..i18n import _
 
 
 def _component_icon(comp: Component) -> str:

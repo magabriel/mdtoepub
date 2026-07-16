@@ -1,5 +1,4 @@
 from ...utils.dialogs import show_error, show_info, confirm
-import gettext
 import os
 import shutil
 from pathlib import Path
@@ -16,7 +15,7 @@ from ...services.image_service import ImageService
 from ...models.component import ComponentType, COMPONENT_TYPE_LABELS
 from ...services.labels_service import DEFAULT_LABELS
 
-_ = gettext.gettext
+from ...i18n import _
 
 
 def _show_info(parent, msg):

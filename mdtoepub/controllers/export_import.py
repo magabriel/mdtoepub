@@ -1,5 +1,4 @@
 from ..utils.dialogs import show_error, show_info, confirm
-import gettext
 import os
 import subprocess
 
@@ -9,7 +8,7 @@ from ..services.file_service import FileService, slugify
 from ..services.epub_service import EpubService
 from ..services.yaml_service import YamlService
 
-_ = gettext.gettext
+from ..i18n import _
 
 
 class ExportImportController:

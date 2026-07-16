@@ -1,5 +1,4 @@
 from ..utils.dialogs import show_error, show_info, confirm
-import gettext
 import os
 import shutil
 import gi
@@ -10,7 +9,7 @@ from ..models.component import Component
 from ..services.file_service import FileService
 from ..services.yaml_service import YamlService
 
-_ = gettext.gettext
+from ..i18n import _
 
 
 class MainWindow:

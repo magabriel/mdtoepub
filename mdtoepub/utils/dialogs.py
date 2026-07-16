@@ -1,9 +1,8 @@
-import gettext
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-_ = gettext.gettext
+from ..i18n import _
 
 
 def show_error(parent, message):
