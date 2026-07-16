@@ -78,6 +78,12 @@ class MDToEPUBApp(Gtk.Application):
     def _update_status(self, message):
         self.status_label.set_text(message)
 
+    def _get_config_path(self) -> tuple:
+        config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
+        os.makedirs(config_dir, exist_ok=True)
+        config_file = os.path.join(config_dir, "config.yaml")
+        return config_dir, config_file
+
 
 def main():
     app = MDToEPUBApp()

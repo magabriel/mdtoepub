@@ -143,7 +143,7 @@ class StylesPanel:
         btn_box.set_margin_top(6)
 
         theme_mgr_btn = Gtk.Button(label="Gestor de temas...")
-        theme_mgr_btn.connect("clicked", self.app._on_theme_manager)
+        theme_mgr_btn.connect("clicked", self.app.main_window._on_theme_manager)
         btn_box.pack_start(theme_mgr_btn, False, False, 0)
 
         manage_btn = Gtk.Button(label="Gestionar todos los tipos...")
