@@ -442,6 +442,8 @@ class EpubService:
         title_part = ""
 
         mode = self.project.auto_chapter_title
+        if component.type == ComponentType.APPENDIX:
+            mode = self.project.auto_appendix_title
         if mode != "none" and show_title:
             if component.should_use_numbering() and chapter_number is not None:
                 label = self._labels.get("chapter", "Capítulo") if component.type == ComponentType.CHAPTER else self._labels.get("appendix", "Apéndice")
@@ -837,7 +839,7 @@ class EpubService:
         if show_title:
             # Use h1 as title_part if found and no title_part from header
             # (but not for modes that replace the title entirely with just a number)
-            replaces_title = self.project.auto_chapter_title in ("chapter_number", "number")
+            replaces_title = (self.project.auto_appendix_title if component.type == ComponentType.APPENDIX else self.project.auto_chapter_title) in ("chapter_number", "number")
             if default_title and not title_part and not replaces_title:
                 title_part = default_title
 

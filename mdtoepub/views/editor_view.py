@@ -658,7 +658,8 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     num_part, title_part, _dp = epub_svc._get_component_header(
                         component, chapter_number
                     )
-                    replaces = self.app.project.auto_chapter_title in ("chapter_number", "number")
+                    mode = self.app.project.auto_appendix_title if component.type == ComponentType.APPENDIX else self.app.project.auto_chapter_title
+                    replaces = mode in ("chapter_number", "number")
                 if show_title:
                     if default_title and not title_part and not replaces:
                         title_part = default_title
