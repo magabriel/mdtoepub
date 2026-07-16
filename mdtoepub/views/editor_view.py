@@ -604,7 +604,7 @@ hr { border: none; border-top: 1px solid #ccc; }
             if self.app.project and component:
                 from ..services.epub_service import EpubService as _EpubService
                 epub_svc = _EpubService(self.app.project)
-                _, config_file = self.app._get_config_path()
+                __, config_file = self.app._get_config_path()
                 global_config = YamlService.load(config_file)
                 epub_svc._resolve_labels(global_config)
 

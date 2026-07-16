@@ -69,7 +69,7 @@ class ExportImportController:
             if not confirm(self.app.window, _("The file already exists:\n{path}\n\nOverwrite?").format(path=epub_path)):
                 return
         epub_service = EpubService(self.app.project)
-        _, config_file = self.app._get_config_path()
+        __, config_file = self.app._get_config_path()
         global_config = YamlService.load(config_file)
         result = epub_service.generate(epub_path, self.app.project.epub_version, global_config=global_config)
         if result:
@@ -120,7 +120,7 @@ class ExportImportController:
                 return
 
             parsed = FileService.parse_imported_markdown(content)
-            total_chars = sum(len(md) for _, _, md in parsed)
+            total_chars = sum(len(md) for _t, _n, md in parsed)
             desc_lines = [_("About to import {n} components:").format(n=len(parsed))]
             for ctype, title, md in parsed:
                 title_str = f' \u2014 "{title}"' if title else ""
@@ -190,7 +190,7 @@ class ExportImportController:
                 show_info(self.app.window, _("The EPUB does not contain importable documents."))
                 return
 
-            total_chars = sum(len(md) for _, _, md in components)
+            total_chars = sum(len(md) for _t, _n, md in components)
             desc_lines = [_("About to import {n} components:").format(n=len(components))]
             for ctype, title, md in components:
                 title_str = f' \u2014 "{title}"' if title else ""

@@ -677,7 +677,7 @@ class ProjectTree:
             self._drag_component_ids = []
             return
         selection = treeview.get_selection()
-        _, paths = selection.get_selected_rows()
+        __, paths = selection.get_selected_rows()
         self._drag_component_ids = []
         if paths:
             for p in paths:

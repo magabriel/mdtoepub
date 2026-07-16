@@ -829,7 +829,7 @@ def show_project_config(app):
     labels_page.set_margin_end(12)
     notebook.append_page(labels_page, Gtk.Label(label=_("Labels")))
 
-    _, config_file = app._get_config_path()
+    __, config_file = app._get_config_path()
     global_cfg = YamlService.load(config_file) or {}
     global_labels = global_cfg.get("labels", {})
     label_keys = [k for k in DEFAULT_LABELS.get("es", {})]
