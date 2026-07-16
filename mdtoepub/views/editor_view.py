@@ -1,3 +1,4 @@
+import gettext
 import os
 import re
 from pathlib import Path
@@ -15,6 +16,8 @@ from ..services.yaml_service import YamlService
 from ..services.image_service import ImageService
 from ..services.markdown_service import MarkdownService
 from ..services.spell_service import SpellCheckService
+
+_ = gettext.gettext
 
 
 class EditorView:
@@ -89,18 +92,18 @@ class EditorView:
         self._init_syntax_help(syntax_buf)
 
         self.app.content_notebook = Gtk.Notebook()
-        self.app.content_notebook.append_page(editor_scrolled, Gtk.Label(label="Editor"))
-        self.app.content_notebook.append_page(self.app.webview, Gtk.Label(label="Vista previa"))
+        self.app.content_notebook.append_page(editor_scrolled, Gtk.Label(label=_("Editor")))
+        self.app.content_notebook.append_page(self.app.webview, Gtk.Label(label=_("Preview")))
 
         help_notebook = Gtk.Notebook()
-        help_notebook.append_page(front_scrolled, Gtk.Label(label="Metadatos"))
-        help_notebook.append_page(syntax_scrolled, Gtk.Label(label="Sintaxis"))
+        help_notebook.append_page(front_scrolled, Gtk.Label(label=_("Metadata")))
+        help_notebook.append_page(syntax_scrolled, Gtk.Label(label=_("Syntax")))
 
         self.app.main_stack = Gtk.Stack()
         self.app.main_stack.set_vexpand(True)
-        self.app.main_stack.add_titled(self.app.content_notebook, "content", "Contenido")
-        self.app.main_stack.add_titled(self.app._styles_scrolled, "styles", "Estilos")
-        self.app.main_stack.add_titled(help_notebook, "help", "Ayuda")
+        self.app.main_stack.add_titled(self.app.content_notebook, "content", _("Content"))
+        self.app.main_stack.add_titled(self.app._styles_scrolled, "styles", _("Styles"))
+        self.app.main_stack.add_titled(help_notebook, "help", _("Help"))
 
         sidebar = Gtk.StackSidebar()
         sidebar.set_stack(self.app.main_stack)
@@ -125,7 +128,7 @@ figcaption { font-style: italic; font-size: 0.9em; margin-top: 0.5em; color: #55
 blockquote { border-left: 3px solid #ccc; margin: 1em 0; padding-left: 1em; color: #555; }
 hr { border: none; border-top: 1px solid #ccc; }
 </style></head><body>
-<p style="color:#999;text-align:center;margin-top:4em;">Vista previa del contenido Markdown</p>
+<p style="color:#999;text-align:center;margin-top:4em;">Markdown content preview</p>
 </body></html>"""
         self.app.webview.load_html(self.app.default_html, self._get_base_uri())
 
@@ -133,143 +136,136 @@ hr { border: none; border-top: 1px solid #ccc; }
 
     def _init_syntax_help(self, buf):
         lines = [
-            "Sintaxis Markdown",
+            _("Markdown Syntax"),
             "",
-            "— Texto —",
+            "\u2014 " + _("Text") + " \u2014",
             "",
             "  *cursiva*                _cursiva_",
             "  **negrita**              __negrita__",
             "  ~~tachado~~              `codigo`",
             "  > cita                   > cita anidada",
             "",
-            "— Encabezados —",
+            "\u2014 " + _("Headings") + " \u2014",
             "",
             "  # Titulo                 ## Seccion",
             "  ### Subseccion           #### Sub-sub",
             "",
-            "— Enlaces e imagenes —",
+            "\u2014 " + _("Links and Images") + " \u2014",
             "",
             "  [Texto](url)             [Texto](url \"Titulo\")",
             "  ![Alt](ruta/imagen.jpg)",
             "",
-            "— Listas —",
+            "\u2014 " + _("Lists") + " \u2014",
             "",
             "  - item                   * item",
             "    - subitem",
             "  1. numerada              1) numerada",
             "",
-            "— Separador —",
+            "\u2014 " + _("Separator") + " \u2014",
             "",
             "  ---                      ***",
             "",
-            "Extensiones activas",
+            _("Active Extensions"),
             "",
-            "— Tablas —  (tables)",
+            "\u2014 " + _("Tables") + " \u2014  (tables)",
             "",
             "  | Col A | Col B | Col C |",
             "  |-------|-------|-------|",
             "  | a     | b     | c     |",
             "",
-            "  * Alineacion con :   |:---|:---:|---:|",
+            "  * " + _("Alignment with :") + "   |:---|:---:|---:|",
             "",
-            "— Bloque de codigo —  (fenced_code + codehilite)",
+            "\u2014 " + _("Code Block") + " \u2014  (fenced_code + codehilite)",
             "",
             "  ```python",
             "  def hola():",
             "      print(\"Hola\")",
             "  ```",
             "",
-            "  * Lenguajes: python, js, html, css, bash, json, yaml...",
-            "  * Resaltado con Pygments en el EPUB exportado.",
+            "  * " + _("Languages: python, js, html, css, bash, json, yaml..."),
+            "  * " + _("Syntax highlighting with Pygments in exported EPUB."),
             "",
-            "— Listas de definicion —  (def_list)",
+            "\u2014 " + _("Definition Lists") + " \u2014  (def_list)",
             "",
             "  Termino",
             "  : Definicion del termino.",
             "  : Parrafo adicional de la definicion.",
             "",
-            "— Atributos CSS —  (attr_list)",
+            "\u2014 " + _("CSS Attributes") + " \u2014  (attr_list)",
             "",
-            "  {.clase}                 → <elemento class=\"clase\">",
-            "  {.c1 .c2}                → varias clases",
-            "  {#id-unico}              → ancla con id",
+            "  {.clase}                 \u2192 <elemento class=\"clase\">",
+            "  {.c1 .c2}                \u2192 " + _("multiple classes"),
+            "  {#id-unico}              \u2192 " + _("anchor with id"),
             "",
-            "  * Se coloca en la linea siguiente al elemento.",
-            "  * Clases disponibles segun el tema activo.",
+            "  * " + _("Placed on the line after the element."),
+            "  * " + _("Available classes depend on the active theme."),
             "",
-            "— Notas al pie —  (footnotes)",
+            "\u2014 " + _("Footnotes") + " \u2014  (footnotes)",
             "",
             "  Texto con nota[^1] y otra nota[^2].",
             "",
             "  [^1]: Contenido de la primera nota.",
             "  [^2]: Contenido de la segunda nota.",
             "",
-            "  * Se numeran automaticamente por componente.",
-            "  * Se recogen al final en el componente Notas al pie.",
+            "  * " + _("Auto-numbered per component."),
+            "  * " + _("Collected at the end in the Footnotes component."),
             "",
-            "— Tabla de contenidos —  (toc)",
+            "\u2014 " + _("Table of Contents") + " \u2014  (toc)",
             "",
             "  [TOC]",
             "",
-            "  * Genera un indice local dentro del propio componente.",
+            "  * " + _("Generates a local index within the component itself."),
             "",
-            "— Saltos de linea —  (estandar CommonMark)",
+            "\u2014 " + _("Line Breaks") + " \u2014  (" + _("CommonMark standard") + ")",
             "",
-            "  * Una linea en blanco entre bloques de texto",
-            "    crea un nuevo parrafo.",
-            "  * Un salto de linea simple une el texto en",
-            "    el mismo parrafo (soft break).",
-            "  * Dos espacios al final de una linea + salto",
-            "    de linea crea un <br> explicito (hard break).",
-            "  * Barra invertida al final de una linea +",
-            "    salto de linea tambien crea un hard break.",
+            "  * " + _("A blank line between text blocks creates a new paragraph."),
+            "  * " + _("A simple line break joins text in the same paragraph (soft break)."),
+            "  * " + _("Two spaces at the end of a line + line break creates an explicit <br> (hard break)."),
+            "  * " + _("Backslash at the end of a line + line break also creates a hard break."),
             "",
-            "Sintaxis personalizada",
+            _("Custom Syntax"),
             "",
-            "— Tablas con titulo —",
+            "\u2014 " + _("Tables with Title") + " \u2014",
             "",
             "  <!-- Table: Mi tabla de datos -->",
             "  | A | B |",
             "  |---|---|",
             "  | 1 | 2 |",
             "",
-            "  * Aparecen en la Lista de Tablas si se activa",
-            "    la numeracion en Configuracion del proyecto.",
-            "  * Tablas sin comentario no se numeran ni listan.",
+            "  * " + _("Appear in the List of Tables if numbering is enabled in Project Settings."),
+            "  * " + _("Tables without a comment are not numbered or listed."),
             "",
-            "— Figuras numerables —",
+            "\u2014 " + _("Numbered Figures") + " \u2014",
             "",
             "  ![Pie de figura](images/illustrations/foto.jpg)",
             "",
-            "  * Las imagenes en images/illustrations/ se numeran",
-            "    automaticamente y aparecen en la Lista de Figuras.",
+            "  * " + _("Images in images/illustrations/ are automatically numbered and appear in the List of Figures."),
             "",
-            "— Imagenes decorativas —",
+            "\u2014 " + _("Decorative Images") + " \u2014",
             "",
             "  ![Alt](images/decorative/ornamento.jpg)",
             "",
-            "  * Quedan fuera de la numeracion y de la LOF.",
-            "  * Aun asi obtienen <figure> con alt como caption.",
+            "  * " + _("Excluded from numbering and LOF."),
+            "  * " + _("Still get <figure> with alt as caption."),
             "",
-            "— Idioma del corrector —",
+            "\u2014 " + _("Spell Checker Language") + " \u2014",
             "",
             "  {lang=en}This text is in English.{lang=es}",
             "",
-            "  * Cambia el idioma del corrector ortografico.",
-            "  * Los marcadores se eliminan del EPUB.",
+            "  * " + _("Changes the spell checker language."),
+            "  * " + _("Markers are removed from the EPUB."),
             "",
-            "— Metadatos del componente —  (frontmatter)",
+            "\u2014 " + _("Component Metadata") + " \u2014  (frontmatter)",
             "",
             "  ---",
             "  show_title: false",
             "  toc_deep: 2",
             "  ---",
             "",
-            "  * En YAML, entre --- al inicio del archivo.",
-            "  * Variables comunes: show_title, toc_deep,",
-            "    toc_include, split_title.",
+            "  * " + _("In YAML, between --- at the beginning of the file."),
+            "  * " + _("Common variables: show_title, toc_deep, toc_include, split_title."),
             "",
-            "— Variables del proyecto —  (interpolacion)",
+            "\u2014 " + _("Project Variables") + " \u2014  (" + _("interpolation") + ")",
             "",
             "  {{title}}       {{subtitle}}",
             "  {{author}}      {{publisher}}",
@@ -277,11 +273,9 @@ hr { border: none; border-top: 1px solid #ccc; }
             "  {{publication_date}}",
             "  {{publication_date:year}}",
             "",
-            "  * Se sustituyen por los valores de la configuracion",
-            "    del proyecto (Archivo → Configuracion).",
-            "  * {{publication_date:year}} extrae solo el año",
-            "    (ej: 2025-01-15 → 2025).",
-            "  * Los campos no definidos quedan como {{clave}}.",
+            "  * " + _("Replaced by values from project settings (File \u2192 Settings)."),
+            "  * " + _("{{publication_date:year}} extracts only the year (e.g.: 2025-01-15 \u2192 2025)."),
+            "  * " + _("Undefined fields remain as {{key}}."),
         ]
         buf.set_text("\n".join(lines))
 
@@ -331,7 +325,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                     sep.show()
                     popup.append(sep)
 
-                    item = Gtk.MenuItem(label="Sugerencias ortográficas")
+                    item = Gtk.MenuItem(label=_("Spelling Suggestions"))
                     item.set_sensitive(False)
                     item.show()
                     popup.append(item)
@@ -359,7 +353,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                     buf.remove_tag(self._spell_tag, it1, it2)
                     self._run_spell_check()
 
-                item_ignore = Gtk.MenuItem(label="Ignorar palabra")
+                item_ignore = Gtk.MenuItem(label=_("Ignore word"))
                 item_ignore.connect("activate", _ignore_word)
                 item_ignore.show()
                 popup.append(item_ignore)
@@ -373,7 +367,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                     buf.remove_tag(self._spell_tag, it1, it2)
                     self._update_preview()
 
-                item_book = Gtk.MenuItem(label="Añadir al diccionario del libro")
+                item_book = Gtk.MenuItem(label=_("Add to book dictionary"))
                 item_book.connect("activate", _add_book_word)
                 item_book.show()
                 popup.append(item_book)
@@ -387,7 +381,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                     buf.remove_tag(self._spell_tag, it1, it2)
                     self._update_preview()
 
-                item_global = Gtk.MenuItem(label="Añadir al diccionario global")
+                item_global = Gtk.MenuItem(label=_("Add to global dictionary"))
                 item_global.connect("activate", _add_global_word)
                 item_global.show()
                 popup.append(item_global)
@@ -416,7 +410,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         sep.show()
         popup.append(sep)
 
-        item = Gtk.MenuItem(label="Insertar imagen...")
+        item = Gtk.MenuItem(label=_("Insert Image..."))
         item.connect("activate", self._on_insert_image_dialog)
         item.show()
         popup.append(item)
@@ -428,12 +422,12 @@ hr { border: none; border-top: 1px solid #ccc; }
         images_dir = Path(self.app.project.path) / "images"
 
         dialog = Gtk.Dialog(
-            title="Insertar imagen",
+            title=_("Insert Image"),
             transient_for=self.app.window,
             modal=True,
         )
-        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Insertar", Gtk.ResponseType.ACCEPT)
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Insert"), Gtk.ResponseType.ACCEPT)
         dialog.set_default_size(600, 450)
 
         hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
@@ -459,17 +453,17 @@ hr { border: none; border-top: 1px solid #ccc; }
         tree_view.set_headers_visible(True)
 
         r_name = Gtk.CellRendererText()
-        col_name = Gtk.TreeViewColumn("Nombre", r_name, text=IMG_COL_NAME)
+        col_name = Gtk.TreeViewColumn(_("Name"), r_name, text=IMG_COL_NAME)
         col_name.set_resizable(True)
         col_name.set_expand(True)
         tree_view.append_column(col_name)
 
         r_cat = Gtk.CellRendererText()
-        col_cat = Gtk.TreeViewColumn("Categoria", r_cat, text=IMG_COL_CAT)
+        col_cat = Gtk.TreeViewColumn(_("Category"), r_cat, text=IMG_COL_CAT)
         col_cat.set_resizable(True)
         tree_view.append_column(col_cat)
 
-        for cat_name, cat_label in [("illustrations", "Ilustrativa"), ("decorative", "Decorativa")]:
+        for cat_name, cat_label in [("illustrations", _("Illustration")), ("decorative", _("Decorative"))]:
             cat_dir = images_dir / cat_name
             if cat_dir.exists():
                 for f in sorted(cat_dir.iterdir()):
@@ -484,7 +478,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         hbox.pack_start(right_box2, False, False, 0)
 
         preview_img = Gtk.Image()
-        preview_frame = Gtk.Frame(label="Vista previa")
+        preview_frame = Gtk.Frame(label=_("Preview"))
         preview_frame.set_size_request(220, 260)
         preview_frame.add(preview_img)
         right_box2.pack_start(preview_frame, True, True, 0)
@@ -514,7 +508,7 @@ hr { border: none; border-top: 1px solid #ccc; }
             if iter_ is not None:
                 name = model.get_value(iter_, IMG_COL_NAME)
                 cat_label = model.get_value(iter_, IMG_COL_CAT)
-                cat_name = "illustrations" if cat_label == "Ilustrativa" else "decorative"
+                cat_name = "illustrations" if cat_label == _("Illustration") else "decorative"
                 rel_path = f"images/{cat_name}/{name}"
 
                 buf = self.app.text_view.get_buffer()
@@ -708,8 +702,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     html = html.replace(
                         '</section>',
                         '<div class="auto-notice">'
-                        '<p>Aquí aparecerán automáticamente todas '
-                        'las notas al pie del libro.</p>'
+                        '<p>' + _('All footnotes from the book will appear here automatically.') + '</p>'
                         '</div>\n</section>',
                         1
                     )
@@ -717,8 +710,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     html = html.replace(
                         '</section>',
                         '<div class="auto-notice">'
-                        '<p>Aquí aparecerá automáticamente la '
-                        'tabla de contenidos.</p>'
+                        '<p>' + _('The table of contents will appear here automatically.') + '</p>'
                         '</div>\n</section>',
                         1
                     )
@@ -726,8 +718,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     html = html.replace(
                         '</section>',
                         '<div class="auto-notice">'
-                        '<p>Aquí aparecerá automáticamente la '
-                        'lista de figuras.</p>'
+                        '<p>' + _('The list of figures will appear here automatically.') + '</p>'
                         '</div>\n</section>',
                         1
                     )
@@ -735,8 +726,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     html = html.replace(
                         '</section>',
                         '<div class="auto-notice">'
-                        '<p>Aquí aparecerá automáticamente la '
-                        'lista de tablas.</p>'
+                        '<p>' + _('The list of tables will appear here automatically.') + '</p>'
                         '</div>\n</section>',
                         1
                     )

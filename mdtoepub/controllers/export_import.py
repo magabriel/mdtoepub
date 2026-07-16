@@ -1,4 +1,5 @@
 from ..utils.dialogs import show_error, show_info, confirm
+import gettext
 import os
 import subprocess
 
@@ -8,6 +9,8 @@ from ..services.file_service import FileService, slugify
 from ..services.epub_service import EpubService
 from ..services.yaml_service import YamlService
 
+_ = gettext.gettext
+
 
 class ExportImportController:
     def __init__(self, app):
@@ -15,7 +18,7 @@ class ExportImportController:
 
     def export_epub(self, button):
         if not self.app.project:
-            show_info(self.app.window, "No hay proyecto abierto")
+            show_info(self.app.window, _("No project open"))
             return
 
         self.app.project_manager.save_component_content()
@@ -34,11 +37,11 @@ class ExportImportController:
             epub_path = os.path.join(output_dir, epub_name)
 
         save_dialog = Gtk.FileChooserNative(
-            title="Guardar EPUB como...",
+            title=_("Save EPUB as..."),
             transient_for=self.app.window,
             action=Gtk.FileChooserAction.SAVE,
-            accept_label="_Guardar",
-            cancel_label="_Cancelar",
+            accept_label=_("_Save"),
+            cancel_label=_("_Cancel"),
         )
         save_dialog.set_current_name(epub_name)
         epub_filter = Gtk.FileFilter()
@@ -63,7 +66,7 @@ class ExportImportController:
 
         os.makedirs(os.path.dirname(epub_path) or ".", exist_ok=True)
         if os.path.exists(epub_path):
-            if not confirm(self.app.window, f"El archivo ya existe:\n{epub_path}\n\n¿Sobrescribirlo?"):
+            if not confirm(self.app.window, _("The file already exists:\n{path}\n\nOverwrite?").format(path=epub_path)):
                 return
         epub_service = EpubService(self.app.project)
         _, config_file = self.app._get_config_path()
@@ -71,33 +74,33 @@ class ExportImportController:
         result = epub_service.generate(epub_path, self.app.project.epub_version, global_config=global_config)
         if result:
             self.app._last_epub_path = result
-            self.app._update_status(f"EPUB exportado: {result}")
-            show_info(self.app.window, f"EPUB generado correctamente:\n{result}")
+            self.app._update_status(_("EPUB exported: {path}").format(path=result))
+            show_info(self.app.window, _("EPUB generated successfully:\n{path}").format(path=result))
         else:
-            show_error(self.app.window, "Error al generar el EPUB")
+            show_error(self.app.window, _("Error generating EPUB"))
 
     def import_book(self, button):
         if not self.app.project:
-            show_info(self.app.window, "No hay proyecto abierto")
+            show_info(self.app.window, _("No project open"))
             return
         if self.app._read_only:
-            show_info(self.app.window, "No se puede importar en el libro de ejemplo")
+            show_info(self.app.window, _("Cannot import into the sample book"))
             return
 
         dialog = Gtk.FileChooserNative(
-            title="Importar libro Markdown",
+            title=_("Import Markdown Book"),
             transient_for=self.app.window,
             action=Gtk.FileChooserAction.OPEN,
-            accept_label="_Importar",
-            cancel_label="_Cancelar",
+            accept_label=_("_Import"),
+            cancel_label=_("_Cancel"),
         )
 
         f_filter = Gtk.FileFilter()
-        f_filter.set_name("Archivos Markdown (*.md)")
+        f_filter.set_name(_("Markdown files (*.md)"))
         f_filter.add_pattern("*.md")
         dialog.add_filter(f_filter)
         f_filter = Gtk.FileFilter()
-        f_filter.set_name("Todos los archivos")
+        f_filter.set_name(_("All files"))
         f_filter.add_pattern("*")
         dialog.add_filter(f_filter)
 
@@ -109,67 +112,67 @@ class ExportImportController:
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
             except Exception as e:
-                show_error(self.app.window, f"Error al leer el archivo: {e}")
+                show_error(self.app.window, _("Error reading file: {error}").format(error=e))
                 return
 
             if not content.strip():
-                show_info(self.app.window, "El archivo esta vacio")
+                show_info(self.app.window, _("The file is empty"))
                 return
 
             parsed = FileService.parse_imported_markdown(content)
             total_chars = sum(len(md) for _, _, md in parsed)
-            desc_lines = [f"Se van a importar {len(parsed)} componentes:"]
+            desc_lines = [_("About to import {n} components:").format(n=len(parsed))]
             for ctype, title, md in parsed:
-                title_str = f' — "{title}"' if title else ""
+                title_str = f' \u2014 "{title}"' if title else ""
                 desc_lines.append(f"  - {ctype}{title_str} ({len(md)} chars)")
             desc_lines.append("")
-            desc_lines.append(f"Total: {total_chars} caracteres en {len(parsed)} componentes.")
+            desc_lines.append(_("Total: {n} characters in {m} components.").format(n=total_chars, m=len(parsed)))
             desc_lines.append("")
-            desc_lines.append("Los nuevos componentes se anyadiran a los existentes.")
+            desc_lines.append(_("New components will be added to existing ones."))
 
-            confirm = Gtk.MessageDialog(
+            confirm_dlg = Gtk.MessageDialog(
                 parent=self.app.window,
                 modal=True,
                 type=Gtk.MessageType.QUESTION,
                 buttons=Gtk.ButtonsType.YES_NO,
-                text="Confirmar importacion",
+                text=_("Confirm Import"),
             )
-            confirm.format_secondary_text("\n".join(desc_lines))
+            confirm_dlg.format_secondary_text("\n".join(desc_lines))
 
-            if confirm.run() == Gtk.ResponseType.YES:
-                confirm.destroy()
+            if confirm_dlg.run() == Gtk.ResponseType.YES:
+                confirm_dlg.destroy()
                 count = FileService.import_book(self.app.project.path, self.app.project, content, file_path)
-                self.app._update_status(f"Importados {count} componentes")
+                self.app._update_status(_("Imported {n} components").format(n=count))
                 self.app.project_tree_view._refresh_project_tree()
                 self.app.editor_view._update_preview()
-                show_info(self.app.window, f"Se importaron {count} componentes correctamente.")
+                show_info(self.app.window, _("Successfully imported {n} components.").format(n=count))
             else:
-                confirm.destroy()
+                confirm_dlg.destroy()
         else:
             dialog.destroy()
 
     def import_epub(self, button):
         if not self.app.project:
-            show_info(self.app.window, "No hay proyecto abierto")
+            show_info(self.app.window, _("No project open"))
             return
         if self.app._read_only:
-            show_info(self.app.window, "No se puede importar en el libro de ejemplo")
+            show_info(self.app.window, _("Cannot import into the sample book"))
             return
 
         dialog = Gtk.FileChooserNative(
-            title="Importar libro EPUB",
+            title=_("Import EPUB Book"),
             transient_for=self.app.window,
             action=Gtk.FileChooserAction.OPEN,
-            accept_label="_Importar",
-            cancel_label="_Cancelar",
+            accept_label=_("_Import"),
+            cancel_label=_("_Cancel"),
         )
 
         f_filter = Gtk.FileFilter()
-        f_filter.set_name("Archivos EPUB (*.epub)")
+        f_filter.set_name(_("EPUB files (*.epub)"))
         f_filter.add_pattern("*.epub")
         dialog.add_filter(f_filter)
         f_filter = Gtk.FileFilter()
-        f_filter.set_name("Todos los archivos")
+        f_filter.set_name(_("All files"))
         f_filter.add_pattern("*")
         dialog.add_filter(f_filter)
 
@@ -180,48 +183,48 @@ class ExportImportController:
             try:
                 components, images = FileService.parse_imported_epub(file_path)
             except Exception as e:
-                show_error(self.app.window, f"Error al leer el EPUB: {e}")
+                show_error(self.app.window, _("Error reading EPUB: {error}").format(error=e))
                 return
 
             if not components:
-                show_info(self.app.window, "El EPUB no contiene documentos importables.")
+                show_info(self.app.window, _("The EPUB does not contain importable documents."))
                 return
 
             total_chars = sum(len(md) for _, _, md in components)
-            desc_lines = [f"Se van a importar {len(components)} componentes:"]
+            desc_lines = [_("About to import {n} components:").format(n=len(components))]
             for ctype, title, md in components:
-                title_str = f' — "{title}"' if title else ""
+                title_str = f' \u2014 "{title}"' if title else ""
                 desc_lines.append(f"  - {ctype}{title_str} ({len(md)} chars)")
             desc_lines.append("")
-            desc_lines.append(f"Imagenes encontradas: {len(images)}")
-            desc_lines.append(f"Total: {total_chars} caracteres en {len(components)} componentes.")
+            desc_lines.append(_("Images found: {n}").format(n=len(images)))
+            desc_lines.append(_("Total: {n} characters in {m} components.").format(n=total_chars, m=len(components)))
             desc_lines.append("")
-            desc_lines.append("Los nuevos componentes se anyadiran a los existentes.")
+            desc_lines.append(_("New components will be added to existing ones."))
 
-            confirm = Gtk.MessageDialog(
+            confirm_dlg = Gtk.MessageDialog(
                 parent=self.app.window,
                 modal=True,
                 type=Gtk.MessageType.QUESTION,
                 buttons=Gtk.ButtonsType.YES_NO,
-                text="Confirmar importacion",
+                text=_("Confirm Import"),
             )
-            confirm.format_secondary_text("\n".join(desc_lines))
+            confirm_dlg.format_secondary_text("\n".join(desc_lines))
 
-            if confirm.run() == Gtk.ResponseType.YES:
-                confirm.destroy()
+            if confirm_dlg.run() == Gtk.ResponseType.YES:
+                confirm_dlg.destroy()
                 count = FileService.import_epub(self.app.project.path, self.app.project, file_path)
-                self.app._update_status(f"Importados {count} componentes")
+                self.app._update_status(_("Imported {n} components").format(n=count))
                 self.app.project_tree_view._refresh_project_tree()
                 self.app.editor_view._update_preview()
-                show_info(self.app.window, f"Se importaron {count} componentes correctamente.")
+                show_info(self.app.window, _("Successfully imported {n} components.").format(n=count))
             else:
-                confirm.destroy()
+                confirm_dlg.destroy()
         else:
             dialog.destroy()
 
     def open_epub(self, button):
         if not self.app._last_epub_path or not os.path.exists(self.app._last_epub_path):
-            show_info(self.app.window, "No hay EPUB generado. Exportalo primero.")
+            show_info(self.app.window, _("No EPUB generated. Export first."))
             return
         try:
             config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
@@ -233,4 +236,4 @@ class ExportImportController:
             else:
                 subprocess.Popen(["xdg-open", self.app._last_epub_path])
         except Exception as e:
-            show_error(self.app.window, f"No se pudo abrir el EPUB: {e}")
+            show_error(self.app.window, _("Could not open EPUB: {error}").format(error=e))

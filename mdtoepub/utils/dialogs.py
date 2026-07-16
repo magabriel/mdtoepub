@@ -1,6 +1,9 @@
+import gettext
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+
+_ = gettext.gettext
 
 
 def show_error(parent, message):
@@ -9,7 +12,7 @@ def show_error(parent, message):
         modal=True,
         message_type=Gtk.MessageType.ERROR,
         buttons=Gtk.ButtonsType.OK,
-        text="Error",
+        text=_("Error"),
     )
     dialog.format_secondary_text(message)
     dialog.connect("response", lambda d, r: d.destroy())
@@ -22,7 +25,7 @@ def show_info(parent, message):
         modal=True,
         message_type=Gtk.MessageType.INFO,
         buttons=Gtk.ButtonsType.OK,
-        text="Informacion",
+        text=_("Information"),
     )
     dialog.format_secondary_text(message)
     dialog.connect("response", lambda d, r: d.destroy())
@@ -35,7 +38,7 @@ def confirm(parent, message) -> bool:
         modal=True,
         message_type=Gtk.MessageType.QUESTION,
         buttons=Gtk.ButtonsType.YES_NO,
-        text="Confirmar",
+        text=_("Confirm"),
     )
     dialog.format_secondary_text(message)
     response = dialog.run()

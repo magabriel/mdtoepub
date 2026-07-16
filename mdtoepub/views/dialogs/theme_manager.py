@@ -1,3 +1,4 @@
+import gettext
 import os
 
 import gi
@@ -9,6 +10,8 @@ from ...services.file_service import FileService
 from ...services.theme_service import ThemeService
 from ...services.yaml_service import YamlService
 
+_ = gettext.gettext
+
 
 def show_theme_manager(app):
     if not app.project:
@@ -17,7 +20,7 @@ def show_theme_manager(app):
             modal=True,
             message_type=Gtk.MessageType.INFO,
             buttons=Gtk.ButtonsType.OK,
-            text="Abre un proyecto primero",
+            text=_("Open a project first"),
         )
         info_dlg.run()
         info_dlg.destroy()
@@ -29,8 +32,8 @@ def show_theme_manager(app):
         store.clear()
         themes_list = ThemeService.list_themes()
         for theme in themes_list:
-            is_active = "Si" if theme.id == app.project.theme_id else ""
-            type_label = "Integrado" if theme.is_builtin else "Personalizado"
+            is_active = _("Yes") if theme.id == app.project.theme_id else ""
+            type_label = _("Built-in") if theme.is_builtin else _("Custom")
             store.append([theme.name, theme.id, is_active, type_label])
 
     def _on_activate_theme(tree, store, dialog):
@@ -48,17 +51,17 @@ def show_theme_manager(app):
             app._styles_panel.update(
                 app.current_component.type if app.current_component else None
             )
-            app._update_status(f"Tema activado: {model.get_value(iter_, 0)}")
+            app._update_status(_("Theme activated: {name}").format(name=model.get_value(iter_, 0)))
             dialog.destroy()
 
     def _on_create_blank_theme(tree, store):
         dialog = Gtk.Dialog(
-            title="Crear tema en blanco",
+            title=_("Create Blank Theme"),
             transient_for=app.window,
             modal=True,
         )
-        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Crear", Gtk.ResponseType.ACCEPT)
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Create"), Gtk.ResponseType.ACCEPT)
         dialog.set_default_size(400, 200)
 
         content = dialog.get_content_area()
@@ -71,21 +74,21 @@ def show_theme_manager(app):
         grid = Gtk.Grid(row_spacing=6, column_spacing=6)
         row = 0
 
-        label = Gtk.Label(label="Nombre:")
+        label = Gtk.Label(label=_("Name:"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         entry_name = Gtk.Entry()
         grid.attach(entry_name, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Descripcion:")
+        label = Gtk.Label(label=_("Description:"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         entry_desc = Gtk.Entry()
         grid.attach(entry_desc, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Autor:")
+        label = Gtk.Label(label=_("Author:"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         entry_author = Gtk.Entry()
@@ -102,7 +105,7 @@ def show_theme_manager(app):
                         modal=True,
                         message_type=Gtk.MessageType.INFO,
                         buttons=Gtk.ButtonsType.OK,
-                        text="El nombre es obligatorio",
+                        text=_("Name is required"),
                     )
                     info_dlg.run()
                     info_dlg.destroy()
@@ -114,14 +117,14 @@ def show_theme_manager(app):
                 )
                 if theme:
                     _refresh_theme_store(store)
-                    app._update_status(f"Tema creado: {name}")
+                    app._update_status(_("Theme created: {name}").format(name=name))
                 else:
                     info_dlg = Gtk.MessageDialog(
                         transient_for=app.window,
                         modal=True,
                         message_type=Gtk.MessageType.INFO,
                         buttons=Gtk.ButtonsType.OK,
-                        text="No se pudo crear el tema (el ID ya existe)",
+                        text=_("Could not create theme (ID already exists)"),
                     )
                     info_dlg.run()
                     info_dlg.destroy()
@@ -139,7 +142,7 @@ def show_theme_manager(app):
                 modal=True,
                 message_type=Gtk.MessageType.INFO,
                 buttons=Gtk.ButtonsType.OK,
-                text="Selecciona un tema para clonar",
+                text=_("Select a theme to clone"),
             )
             info_dlg.run()
             info_dlg.destroy()
@@ -149,12 +152,12 @@ def show_theme_manager(app):
         source_name = model.get_value(iter_, 0)
 
         dialog = Gtk.Dialog(
-            title=f"Clonar tema: {source_name}",
+            title=_("Clone theme: {name}").format(name=source_name),
             transient_for=app.window,
             modal=True,
         )
-        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Clonar", Gtk.ResponseType.ACCEPT)
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Clone"), Gtk.ResponseType.ACCEPT)
         dialog.set_default_size(400, 250)
 
         content = dialog.get_content_area()
@@ -167,23 +170,23 @@ def show_theme_manager(app):
         grid = Gtk.Grid(row_spacing=6, column_spacing=6)
         row = 0
 
-        label = Gtk.Label(label="Nombre:")
+        label = Gtk.Label(label=_("Name:"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         entry_name = Gtk.Entry()
-        entry_name.set_text(f"{source_name} (copia)")
+        entry_name.set_text(f"{source_name} ({_('copy')})")
         entry_name.select_region(0, -1)
         grid.attach(entry_name, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Descripcion:")
+        label = Gtk.Label(label=_("Description:"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         entry_desc = Gtk.Entry()
         grid.attach(entry_desc, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Autor:")
+        label = Gtk.Label(label=_("Author:"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         entry_author = Gtk.Entry()
@@ -200,7 +203,7 @@ def show_theme_manager(app):
                         modal=True,
                         message_type=Gtk.MessageType.INFO,
                         buttons=Gtk.ButtonsType.OK,
-                        text="El nombre es obligatorio",
+                        text=_("Name is required"),
                     )
                     info_dlg.run()
                     info_dlg.destroy()
@@ -213,14 +216,14 @@ def show_theme_manager(app):
                 )
                 if theme:
                     _refresh_theme_store(store)
-                    app._update_status(f"Tema clonado: {name}")
+                    app._update_status(_("Theme cloned: {name}").format(name=name))
                 else:
                     info_dlg = Gtk.MessageDialog(
                         transient_for=app.window,
                         modal=True,
                         message_type=Gtk.MessageType.INFO,
                         buttons=Gtk.ButtonsType.OK,
-                        text="No se pudo clonar el tema (el ID ya existe)",
+                        text=_("Could not clone theme (ID already exists)"),
                     )
                     info_dlg.run()
                     info_dlg.destroy()
@@ -235,7 +238,7 @@ def show_theme_manager(app):
         if iter_ is None:
             return
         type_label = model.get_value(iter_, 3)
-        is_read_only = type_label == "Integrado"
+        is_read_only = type_label == _("Built-in")
 
         theme_id = model.get_value(iter_, 1)
         theme_name = model.get_value(iter_, 0)
@@ -250,20 +253,20 @@ def show_theme_manager(app):
         if os.path.exists(tyaml):
             theme_config = YamlService.load(tyaml)
 
-        css_files = {"style.css": "Base"}
+        css_files = {"style.css": _("Base")}
         for comp_type, css_file in theme_config.get("styles", {}).items():
             if css_file not in css_files:
-                css_files[css_file] = f"Componente: {comp_type}"
+                css_files[css_file] = f"{_('Component')}: {comp_type}"
 
-        mode_title = "Visualizar" if is_read_only else "Editar"
+        mode_title = _("View") if is_read_only else _("Edit")
         editor_dialog = Gtk.Dialog(
             title=f"{mode_title} CSS: {theme_name}",
             transient_for=app.window,
             modal=True,
         )
-        editor_dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        editor_dialog.add_button(_("Close"), Gtk.ResponseType.CLOSE)
         if not is_read_only:
-            editor_dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+            editor_dialog.add_button(_("Save"), Gtk.ResponseType.ACCEPT)
         editor_dialog.set_default_size(700, 500)
 
         editor_content = editor_dialog.get_content_area()
@@ -322,7 +325,7 @@ def show_theme_manager(app):
                 fpath = os.path.join(theme_dir, fname)
                 with open(fpath, "w", encoding="utf-8") as f:
                     f.write(buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True))
-                app._update_status(f"CSS guardado: {fname}")
+                app._update_status(_("CSS saved: {name}").format(name=fname))
                 if app.project and app.project.theme_id == theme_id:
                     app.editor_view._update_preview()
                     app._styles_panel.update()
@@ -337,13 +340,13 @@ def show_theme_manager(app):
         if iter_ is None:
             return
         type_label = model.get_value(iter_, 3)
-        if type_label == "Integrado":
+        if type_label == _("Built-in"):
             info_dlg = Gtk.MessageDialog(
                 transient_for=app.window,
                 modal=True,
                 message_type=Gtk.MessageType.INFO,
                 buttons=Gtk.ButtonsType.OK,
-                text="Los temas integrados no se pueden renombrar",
+                text=_("Built-in themes cannot be renamed"),
             )
             info_dlg.run()
             info_dlg.destroy()
@@ -353,12 +356,12 @@ def show_theme_manager(app):
         current_name = model.get_value(iter_, 0)
 
         dialog = Gtk.Dialog(
-            title="Renombrar tema",
+            title=_("Rename theme"),
             transient_for=app.window,
             modal=True,
         )
-        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Renombrar", Gtk.ResponseType.ACCEPT)
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Rename"), Gtk.ResponseType.ACCEPT)
         dialog.set_default_size(350, 120)
 
         content = dialog.get_content_area()
@@ -379,7 +382,7 @@ def show_theme_manager(app):
                 if new_name:
                     ThemeService.rename_theme(theme_id, new_name)
                     _refresh_theme_store(store)
-                    app._update_status(f"Tema renombrado: {new_name}")
+                    app._update_status(_("Theme renamed: {name}").format(name=new_name))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -391,13 +394,13 @@ def show_theme_manager(app):
         if iter_ is None:
             return
         type_label = model.get_value(iter_, 3)
-        if type_label == "Integrado":
+        if type_label == _("Built-in"):
             info_dlg = Gtk.MessageDialog(
                 transient_for=app.window,
                 modal=True,
                 message_type=Gtk.MessageType.INFO,
                 buttons=Gtk.ButtonsType.OK,
-                text="Los temas integrados no se pueden eliminar",
+                text=_("Built-in themes cannot be deleted"),
             )
             info_dlg.run()
             info_dlg.destroy()
@@ -412,38 +415,38 @@ def show_theme_manager(app):
                 modal=True,
                 message_type=Gtk.MessageType.INFO,
                 buttons=Gtk.ButtonsType.OK,
-                text=f"El tema '{theme_name}' esta en uso.\n"
-                     "Cambia a otro tema antes de eliminarlo.",
+                text=_("The theme '{name}' is in use.\n"
+                       "Switch to another theme before deleting it.").format(name=theme_name),
             )
             info_dlg.run()
             info_dlg.destroy()
             return
 
-        confirm = Gtk.MessageDialog(
+        confirm_dlg = Gtk.MessageDialog(
             transient_for=parent_dialog,
             modal=True,
             message_type=Gtk.MessageType.QUESTION,
             buttons=Gtk.ButtonsType.YES_NO,
-            text=f"Eliminar tema: {theme_name}",
+            text=_("Delete theme: {name}").format(name=theme_name),
         )
-        confirm.format_secondary_text(
-            "Esta accion no se puede deshacer.\n"
-            "Todos los archivos del tema se eliminaran permanentemente."
+        confirm_dlg.format_secondary_text(
+            _("This action cannot be undone.\n"
+              "All theme files will be permanently deleted.")
         )
-        resp = confirm.run()
-        confirm.destroy()
+        resp = confirm_dlg.run()
+        confirm_dlg.destroy()
 
         if resp == Gtk.ResponseType.YES:
             if ThemeService.delete_theme(theme_id):
                 _refresh_theme_store(store)
-                app._update_status(f"Tema eliminado: {theme_name}")
+                app._update_status(_("Theme deleted: {name}").format(name=theme_name))
             else:
                 info_dlg = Gtk.MessageDialog(
                     transient_for=app.window,
                     modal=True,
                     message_type=Gtk.MessageType.INFO,
                     buttons=Gtk.ButtonsType.OK,
-                    text="No se pudo eliminar el tema",
+                    text=_("Could not delete theme"),
                 )
                 info_dlg.run()
                 info_dlg.destroy()
@@ -457,7 +460,7 @@ def show_theme_manager(app):
                 modal=True,
                 message_type=Gtk.MessageType.INFO,
                 buttons=Gtk.ButtonsType.OK,
-                text="Selecciona un tema primero",
+                text=_("Select a theme first"),
             )
             info_dlg.run()
             info_dlg.destroy()
@@ -467,16 +470,16 @@ def show_theme_manager(app):
         theme_name = model.get_value(iter_, 0)
 
         dialog = Gtk.FileChooserNative(
-            title=f"Exportar tema: {theme_name}",
+            title=_("Export theme: {name}").format(name=theme_name),
             transient_for=app.window,
             action=Gtk.FileChooserAction.SAVE,
-            accept_label="_Exportar",
-            cancel_label="_Cancelar",
+            accept_label=_("_Export"),
+            cancel_label=_("_Cancel"),
         )
         dialog.set_current_name(f"{theme_id}.mdtotheme")
 
         f_filter = Gtk.FileFilter()
-        f_filter.set_name("Archivos de tema (*.mdtotheme)")
+        f_filter.set_name(_("Theme files (*.mdtotheme)"))
         f_filter.add_pattern("*.mdtotheme")
         dialog.add_filter(f_filter)
 
@@ -487,13 +490,13 @@ def show_theme_manager(app):
                 output_path += ".mdtotheme"
 
             if ThemeService.export_theme(theme_id, output_path):
-                app._update_status(f"Tema exportado: {output_path}")
+                app._update_status(_("Theme exported: {path}").format(path=output_path))
                 info_dlg = Gtk.MessageDialog(
                     transient_for=app.window,
                     modal=True,
                     message_type=Gtk.MessageType.INFO,
                     buttons=Gtk.ButtonsType.OK,
-                    text=f"Tema '{theme_name}' exportado correctamente.",
+                    text=_("Theme '{name}' exported successfully.").format(name=theme_name),
                 )
                 info_dlg.run()
                 info_dlg.destroy()
@@ -503,7 +506,7 @@ def show_theme_manager(app):
                     modal=True,
                     message_type=Gtk.MessageType.ERROR,
                     buttons=Gtk.ButtonsType.OK,
-                    text=f"No se pudo exportar el tema '{theme_name}'",
+                    text=_("Could not export theme '{name}'").format(name=theme_name),
                 )
                 error_dlg.run()
                 error_dlg.destroy()
@@ -512,19 +515,19 @@ def show_theme_manager(app):
 
     def _on_import_theme(tree, store):
         dialog = Gtk.FileChooserNative(
-            title="Importar tema",
+            title=_("Import theme"),
             transient_for=app.window,
             action=Gtk.FileChooserAction.OPEN,
-            accept_label="_Importar",
-            cancel_label="_Cancelar",
+            accept_label=_("_Import"),
+            cancel_label=_("_Cancel"),
         )
 
         f_filter = Gtk.FileFilter()
-        f_filter.set_name("Archivos de tema (*.mdtotheme)")
+        f_filter.set_name(_("Theme files (*.mdtotheme)"))
         f_filter.add_pattern("*.mdtotheme")
         dialog.add_filter(f_filter)
         f_filter = Gtk.FileFilter()
-        f_filter.set_name("Todos los archivos")
+        f_filter.set_name(_("All files"))
         f_filter.add_pattern("*")
         dialog.add_filter(f_filter)
 
@@ -535,13 +538,13 @@ def show_theme_manager(app):
             imported = ThemeService.import_theme(file_path)
             if imported:
                 _refresh_theme_store(store)
-                app._update_status(f"Tema importado: {imported.name}")
+                app._update_status(_("Theme imported: {name}").format(name=imported.name))
                 info_dlg = Gtk.MessageDialog(
                     transient_for=app.window,
                     modal=True,
                     message_type=Gtk.MessageType.INFO,
                     buttons=Gtk.ButtonsType.OK,
-                    text=f"Tema '{imported.name}' importado correctamente.",
+                    text=_("Theme '{name}' imported successfully.").format(name=imported.name),
                 )
                 info_dlg.run()
                 info_dlg.destroy()
@@ -551,8 +554,8 @@ def show_theme_manager(app):
                     modal=True,
                     message_type=Gtk.MessageType.ERROR,
                     buttons=Gtk.ButtonsType.OK,
-                    text="No se pudo importar el tema.\n"
-                         "Asegurate de que el archivo es un .mdtotheme valido.",
+                    text=_("Could not import theme.\n"
+                           "Make sure the file is a valid .mdtotheme."),
                 )
                 error_dlg.run()
                 error_dlg.destroy()
@@ -560,11 +563,11 @@ def show_theme_manager(app):
             dialog.destroy()
 
     dialog = Gtk.Dialog(
-        title="Gestor de temas",
+        title=_("Theme Manager"),
         transient_for=app.window,
         modal=True,
     )
-    dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+    dialog.add_button(_("Close"), Gtk.ResponseType.CLOSE)
     dialog.set_default_size(650, 500)
 
     content = dialog.get_content_area()
@@ -576,15 +579,15 @@ def show_theme_manager(app):
 
     store = Gtk.ListStore(str, str, str, str)
     for theme in themes:
-        is_active = "Si" if theme.id == app.project.theme_id else ""
-        type_label = "Integrado" if theme.is_builtin else "Personalizado"
+        is_active = _("Yes") if theme.id == app.project.theme_id else ""
+        type_label = _("Built-in") if theme.is_builtin else _("Custom")
         store.append([theme.name, theme.id, is_active, type_label])
 
     tree = Gtk.TreeView(model=store)
     tree.set_headers_visible(True)
 
     r_name = Gtk.CellRendererText()
-    c_name = Gtk.TreeViewColumn("Tema", r_name, text=0)
+    c_name = Gtk.TreeViewColumn(_("Theme"), r_name, text=0)
     c_name.set_resizable(True)
     c_name.set_expand(True)
     tree.append_column(c_name)
@@ -595,11 +598,11 @@ def show_theme_manager(app):
     tree.append_column(c_id)
 
     r_active = Gtk.CellRendererText()
-    c_active = Gtk.TreeViewColumn("Activo", r_active, text=2)
+    c_active = Gtk.TreeViewColumn(_("Active"), r_active, text=2)
     tree.append_column(c_active)
 
     r_type = Gtk.CellRendererText()
-    c_type = Gtk.TreeViewColumn("Tipo", r_type, text=3)
+    c_type = Gtk.TreeViewColumn(_("Type"), r_type, text=3)
     tree.append_column(c_type)
 
     scrolled = Gtk.ScrolledWindow()
@@ -609,37 +612,37 @@ def show_theme_manager(app):
 
     btn_box = Gtk.Box(spacing=6)
 
-    btn_activate = Gtk.Button(label="Activar tema")
+    btn_activate = Gtk.Button(label=_("Activate Theme"))
     btn_activate.connect("clicked", lambda b: _on_activate_theme(tree, store, dialog))
     btn_box.pack_start(btn_activate, False, False, 0)
 
-    btn_create = Gtk.Button(label="Crear tema en blanco")
+    btn_create = Gtk.Button(label=_("Create Blank Theme"))
     btn_create.connect("clicked", lambda b: _on_create_blank_theme(tree, store))
     btn_box.pack_start(btn_create, False, False, 0)
 
-    btn_clone = Gtk.Button(label="Clonar tema")
+    btn_clone = Gtk.Button(label=_("Clone Theme"))
     btn_clone.connect("clicked", lambda b: _on_clone_theme(tree, store))
     btn_box.pack_start(btn_clone, False, False, 0)
 
-    btn_view_css = Gtk.Button(label="Visualizar CSS")
+    btn_view_css = Gtk.Button(label=_("View CSS"))
     btn_view_css.connect("clicked", lambda b: _on_view_theme_css(tree, store))
     btn_box.pack_start(btn_view_css, False, False, 0)
 
-    btn_rename = Gtk.Button(label="Renombrar")
+    btn_rename = Gtk.Button(label=_("Rename"))
     btn_rename.connect("clicked", lambda b: _on_rename_theme(tree, store))
     btn_box.pack_start(btn_rename, False, False, 0)
 
-    btn_delete = Gtk.Button(label="Eliminar")
+    btn_delete = Gtk.Button(label=_("Delete"))
     btn_delete.connect("clicked", lambda b: _on_delete_theme(tree, store, dialog))
     btn_box.pack_start(btn_delete, False, False, 0)
 
     btn_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL), False, False, 0)
 
-    btn_export = Gtk.Button(label="Exportar")
+    btn_export = Gtk.Button(label=_("Export"))
     btn_export.connect("clicked", lambda b: _on_export_theme(tree, store))
     btn_box.pack_start(btn_export, False, False, 0)
 
-    btn_import = Gtk.Button(label="Importar")
+    btn_import = Gtk.Button(label=_("Import"))
     btn_import.connect("clicked", lambda b: _on_import_theme(tree, store))
     btn_box.pack_start(btn_import, False, False, 0)
 
@@ -649,12 +652,12 @@ def show_theme_manager(app):
         model, iter_ = sel.get_selected()
         if iter_ is not None:
             type_label = model.get_value(iter_, 3)
-            is_custom = type_label == "Personalizado"
-            btn_view_css.set_label("Editar CSS" if is_custom else "Visualizar CSS")
+            is_custom = type_label == _("Custom")
+            btn_view_css.set_label(_("Edit CSS") if is_custom else _("View CSS"))
             btn_rename.set_sensitive(is_custom)
             btn_delete.set_sensitive(is_custom)
         else:
-            btn_view_css.set_label("Visualizar CSS")
+            btn_view_css.set_label(_("View CSS"))
             btn_rename.set_sensitive(False)
             btn_delete.set_sensitive(False)
 
