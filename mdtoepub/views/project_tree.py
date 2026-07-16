@@ -287,6 +287,7 @@ class ProjectTree:
         if self.app.current_component and not self.app._read_only:
             self.app.project_manager.save_component_content()
         self.app.project = None
+        self.app.main_window.update_project_sensitivity(False)
         self.project_store.clear()
         self.app.current_component = None
         self.app._styles_current_component = None
