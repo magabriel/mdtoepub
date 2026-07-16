@@ -806,7 +806,8 @@ def show_project_config(app):
     combo_auto_part.append_text(_("Part <n> + title"))
     combo_auto_part.append_text("<n> + " + _("title"))
     combo_auto_part.append_text(_("<n> part"))
-    auto_part_values = ["none", "part_number", "number", "part_number_with_title", "number_with_title", "word_part"]
+    combo_auto_part.append_text(_("<n> part + title"))
+    auto_part_values = ["none", "part_number", "number", "part_number_with_title", "number_with_title", "word_part", "word_part_with_title"]
     auto_part_index = 0
     for i, v in enumerate(auto_part_values):
         if v == app.project.auto_part_title:
