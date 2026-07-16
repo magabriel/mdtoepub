@@ -412,6 +412,9 @@ class MainWindow:
                 new_project.figure_numbering_style = self.app.project.figure_numbering_style
                 new_project.table_numbering = self.app.project.table_numbering
                 new_project.table_numbering_style = self.app.project.table_numbering_style
+                new_project.chapter_numbering_style = self.app.project.chapter_numbering_style
+                new_project.appendix_numbering_style = self.app.project.appendix_numbering_style
+                new_project.part_numbering_style = self.app.project.part_numbering_style
                 new_project.edition = self.app.project.edition
                 new_project.isbn = self.app.project.isbn
                 new_project.publisher = self.app.project.publisher

@@ -12,7 +12,9 @@ class Project:
     theme_id: str = "classic"
     epub_version: str = "epub3"
     auto_chapter_title: str = "none"
+    chapter_numbering_style: str = "arabic"
     auto_appendix_title: str = "none"
+    appendix_numbering_style: str = "arabic"
     components: List[Component] = field(default_factory=list)
     global_config: Dict[str, Any] = field(default_factory=dict)
     custom_css: str = ""
@@ -29,6 +31,7 @@ class Project:
     publisher: str = ""
     subtitle: str = ""
     auto_part_title: str = "none"
+    part_numbering_style: str = "arabic"
     figure_numbering: bool = False
     figure_numbering_style: str = "arabic"
     table_numbering: bool = False

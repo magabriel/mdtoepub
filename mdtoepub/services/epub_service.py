@@ -442,20 +442,26 @@ class EpubService:
         title_part = ""
 
         mode = self.project.auto_chapter_title
+        num_style = self.project.chapter_numbering_style
         if component.type == ComponentType.APPENDIX:
             mode = self.project.auto_appendix_title
+            num_style = self.project.appendix_numbering_style
         if mode != "none" and show_title:
             if component.should_use_numbering() and chapter_number is not None:
                 label = self._labels.get("chapter", "Capítulo") if component.type == ComponentType.CHAPTER else self._labels.get("appendix", "Apéndice")
+                num_str = str(chapter_number)
+                if num_style == "roman":
+                    from .markdown_service import MarkdownService as _MS
+                    num_str = _MS._to_roman(chapter_number)
                 if mode == "chapter_number":
-                    number_part = f"{label} {chapter_number}"
+                    number_part = f"{label} {num_str}"
                 elif mode == "number":
-                    number_part = str(chapter_number)
+                    number_part = num_str
                 elif mode == "chapter_number_with_title":
-                    number_part = f"{label} {chapter_number}"
+                    number_part = f"{label} {num_str}"
                     title_part = self._component_label(component)
                 elif mode == "number_with_title":
-                    number_part = str(chapter_number)
+                    number_part = num_str
                     title_part = self._component_label(component)
 
         if show_title and not number_part and not title_part:
@@ -480,18 +486,23 @@ class EpubService:
         title_part = ""
 
         mode = self.project.auto_part_title
+        num_style = self.project.part_numbering_style
         if mode != "none" and show_title:
             if part_number is not None:
                 label = self._labels.get("part", "Parte")
+                num_str = str(part_number)
+                if num_style == "roman":
+                    from .markdown_service import MarkdownService as _MS
+                    num_str = _MS._to_roman(part_number)
                 if mode == "part_number":
-                    number_part = f"{label} {part_number}"
+                    number_part = f"{label} {num_str}"
                 elif mode == "number":
-                    number_part = str(part_number)
+                    number_part = num_str
                 elif mode == "part_number_with_title":
-                    number_part = f"{label} {part_number}"
+                    number_part = f"{label} {num_str}"
                     title_part = self._component_label(component)
                 elif mode == "number_with_title":
-                    number_part = str(part_number)
+                    number_part = num_str
                     title_part = self._component_label(component)
 
         if show_title and not number_part and not title_part:

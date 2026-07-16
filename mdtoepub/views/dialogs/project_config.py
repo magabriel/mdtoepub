@@ -729,6 +729,29 @@ def show_project_config(app):
     grid_num.attach(combo_auto_title, 1, num_row, 1, 1)
     num_row += 1
 
+    label_chapter_style = Gtk.Label(label=_("Style:"))
+    label_chapter_style.set_xalign(1)
+    grid_num.attach(label_chapter_style, 0, num_row, 1, 1)
+    combo_chapter_style = Gtk.ComboBoxText()
+    interactive_widgets.append(combo_chapter_style)
+    combo_chapter_style.append_text(_("Arabic numbers"))
+    combo_chapter_style.append_text(_("Roman numerals"))
+    chapter_style_values = ["arabic", "roman"]
+    chapter_style_index = 0
+    for i, v in enumerate(chapter_style_values):
+        if v == app.project.chapter_numbering_style:
+            chapter_style_index = i
+            break
+    combo_chapter_style.set_active(chapter_style_index)
+    combo_chapter_style.set_sensitive(auto_title_index > 0)
+    grid_num.attach(combo_chapter_style, 1, num_row, 1, 1)
+    num_row += 1
+
+    def _on_chapter_auto_toggle(combo):
+        combo_chapter_style.set_sensitive(combo.get_active() > 0)
+
+    combo_auto_title.connect("changed", _on_chapter_auto_toggle)
+
     label_appendix = Gtk.Label(label=_("Auto appendix title:"))
     label_appendix.set_xalign(1)
     grid_num.attach(label_appendix, 0, num_row, 1, 1)
@@ -749,6 +772,29 @@ def show_project_config(app):
     grid_num.attach(combo_auto_appendix, 1, num_row, 1, 1)
     num_row += 1
 
+    label_appendix_style = Gtk.Label(label=_("Style:"))
+    label_appendix_style.set_xalign(1)
+    grid_num.attach(label_appendix_style, 0, num_row, 1, 1)
+    combo_appendix_style = Gtk.ComboBoxText()
+    interactive_widgets.append(combo_appendix_style)
+    combo_appendix_style.append_text(_("Arabic numbers"))
+    combo_appendix_style.append_text(_("Roman numerals"))
+    appendix_style_values = ["arabic", "roman"]
+    appendix_style_index = 0
+    for i, v in enumerate(appendix_style_values):
+        if v == app.project.appendix_numbering_style:
+            appendix_style_index = i
+            break
+    combo_appendix_style.set_active(appendix_style_index)
+    combo_appendix_style.set_sensitive(auto_appendix_index > 0)
+    grid_num.attach(combo_appendix_style, 1, num_row, 1, 1)
+    num_row += 1
+
+    def _on_appendix_auto_toggle(combo):
+        combo_appendix_style.set_sensitive(combo.get_active() > 0)
+
+    combo_auto_appendix.connect("changed", _on_appendix_auto_toggle)
+
     label_part = Gtk.Label(label=_("Auto part title:"))
     label_part.set_xalign(1)
     grid_num.attach(label_part, 0, num_row, 1, 1)
@@ -768,6 +814,29 @@ def show_project_config(app):
     combo_auto_part.set_active(auto_part_index)
     grid_num.attach(combo_auto_part, 1, num_row, 1, 1)
     num_row += 1
+
+    label_part_style = Gtk.Label(label=_("Style:"))
+    label_part_style.set_xalign(1)
+    grid_num.attach(label_part_style, 0, num_row, 1, 1)
+    combo_part_style = Gtk.ComboBoxText()
+    interactive_widgets.append(combo_part_style)
+    combo_part_style.append_text(_("Arabic numbers"))
+    combo_part_style.append_text(_("Roman numerals"))
+    part_style_values = ["arabic", "roman"]
+    part_style_index = 0
+    for i, v in enumerate(part_style_values):
+        if v == app.project.part_numbering_style:
+            part_style_index = i
+            break
+    combo_part_style.set_active(part_style_index)
+    combo_part_style.set_sensitive(auto_part_index > 0)
+    grid_num.attach(combo_part_style, 1, num_row, 1, 1)
+    num_row += 1
+
+    def _on_part_auto_toggle(combo):
+        combo_part_style.set_sensitive(combo.get_active() > 0)
+
+    combo_auto_part.connect("changed", _on_part_auto_toggle)
 
     sep_num1 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
     grid_num.attach(sep_num1, 0, num_row, 2, 1)
@@ -1012,12 +1081,21 @@ def show_project_config(app):
             auto_idx = combo_auto_title.get_active()
             if 0 <= auto_idx < len(auto_title_values):
                 app.project.auto_chapter_title = auto_title_values[auto_idx]
+            chapter_style_idx = combo_chapter_style.get_active()
+            if 0 <= chapter_style_idx < len(chapter_style_values):
+                app.project.chapter_numbering_style = chapter_style_values[chapter_style_idx]
             auto_appendix_idx = combo_auto_appendix.get_active()
             if 0 <= auto_appendix_idx < len(auto_appendix_values):
                 app.project.auto_appendix_title = auto_appendix_values[auto_appendix_idx]
+            appendix_style_idx = combo_appendix_style.get_active()
+            if 0 <= appendix_style_idx < len(appendix_style_values):
+                app.project.appendix_numbering_style = appendix_style_values[appendix_style_idx]
             auto_part_idx = combo_auto_part.get_active()
             if 0 <= auto_part_idx < len(auto_part_values):
                 app.project.auto_part_title = auto_part_values[auto_part_idx]
+            part_style_idx = combo_part_style.get_active()
+            if 0 <= part_style_idx < len(part_style_values):
+                app.project.part_numbering_style = part_style_values[part_style_idx]
             theme_idx = combo_theme.get_active()
             if theme_idx >= 0 and theme_idx < len(available_themes):
                 app.project.theme_id = available_themes[theme_idx][0]
