@@ -224,7 +224,7 @@ class StylesPanel:
                 "  — Usa {lang=en} para cambiar idioma del corrector."
             )
         else:
-            comp_label = self.app._resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, component_type.value))
+            comp_label = self.app.project_manager.resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, component_type.value))
             type_key = component_type.value
             fm_lines = [
                 f"Metadatos para {comp_label}:",
@@ -286,7 +286,7 @@ class StylesPanel:
             if component_type is not None:
                 type_value = component_type.value
                 type_file = theme_config.get("styles", {}).get(type_value, "")
-                type_label = self.app._resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, type_value))
+                type_label = self.app.project_manager.resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, type_value))
                 if type_file:
                     row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
                     row2.pack_start(Gtk.Label(label=f"Tipo {type_label}: {type_file}", xalign=0), True, True, 0)
@@ -319,7 +319,7 @@ class StylesPanel:
 
             if component_type is not None:
                 type_value = component_type.value
-                type_label = self.app._resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, type_value))
+                type_label = self.app.project_manager.resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, type_value))
                 has_override = type_value in self.app.project.type_css_overrides
                 row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
                 row2.pack_start(Gtk.Label(label=f"Tipo: {type_label}", xalign=0), True, True, 0)
@@ -339,7 +339,7 @@ class StylesPanel:
         if self._styles_current_component and component_type is not None:
             comp = self._styles_current_component
             self._comp_frame_label.set_markup(
-                f"<b>Componente: {comp.get_display_name(self.app._resolve_labels())}</b>  <small>(solo este componente)</small>"
+                f"<b>Componente: {comp.get_display_name(self.app.project_manager.resolve_labels())}</b>  <small>(solo este componente)</small>"
             )
             self._comp_frame.set_visible(True)
 
@@ -394,7 +394,7 @@ class StylesPanel:
         ct = component_type
         type_key = ct.value
         current = self.app.project.type_css_overrides.get(type_key, "")
-        label = self.app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
+        label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
         css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=ct.value)
         if css is None:
             return
@@ -410,10 +410,10 @@ class StylesPanel:
     def _on_styles_reset_type_css(self, component_type):
         ct = component_type
         type_key = ct.value
-        label = self.app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
+        label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
         if type_key not in self.app.project.type_css_overrides:
             return
-        if not self.app._confirm(f"Restablecer estilos del tipo «{label}»?\nSe perderan los cambios personalizados."):
+        if not confirm(self.app.window, f"Restablecer estilos del tipo «{label}»?\nSe perderan los cambios personalizados."):
             return
         del self.app.project.type_css_overrides[type_key]
         FileService.save_project(self.app.project)
@@ -436,7 +436,7 @@ class StylesPanel:
         theme_dir = theme.path
         fpath = os.path.join(theme_dir, filename)
         if not os.path.exists(fpath):
-            self.app._show_info(f"El archivo {filename} no existe en el tema.")
+            show_info(self.app.window, f"El archivo {filename} no existe en el tema.")
             return
 
         with open(fpath, "r") as f:
@@ -595,7 +595,7 @@ class StylesPanel:
 
     def _on_edit_book_css(self, widget):
         if not self.app.project:
-            self.app._show_info("Abre un proyecto primero")
+            show_info(self.app.window, "Abre un proyecto primero")
             return
         css = self._edit_css_dialog("Estilos del libro", self.app.project.custom_css, scope_type="book")
         if css is None:
@@ -613,7 +613,7 @@ class StylesPanel:
             return
         type_key = component.type.value
         current = self.app.project.type_css_overrides.get(type_key, "")
-        label = self.app._resolve_labels().get(component.type.value, COMPONENT_TYPE_LABELS.get(component.type, type_key))
+        label = self.app.project_manager.resolve_labels().get(component.type.value, COMPONENT_TYPE_LABELS.get(component.type, type_key))
         css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=component.type.value)
         if css is None:
             return
@@ -630,7 +630,7 @@ class StylesPanel:
         if not self.app.project:
             return
         css = self._edit_css_dialog(
-            f"Estilos del componente: {component.get_display_name(self.app._resolve_labels())}",
+            f"Estilos del componente: {component.get_display_name(self.app.project_manager.resolve_labels())}",
             component.custom_css,
             scope_type="component",
             scope_type_value=component.type.value,
@@ -641,11 +641,11 @@ class StylesPanel:
         FileService.save_project(self.app.project)
         self.app.editor_view._update_preview()
         self.update(component.type)
-        self.app._update_status(f"Estilos del componente '{component.get_display_name(self.app._resolve_labels())}' actualizados")
+        self.app._update_status(f"Estilos del componente '{component.get_display_name(self.app.project_manager.resolve_labels())}' actualizados")
 
     def _on_manage_type_css(self, widget):
         if not self.app.project:
-            self.app._show_info("Abre un proyecto primero")
+            show_info(self.app.window, "Abre un proyecto primero")
             return
 
         dialog = Gtk.Dialog(
@@ -658,7 +658,7 @@ class StylesPanel:
 
         store = Gtk.ListStore(str, str, str)
         for ct in ComponentType:
-            label = self.app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
+            label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             has_css = ct.value in self.app.project.type_css_overrides
             status = "Editado" if has_css else "Por defecto del tema"
             store.append([label, status, ct.value])
@@ -700,7 +700,7 @@ class StylesPanel:
             if not type_key:
                 return
             ct = ComponentType(type_key)
-            label = self.app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
+            label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             current = self.app.project.type_css_overrides.get(type_key, "")
             css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=ct.value)
             if css is None:
@@ -721,10 +721,10 @@ class StylesPanel:
             if not type_key:
                 return
             ct = ComponentType(type_key)
-            label = self.app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
+            label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             if type_key not in self.app.project.type_css_overrides:
                 return
-            if not self.app._confirm(f"Restablecer estilos del tipo «{label}»?\nSe perderán los cambios personalizados."):
+            if not confirm(self.app.window, f"Restablecer estilos del tipo «{label}»?\nSe perderán los cambios personalizados."):
                 return
             del self.app.project.type_css_overrides[type_key]
             FileService.save_project(self.app.project)
@@ -737,7 +737,7 @@ class StylesPanel:
         def _refresh_list():
             store.clear()
             for ct in ComponentType:
-                label = self.app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
+                label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
                 has_css = ct.value in self.app.project.type_css_overrides
                 status = "Editado" if has_css else "Por defecto del tema"
                 store.append([label, status, ct.value])

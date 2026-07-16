@@ -125,7 +125,7 @@ class ProjectTree:
         if not self.app.project:
             return
 
-        labels = self.app._resolve_labels()
+        labels = self.app.project_manager.resolve_labels()
         project_iter = self.project_store.append(None, [self.app.project.name, self.app.project])
         part_iters = {}
 
@@ -160,17 +160,17 @@ class ProjectTree:
             obj = self.project_store.get_value(iter_, 1)
 
             if isinstance(obj, Component):
-                title_changed = self.app._save_current_component()
+                title_changed = self.app.project_manager.save_component_content()
                 self.app.current_component = obj
                 self.app.current_part = None
                 self.app._styles_current_component = obj
                 if title_changed:
                     self._refresh_project_tree()
                     self.project_tree.expand_all()
-                content = self.app._load_component_content(obj)
+                content = self.app.project_manager.load_component_content(obj)
                 buffer = self.app.text_view.get_buffer()
                 buffer.set_text(content)
-                self.app._update_status(f"Editando: {obj.get_display_name(self.app._resolve_labels())}")
+                self.app._update_status(f"Editando: {obj.get_display_name(self.app.project_manager.resolve_labels())}")
                 self.app._styles_panel.update(obj.type)
                 self.app.editor_view._update_preview()
         finally:
@@ -232,7 +232,7 @@ class ProjectTree:
             item_change_type = Gtk.MenuItem(label="Cambiar tipo")
             change_type_menu = Gtk.Menu()
             for ct in ComponentType:
-                ct_item = Gtk.MenuItem(label=self.app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct]))
+                ct_item = Gtk.MenuItem(label=self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct]))
                 ct_item.connect("activate", self._on_change_component_type, obj, ct)
                 change_type_menu.append(ct_item)
             item_change_type.set_submenu(change_type_menu)
@@ -254,11 +254,11 @@ class ProjectTree:
             menu.append(Gtk.SeparatorMenuItem())
             item_styles = Gtk.MenuItem(label="Estilos")
             styles_menu = Gtk.Menu()
-            type_label = self.app._resolve_labels().get(obj.type.value, COMPONENT_TYPE_LABELS.get(obj.type, obj.type.value))
+            type_label = self.app.project_manager.resolve_labels().get(obj.type.value, COMPONENT_TYPE_LABELS.get(obj.type, obj.type.value))
             s1 = Gtk.MenuItem(label=f"Del tipo «{type_label}»")
             s1.connect("activate", self.app._styles_panel._on_edit_type_css, obj)
             styles_menu.append(s1)
-            s2 = Gtk.MenuItem(label=f"Del componente «{obj.get_display_name(self.app._resolve_labels())}»")
+            s2 = Gtk.MenuItem(label=f"Del componente «{obj.get_display_name(self.app.project_manager.resolve_labels())}»")
             s2.connect("activate", self.app._styles_panel._on_edit_component_css, obj)
             styles_menu.append(s2)
             item_styles.set_submenu(styles_menu)
@@ -280,10 +280,10 @@ class ProjectTree:
     def _on_close_project(self, widget):
         if self.app.project is None:
             return
-        if not self.app._confirm("?Cerrar el proyecto actual?"):
+        if not confirm(self.app.window, "?Cerrar el proyecto actual?"):
             return
         if self.app.current_component and not self.app._read_only:
-            self.app._save_current_component()
+            self.app.project_manager.save_component_content()
         self.app.project = None
         self.project_store.clear()
         self.app.current_component = None
@@ -310,10 +310,10 @@ class ProjectTree:
 
     def _on_add_component(self, button, part=None):
         if not self.app.project:
-            self.app._show_info("Primero crea o abre un proyecto")
+            show_info(self.app.window, "Primero crea o abre un proyecto")
             return
         if self.app._read_only:
-            self.app._show_info("No se puede modificar un proyecto de solo lectura")
+            show_info(self.app.window, "No se puede modificar un proyecto de solo lectura")
             return
 
         dialog = Gtk.Dialog(
@@ -338,7 +338,7 @@ class ProjectTree:
 
         combo_type = Gtk.ComboBoxText()
         for ct in ComponentType:
-            combo_type.append_text(self.app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct]))
+            combo_type.append_text(self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct]))
         combo_type.set_active(0)
         type_box.pack_start(combo_type, True, True, 0)
         content_area.add(type_box)
@@ -373,7 +373,7 @@ class ProjectTree:
                 FileService.save_component(self.app.project.path, component, initial_content)
                 FileService.save_project(self.app.project)
                 self._refresh_project_tree()
-                self.app._update_status(f"Componente anadido: {component.get_display_name(self.app._resolve_labels())}")
+                self.app._update_status(f"Componente anadido: {component.get_display_name(self.app.project_manager.resolve_labels())}")
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -381,10 +381,10 @@ class ProjectTree:
 
     def _on_add_part(self, button):
         if not self.app.project:
-            self.app._show_info("Primero crea o abre un proyecto")
+            show_info(self.app.window, "Primero crea o abre un proyecto")
             return
         if self.app._read_only:
-            self.app._show_info("No se puede modificar un proyecto de solo lectura")
+            show_info(self.app.window, "No se puede modificar un proyecto de solo lectura")
             return
 
         dialog = Gtk.Dialog(
@@ -464,7 +464,7 @@ class ProjectTree:
                     labels = resolve_labels(self.app.project.language)
                     new_title = labels.get("part", "Parte")
                 part.title = new_title
-                self.project_store.set_value(iter_, 0, part.get_display_name(self.app._resolve_labels()))
+                self.project_store.set_value(iter_, 0, part.get_display_name(self.app.project_manager.resolve_labels()))
                 FileService.save_project(self.app.project)
                 self.app._update_status(f"Parte renombrada: {new_title}")
             d.destroy()
@@ -480,7 +480,7 @@ class ProjectTree:
             buttons=Gtk.ButtonsType.YES_NO,
             text="Eliminar parte",
         )
-        dialog.format_secondary_text(f"Se eliminara la parte \"{part.get_display_name(self.app._resolve_labels())}\" y sus componentes quedaran sin agrupar.")
+        dialog.format_secondary_text(f"Se eliminara la parte \"{part.get_display_name(self.app.project_manager.resolve_labels())}\" y sus componentes quedaran sin agrupar.")
 
         def on_response(d, response):
             if response == Gtk.ResponseType.YES:
@@ -490,7 +490,7 @@ class ProjectTree:
                 self.app.project.remove_component(part.id)
                 FileService.save_project(self.app.project)
                 self._refresh_project_tree()
-                self.app._update_status(f"Parte eliminada: {part.get_display_name(self.app._resolve_labels())}")
+                self.app._update_status(f"Parte eliminada: {part.get_display_name(self.app.project_manager.resolve_labels())}")
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -522,7 +522,7 @@ class ProjectTree:
                 new_title = entry.get_text().strip()
                 if new_title:
                     component.title = new_title
-                    self.project_store.set_value(iter_, 0, component.get_display_name(self.app._resolve_labels()))
+                    self.project_store.set_value(iter_, 0, component.get_display_name(self.app.project_manager.resolve_labels()))
                     FileService.save_project(self.app.project)
                     self.app._update_status(f"Componente renombrado: {new_title}")
             d.destroy()
@@ -550,7 +550,7 @@ class ProjectTree:
         FileService.save_component(self.app.project.path, new_comp, content or "")
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(f"Componente duplicado: {new_comp.get_display_name(self.app._resolve_labels())}")
+        self.app._update_status(f"Componente duplicado: {new_comp.get_display_name(self.app.project_manager.resolve_labels())}")
 
     def _on_move_to_part(self, menu_item, component, part):
         if component.part_id == part.id:
@@ -558,17 +558,17 @@ class ProjectTree:
         component.part_id = part.id
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(f"{component.get_display_name(self.app._resolve_labels())} movido a {part.get_display_name(self.app._resolve_labels())}")
+        self.app._update_status(f"{component.get_display_name(self.app.project_manager.resolve_labels())} movido a {part.get_display_name(self.app.project_manager.resolve_labels())}")
 
     def _on_detach_from_part(self, menu_item, component):
         if not component.part_id:
             return
-        if not self.app._confirm(f"Separar \xab{component.get_display_name(self.app._resolve_labels())}\xbb de su parte?"):
+        if not confirm(self.app.window, f"Separar \xab{component.get_display_name(self.app.project_manager.resolve_labels())}\xbb de su parte?"):
             return
         component.part_id = None
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(f"{component.get_display_name(self.app._resolve_labels())} separado de la parte")
+        self.app._update_status(f"{component.get_display_name(self.app.project_manager.resolve_labels())} separado de la parte")
 
     def _on_delete_component(self, menu_item, component):
         dialog = Gtk.MessageDialog(
@@ -578,7 +578,7 @@ class ProjectTree:
             buttons=Gtk.ButtonsType.YES_NO,
             text="Eliminar componente",
         )
-        dialog.format_secondary_text(f"Se eliminara el componente \"{component.get_display_name(self.app._resolve_labels())}\".")
+        dialog.format_secondary_text(f"Se eliminara el componente \"{component.get_display_name(self.app.project_manager.resolve_labels())}\".")
 
         def on_response(d, response):
             if response == Gtk.ResponseType.YES:
@@ -589,7 +589,7 @@ class ProjectTree:
                 self.app.project.remove_component(component.id)
                 FileService.save_project(self.app.project)
                 self._refresh_project_tree()
-                self.app._update_status(f"Componente eliminado: {component.get_display_name(self.app._resolve_labels())}")
+                self.app._update_status(f"Componente eliminado: {component.get_display_name(self.app.project_manager.resolve_labels())}")
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -606,7 +606,7 @@ class ProjectTree:
         return comps
 
     def _on_delete_multiple_components(self, menu_item, components):
-        names = "\n".join(f"  - {c.get_display_name(self.app._resolve_labels())}" for c in components)
+        names = "\n".join(f"  - {c.get_display_name(self.app.project_manager.resolve_labels())}" for c in components)
         dialog = Gtk.MessageDialog(
             transient_for=self.app.window,
             modal=True,
@@ -639,12 +639,12 @@ class ProjectTree:
             component.title = ""
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(f"Tipo cambiado a: {self.app._resolve_labels().get(new_type.value, COMPONENT_TYPE_LABELS[new_type])}")
+        self.app._update_status(f"Tipo cambiado a: {self.app.project_manager.resolve_labels().get(new_type.value, COMPONENT_TYPE_LABELS[new_type])}")
         self.app.editor_view._update_preview()
 
     def _on_menu_rename_component(self, widget):
         if not self.app.current_component:
-            self.app._show_info("Selecciona un componente primero")
+            show_info(self.app.window, "Selecciona un componente primero")
             return
         path, _ = self.project_tree.get_cursor()
         if path is None:
@@ -662,7 +662,7 @@ class ProjectTree:
             if isinstance(obj, Component):
                 comps.append(obj)
         if not comps:
-            self.app._show_info("Selecciona uno o varios componentes primero")
+            show_info(self.app.window, "Selecciona uno o varios componentes primero")
             return
         if len(comps) == 1:
             self._on_delete_component(None, comps[0])

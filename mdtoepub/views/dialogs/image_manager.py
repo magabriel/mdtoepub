@@ -1,3 +1,4 @@
+from ...utils.dialogs import show_error, show_info, confirm
 import os
 import shutil
 from pathlib import Path
@@ -308,7 +309,7 @@ def build_image_manager_widget(app, parent_dialog):
             )
 
             if app.current_component:
-                content = app._load_component_content(app.current_component)
+                content = app.project_manager.load_component_content(app.current_component)
                 if content:
                     buf = app.text_view.get_buffer()
                     buf.set_text(content)
@@ -357,7 +358,7 @@ def build_image_manager_widget(app, parent_dialog):
         )
 
         if app.current_component:
-            content = app._load_component_content(app.current_component)
+            content = app.project_manager.load_component_content(app.current_component)
             if content:
                 buf = app.text_view.get_buffer()
                 buf.set_text(content)
