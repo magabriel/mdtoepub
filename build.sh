@@ -7,6 +7,13 @@ BUILD_DIR="/tmp/mdtoepub/build-flatpak"
 REPO_DIR="/tmp/mdtoepub/repo"
 VERSION="${VERSION:-$(grep '^version' pyproject.toml | head -1 | cut -d'"' -f2)}"
 BUNDLE="dist/mdtoepub-v${VERSION}.flatpak"
+
+sync_metainfo_version() {
+    local xml_file="data/com.github.mdtoepub.metainfo.xml"
+    local today
+    today=$(date +%Y-%m-%d)
+    sed -i "s|<release version=\"[^\"]*\" date=\"[^\"]*\"|<release version=\"${VERSION}\" date=\"${today}\"|" "$xml_file"
+}
 RUNTIME="org.gnome.Platform"
 RUNTIME_VERSION="48"
 
@@ -88,6 +95,7 @@ main() {
     case "${1:-all}" in
         all)
             check_deps
+            sync_metainfo_version
             install_runtime
             build_app
             create_bundle
@@ -107,6 +115,7 @@ main() {
             ;;
         install-local)
         if [ -f "$BUNDLE" ]; then
+            echo "=== Instalando bundle: $BUNDLE ==="
             flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
             flatpak install --user -y "$BUNDLE"
         else
@@ -115,6 +124,7 @@ main() {
         fi
         ;;
         reinstall)
+        echo "=== Reinstalando bundle: $BUNDLE ==="
         flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
         if [ -f "$BUNDLE" ]; then
             flatpak install --user -y "$BUNDLE"
