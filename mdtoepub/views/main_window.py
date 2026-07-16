@@ -495,6 +495,7 @@ class MainWindow:
                 "preview": {"zoom": 100},
                 "general": {"window_width": 1200, "window_height": 800},
                 "epub_reader_path": "",
+                "ui_language": "",
             }
 
         dialog = Gtk.Dialog(
@@ -602,12 +603,36 @@ class MainWindow:
         reader_box.pack_start(browse_btn, False, False, 0)
         grid_general.attach(reader_box, 1, reader_row, 1, 1)
 
+        # UI language selector
+        reader_row += 1
+        lang_label = Gtk.Label(label=_("UI Language:"))
+        lang_label.set_xalign(1)
+        grid_general.attach(lang_label, 0, reader_row, 1, 1)
+
+        lang_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        combo_lang = Gtk.ComboBoxText()
+        combo_lang.append_text(_("Auto (system)"))
+        combo_lang.append_text("English")
+        combo_lang.append_text("Español")
+        current_lang = config.get("ui_language", "").strip()
+        if current_lang == "en":
+            combo_lang.set_active(1)
+        elif current_lang == "es":
+            combo_lang.set_active(2)
+        else:
+            combo_lang.set_active(0)
+        lang_box.pack_start(combo_lang, True, True, 0)
+        grid_general.attach(lang_box, 1, reader_row, 1, 1)
+
         def on_global_response(d, response):
             if response == Gtk.ResponseType.ACCEPT:
                 config["editor"]["font_size"] = int(spin_font_size.get_value())
                 config["editor"]["tab_size"] = int(spin_tab.get_value())
                 config["editor"]["auto_save_interval"] = int(spin_auto.get_value())
                 config["epub_reader_path"] = entry_reader.get_text().strip()
+                lang_idx = combo_lang.get_active()
+                lang_map = {0: "", 1: "en", 2: "es"}
+                config["ui_language"] = lang_map.get(lang_idx, "")
                 YamlService.save(config, config_file)
                 show_info(self.app.window, _("Global settings saved"))
             d.destroy()

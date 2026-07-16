@@ -1538,3 +1538,9 @@ msgstr "Information"
 #: mdtoepub/utils/dialogs.py
 msgid "Confirm"
 msgstr "Confirm"
+
+msgid "UI Language:"
+msgstr "UI Language:"
+
+msgid "Auto (system)"
+msgstr "Auto (system)"
