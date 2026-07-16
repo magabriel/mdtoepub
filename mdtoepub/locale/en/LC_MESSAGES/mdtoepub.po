@@ -1175,3 +1175,39 @@ msgstr "Appendix <n>"
 
 msgid "Appendix <n> + title"
 msgstr "Appendix <n> + title"
+
+msgid "Word numbers"
+msgstr "Word numbers"
+
+msgid "<n> part"
+msgstr "<n> part"
+
+msgid "First"
+msgstr "First"
+
+msgid "Second"
+msgstr "Second"
+
+msgid "Third"
+msgstr "Third"
+
+msgid "Fourth"
+msgstr "Fourth"
+
+msgid "Fifth"
+msgstr "Fifth"
+
+msgid "Sixth"
+msgstr "Sixth"
+
+msgid "Seventh"
+msgstr "Seventh"
+
+msgid "Eighth"
+msgstr "Eighth"
+
+msgid "Ninth"
+msgstr "Ninth"
+
+msgid "Tenth"
+msgstr "Tenth"

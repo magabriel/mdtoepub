@@ -494,16 +494,23 @@ class EpubService:
                 if num_style == "roman":
                     from .markdown_service import MarkdownService as _MS
                     num_str = _MS._to_roman(part_number)
+                elif num_style == "word":
+                    from .markdown_service import MarkdownService as _MS
+                    num_str = _MS._to_word(part_number, self.project.language)
                 if mode == "part_number":
-                    number_part = f"{label} {num_str}"
+                    number_part = f"{label} {num_str}" if num_style != "word" else num_str
                 elif mode == "number":
                     number_part = num_str
                 elif mode == "part_number_with_title":
-                    number_part = f"{label} {num_str}"
+                    number_part = f"{label} {num_str}" if num_style != "word" else num_str
                     title_part = self._component_label(component)
                 elif mode == "number_with_title":
                     number_part = num_str
                     title_part = self._component_label(component)
+                elif mode == "word_part":
+                    from .markdown_service import MarkdownService as _MS
+                    word = _MS._to_word(part_number, self.project.language)
+                    number_part = f"{word} {label.lower()}"
 
         if show_title and not number_part and not title_part:
             title_part = self._component_label(component)

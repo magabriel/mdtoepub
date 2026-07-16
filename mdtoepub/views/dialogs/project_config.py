@@ -805,7 +805,8 @@ def show_project_config(app):
     combo_auto_part.append_text("<n>")
     combo_auto_part.append_text(_("Part <n> + title"))
     combo_auto_part.append_text("<n> + " + _("title"))
-    auto_part_values = ["none", "part_number", "number", "part_number_with_title", "number_with_title"]
+    combo_auto_part.append_text(_("<n> part"))
+    auto_part_values = ["none", "part_number", "number", "part_number_with_title", "number_with_title", "word_part"]
     auto_part_index = 0
     for i, v in enumerate(auto_part_values):
         if v == app.project.auto_part_title:
@@ -822,7 +823,8 @@ def show_project_config(app):
     interactive_widgets.append(combo_part_style)
     combo_part_style.append_text(_("Arabic numbers"))
     combo_part_style.append_text(_("Roman numerals"))
-    part_style_values = ["arabic", "roman"]
+    combo_part_style.append_text(_("Word numbers"))
+    part_style_values = ["arabic", "roman", "word"]
     part_style_index = 0
     for i, v in enumerate(part_style_values):
         if v == app.project.part_numbering_style:

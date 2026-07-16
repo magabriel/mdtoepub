@@ -1,4 +1,5 @@
 from typing import List, Optional, Set, Dict, Tuple
+from pathlib import Path
 import markdown
 from pygments.formatters.html import HtmlFormatter
 import re
@@ -197,6 +198,35 @@ class MarkdownService:
                 result.append(s)
                 num -= v
         return ''.join(result)
+
+    @staticmethod
+    def _to_word(num: int, language: str = "en") -> str:
+        """Convert an integer to a word (ordinal, feminine) in the given language.
+
+        Uses gettext translations. Supports 1-10. Falls back to the number
+        itself for out-of-range values.
+        """
+        import gettext as _gettext
+        locale_dir = str(Path(__file__).parent.parent / "locale")
+        t = _gettext.translation("mdtoepub", locale_dir, languages=[language], fallback=True)
+
+        words = [
+            "",
+            t.gettext("First"),
+            t.gettext("Second"),
+            t.gettext("Third"),
+            t.gettext("Fourth"),
+            t.gettext("Fifth"),
+            t.gettext("Sixth"),
+            t.gettext("Seventh"),
+            t.gettext("Eighth"),
+            t.gettext("Ninth"),
+            t.gettext("Tenth"),
+        ]
+
+        if 1 <= num < len(words):
+            return words[num]
+        return str(num)
 
     @staticmethod
     def _add_image_captions(html: str, figure_num_start: int = 0, figure_num_style: str = "arabic",

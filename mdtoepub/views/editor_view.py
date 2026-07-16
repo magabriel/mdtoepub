@@ -653,7 +653,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     num_part, title_part, _dp = epub_svc._get_part_header(
                         component, part_number
                     )
-                    replaces = self.app.project.auto_part_title in ("part_number", "number")
+                    replaces = self.app.project.auto_part_title in ("part_number", "number", "word_part")
                 else:
                     num_part, title_part, _dp = epub_svc._get_component_header(
                         component, chapter_number
