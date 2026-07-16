@@ -572,7 +572,8 @@ hr { border: none; border-top: 1px solid #ccc; }
         if not text.strip():
             if (self.app.project and component
                     and component.type
-                    in (ComponentType.FOOTNOTES, ComponentType.TOC, ComponentType.LOF)):
+                    in (ComponentType.FOOTNOTES, ComponentType.TOC,
+                        ComponentType.LOF, ComponentType.LOT, ComponentType.PART)):
                 text = '\u200b'
             else:
                 self.app.webview.load_html(self.app.default_html, self._get_base_uri())
