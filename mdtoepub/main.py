@@ -30,22 +30,6 @@ from .services.theme_service import ThemeService
 from .services.labels_service import resolve_labels
 
 
-FRONTMATTER_DOCS = {
-    "toc": [
-        ("toc_include", "Lista de tipos de componente a incluir en el índice (ej: ['chapter', 'appendix'])"),
-        ("toc_deep", "Profundidad maxima de encabezados en el índice (1-6, por defecto 2)"),
-    ],
-    "chapter": [
-        ("show_title", "false para ocultar el titulo del capitulo"),
-    ],
-}
-
-FRONTMATTER_COMMON = [
-    ("show_title", "false para ocultar el titulo del componente (por defecto true)"),
-    ("split_title", "false para desactivar la particion automatica del titulo en subtitulo + titulo al encontrar ' - ', ' -- ' o ' --- ' (por defecto true)"),
-]
-
-
 def _component_icon(comp: Component) -> str:
     mapping = {
         ComponentType.ACKNOWLEDGEMENT: "emblem-people",
