@@ -12,6 +12,7 @@ class Project:
     theme_id: str = "classic"
     epub_version: str = "epub3"
     auto_chapter_title: str = "none"
+    auto_appendix_title: str = "none"
     components: List[Component] = field(default_factory=list)
     global_config: Dict[str, Any] = field(default_factory=dict)
     custom_css: str = ""

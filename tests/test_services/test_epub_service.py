@@ -453,21 +453,21 @@ class TestFootnotes:
 
 class TestAppendixAutoTitle:
     def test_appendix_chapter_number_format(self):
-        p = Project(auto_chapter_title="chapter_number")
+        p = Project(auto_appendix_title="chapter_number")
         svc = EpubService(p)
         c = Component(type=ComponentType.APPENDIX, title="")
         num1, _, _ = svc._get_component_header(c, 1)
         assert num1 == "Apéndice 1"
 
     def test_appendix_number_format(self):
-        p = Project(auto_chapter_title="number")
+        p = Project(auto_appendix_title="number")
         svc = EpubService(p)
         c = Component(type=ComponentType.APPENDIX, title="")
         num1, _, _ = svc._get_component_header(c, 42)
         assert num1 == "42"
 
     def test_appendix_with_title_mode(self):
-        p = Project(auto_chapter_title="chapter_number_with_title")
+        p = Project(auto_appendix_title="chapter_number_with_title")
         svc = EpubService(p)
         c = Component(type=ComponentType.APPENDIX, title="Datos")
         num, title_part, _ = svc._get_component_header(c, 3)

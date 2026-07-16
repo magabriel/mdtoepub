@@ -16,1526 +16,1132 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 
 #: mdtoepub/views/main_window.py
+
 msgid "File"
 msgstr "File"
 
-#: mdtoepub/views/main_window.py
 msgid "New Project"
 msgstr "New Project"
 
-#: mdtoepub/views/main_window.py
 msgid "Open Project"
 msgstr "Open Project"
 
-#: mdtoepub/views/main_window.py
 msgid "Save"
 msgstr "Save"
 
-#: mdtoepub/views/main_window.py
 msgid "Save As"
 msgstr "Save As"
 
-#: mdtoepub/views/main_window.py
 msgid "Close Project"
 msgstr "Close Project"
 
-#: mdtoepub/views/main_window.py
 msgid "Recent Projects"
 msgstr "Recent Projects"
 
-#: mdtoepub/views/main_window.py
 msgid "Import Book..."
 msgstr "Import Book..."
 
-#: mdtoepub/views/main_window.py
 msgid "Import EPUB Book..."
 msgstr "Import EPUB Book..."
 
-#: mdtoepub/views/main_window.py
 msgid "Quit"
 msgstr "Quit"
 
-#: mdtoepub/views/main_window.py
 msgid "Component"
 msgstr "Component"
 
-#: mdtoepub/views/main_window.py
 msgid "Add Component"
 msgstr "Add Component"
 
-#: mdtoepub/views/main_window.py
 msgid "Rename Component"
 msgstr "Rename Component"
 
-#: mdtoepub/views/main_window.py
 msgid "Delete Component"
 msgstr "Delete Component"
 
-#: mdtoepub/views/main_window.py
 msgid "View"
 msgstr "View"
 
-#: mdtoepub/views/main_window.py
 msgid "Editor"
 msgstr "Editor"
 
-#: mdtoepub/views/main_window.py
 msgid "Preview"
 msgstr "Preview"
 
-#: mdtoepub/views/main_window.py
 msgid "Export"
 msgstr "Export"
 
-#: mdtoepub/views/main_window.py
 msgid "Export EPUB"
 msgstr "Export EPUB"
 
-#: mdtoepub/views/main_window.py
 msgid "Open EPUB"
 msgstr "Open EPUB"
 
-#: mdtoepub/views/main_window.py
 msgid "Settings"
 msgstr "Settings"
 
-#: mdtoepub/views/main_window.py
 msgid "Project"
 msgstr "Project"
 
-#: mdtoepub/views/main_window.py
 msgid "Global"
 msgstr "Global"
 
-#: mdtoepub/views/main_window.py
 msgid "Themes"
 msgstr "Themes"
 
-#: mdtoepub/views/main_window.py
 msgid "Help"
 msgstr "Help"
 
-#: mdtoepub/views/main_window.py
 msgid "Sample Books"
 msgstr "Sample Books"
 
-#: mdtoepub/views/main_window.py
 msgid "Classic Novel"
 msgstr "Classic Novel"
 
-#: mdtoepub/views/main_window.py
 msgid "Textbook"
 msgstr "Textbook"
 
-#: mdtoepub/views/main_window.py
 msgid "About"
 msgstr "About"
 
-#: mdtoepub/views/main_window.py
 msgid "MDToEPUB"
 msgstr "MDToEPUB"
 
-#: mdtoepub/views/main_window.py
 msgid "EPUB editor from Markdown"
 msgstr "EPUB editor from Markdown"
 
-#: mdtoepub/views/main_window.py
 msgid "New"
 msgstr "New"
 
-#: mdtoepub/views/main_window.py
 msgid "Open"
 msgstr "Open"
 
-#: mdtoepub/views/main_window.py
 msgid "Configure"
 msgstr "Configure"
 
-#: mdtoepub/views/main_window.py
 msgid "Project Settings"
 msgstr "Project Settings"
 
-#: mdtoepub/views/main_window.py
 msgid "Ready"
 msgstr "Ready"
 
-#: mdtoepub/views/main_window.py
 msgid "Parent folder:"
 msgstr "Parent folder:"
 
-#: mdtoepub/views/main_window.py
 msgid "Name:"
 msgstr "Name:"
 
-#: mdtoepub/views/main_window.py
 msgid "Title:"
 msgstr "Title:"
 
-#: mdtoepub/views/main_window.py
 msgid "Author:"
 msgstr "Author:"
 
-#: mdtoepub/views/main_window.py
 msgid "Select folder"
 msgstr "Select folder"
 
-#: mdtoepub/views/main_window.py
 msgid "_Select"
 msgstr "_Select"
 
-#: mdtoepub/views/main_window.py
 msgid "_Cancel"
 msgstr "_Cancel"
 
-#: mdtoepub/views/main_window.py
 msgid "Project name is required"
 msgstr "Project name is required"
 
-#: mdtoepub/views/main_window.py
 msgid "Project created: {name}"
 msgstr "Project created: {name}"
 
-#: mdtoepub/views/main_window.py
 msgid "Project opened: {name}"
 msgstr "Project opened: {name}"
 
-#: mdtoepub/views/main_window.py
 msgid "Error loading project"
 msgstr "Error loading project"
 
-#: mdtoepub/views/main_window.py
 msgid "No project.yaml found in this folder"
 msgstr "No project.yaml found in this folder"
 
-#: mdtoepub/views/main_window.py
 msgid "No project open"
 msgstr "No project open"
 
-#: mdtoepub/views/main_window.py
 msgid "Project saved"
 msgstr "Project saved"
 
-#: mdtoepub/views/main_window.py
 msgid "Save Project As"
 msgstr "Save Project As"
 
-#: mdtoepub/views/main_window.py
 msgid "_Save"
 msgstr "_Save"
 
-#: mdtoepub/views/main_window.py
 msgid "Project saved to: {path}"
 msgstr "Project saved to: {path}"
 
-#: mdtoepub/views/main_window.py
 msgid "Sample book not found"
 msgstr "Sample book not found"
 
-#: mdtoepub/views/main_window.py
 msgid "Sample book loaded: {name} [READ ONLY]"
 msgstr "Sample book loaded: {name} [READ ONLY]"
 
-#: mdtoepub/views/main_window.py
 msgid "Error loading sample book"
 msgstr "Error loading sample book"
 
-#: mdtoepub/views/main_window.py
 msgid "Global Settings"
 msgstr "Global Settings"
 
-#: mdtoepub/views/main_window.py
 msgid "General"
 msgstr "General"
 
-#: mdtoepub/views/main_window.py
 msgid "Font size:"
 msgstr "Font size:"
 
-#: mdtoepub/views/main_window.py
 msgid "Tab size:"
 msgstr "Tab size:"
 
-#: mdtoepub/views/main_window.py
 msgid "Auto-save (s):"
 msgstr "Auto-save (s):"
 
-#: mdtoepub/views/main_window.py
 msgid "EPUB reader:"
 msgstr "EPUB reader:"
 
-#: mdtoepub/views/main_window.py
 msgid "Leave empty to use system viewer"
 msgstr "Leave empty to use system viewer"
 
-#: mdtoepub/views/main_window.py
 msgid "Select EPUB reader"
 msgstr "Select EPUB reader"
 
-#: mdtoepub/views/main_window.py
 msgid "Cancel"
 msgstr "Cancel"
 
-#: mdtoepub/views/main_window.py
 msgid "Select"
 msgstr "Select"
 
-#: mdtoepub/views/main_window.py
 msgid "Browse..."
 msgstr "Browse..."
 
-#: mdtoepub/views/main_window.py
 msgid "Global settings saved"
 msgstr "Global settings saved"
 
-#: mdtoepub/views/main_window.py
 msgid "The current project will be closed. Continue?"
 msgstr "The current project will be closed. Continue?"
 
-#: mdtoepub/views/main_window.py
 msgid "(no recent projects)"
 msgstr "(no recent projects)"
 
-#: mdtoepub/views/main_window.py
 msgid "Project no longer exists:\n{path}"
 msgstr "Project no longer exists:\n{path}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Project Navigator"
 msgstr "Project Navigator"
 
-#: mdtoepub/views/project_tree.py
 msgid "Editing: {name}"
 msgstr "Editing: {name}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Delete {n} components"
 msgstr "Delete {n} components"
 
-#: mdtoepub/views/project_tree.py
 msgid "Add Component to this Part"
 msgstr "Add Component to this Part"
 
-#: mdtoepub/views/project_tree.py
 msgid "Rename Part"
 msgstr "Rename Part"
 
-#: mdtoepub/views/project_tree.py
 msgid "Delete Part"
 msgstr "Delete Part"
 
-#: mdtoepub/views/project_tree.py
 msgid "Duplicate Component"
 msgstr "Duplicate Component"
 
-#: mdtoepub/views/project_tree.py
 msgid "Change Type"
 msgstr "Change Type"
 
-#: mdtoepub/views/project_tree.py
 msgid "Move to Part"
 msgstr "Move to Part"
 
-#: mdtoepub/views/project_tree.py
 msgid "Detach from Part"
 msgstr "Detach from Part"
 
-#: mdtoepub/views/project_tree.py
 msgid "Styles"
 msgstr "Styles"
 
-#: mdtoepub/views/project_tree.py
 msgid "Of type '{label}'"
 msgstr "Of type '{label}'"
 
-#: mdtoepub/views/project_tree.py
 msgid "Of component '{name}'"
 msgstr "Of component '{name}'"
 
-#: mdtoepub/views/project_tree.py
 msgid "Close the current project?"
 msgstr "Close the current project?"
 
-#: mdtoepub/views/project_tree.py
 msgid "Project closed"
 msgstr "Project closed"
 
-#: mdtoepub/views/project_tree.py
 msgid "Create or open a project first"
 msgstr "Create or open a project first"
 
-#: mdtoepub/views/project_tree.py
 msgid "Cannot modify a read-only project"
 msgstr "Cannot modify a read-only project"
 
-#: mdtoepub/views/project_tree.py
 msgid "Add"
 msgstr "Add"
 
-#: mdtoepub/views/project_tree.py
 msgid "Type:"
 msgstr "Type:"
 
-#: mdtoepub/views/project_tree.py
 msgid "Component title"
 msgstr "Component title"
 
-#: mdtoepub/views/project_tree.py
 msgid "Component added: {name}"
 msgstr "Component added: {name}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Add Part"
 msgstr "Add Part"
 
-#: mdtoepub/views/project_tree.py
 msgid "Part I: Beginnings"
 msgstr "Part I: Beginnings"
 
-#: mdtoepub/views/project_tree.py
 msgid "Part added: {title}"
 msgstr "Part added: {title}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Rename"
 msgstr "Rename"
 
-#: mdtoepub/views/project_tree.py
 msgid "Part renamed: {title}"
 msgstr "Part renamed: {title}"
 
-#: mdtoepub/views/project_tree.py
-msgid "The part \"{name}\" will be deleted and its components will be ungrouped."
-msgstr "The part \"{name}\" will be deleted and its components will be ungrouped."
-
-#: mdtoepub/views/project_tree.py
 msgid "Part deleted: {name}"
 msgstr "Part deleted: {name}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Component renamed: {title}"
 msgstr "Component renamed: {title}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Component duplicated: {name}"
 msgstr "Component duplicated: {name}"
 
-#: mdtoepub/views/project_tree.py
 msgid "{name} moved to {part}"
 msgstr "{name} moved to {part}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Detach '{name}' from its part?"
 msgstr "Detach '{name}' from its part?"
 
-#: mdtoepub/views/project_tree.py
 msgid "{name} detached from part"
 msgstr "{name} detached from part"
 
-#: mdtoepub/views/project_tree.py
-msgid "The component \"{name}\" will be deleted."
-msgstr "The component \"{name}\" will be deleted."
-
-#: mdtoepub/views/project_tree.py
 msgid "Component deleted: {name}"
 msgstr "Component deleted: {name}"
 
-#: mdtoepub/views/project_tree.py
 msgid "The following components will be deleted:\n{names}"
 msgstr "The following components will be deleted:\n{names}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Deleted {n} components"
 msgstr "Deleted {n} components"
 
-#: mdtoepub/views/project_tree.py
 msgid "Type changed to: {type}"
 msgstr "Type changed to: {type}"
 
-#: mdtoepub/views/project_tree.py
 msgid "Select a component first"
 msgstr "Select a component first"
 
-#: mdtoepub/views/project_tree.py
 msgid "Select one or more components first"
 msgstr "Select one or more components first"
 
-#: mdtoepub/views/project_tree.py
 msgid "Component(s) reordered"
 msgstr "Component(s) reordered"
 
-#: mdtoepub/views/styles_panel.py
 msgid "List of component types to include in the index (e.g.: ['chapter', 'appendix'])"
 msgstr "List of component types to include in the index (e.g.: ['chapter', 'appendix'])"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Maximum heading depth in the index (1-6, default 2)"
 msgstr "Maximum heading depth in the index (1-6, default 2)"
 
-#: mdtoepub/views/styles_panel.py
 msgid "false to hide the chapter title"
 msgstr "false to hide the chapter title"
 
-#: mdtoepub/views/styles_panel.py
 msgid "false to hide the component title (default true)"
 msgstr "false to hide the component title (default true)"
 
-#: mdtoepub/views/styles_panel.py
 msgid "false to disable automatic title splitting into subtitle + title when finding ' - ', ' -- ' or ' --- ' (default true)"
 msgstr "false to disable automatic title splitting into subtitle + title when finding ' - ', ' -- ' or ' --- ' (default true)"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Style hierarchy — lower overrides higher"
 msgstr "Style hierarchy — lower overrides higher"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Available CSS classes"
 msgstr "Available CSS classes"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Selector"
 msgstr "Selector"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Description"
 msgstr "Description"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Origin"
 msgstr "Origin"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Theme Manager..."
 msgstr "Theme Manager..."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Manage All Types..."
 msgstr "Manage All Types..."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Select a component to view its metadata."
 msgstr "Select a component to view its metadata."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Markdown syntax tips:"
 msgstr "Markdown syntax tips:"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Use {.class} to apply a CSS class."
 msgstr "Use {.class} to apply a CSS class."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Use <!-- Table: title --> before a table to assign it a title and list it in the List of Tables."
 msgstr "Use <!-- Table: title --> before a table to assign it a title and list it in the List of Tables."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Use ![alt](path) for images. Images in images/illustrations/ are automatically numbered."
 msgstr "Use ![alt](path) for images. Images in images/illustrations/ are automatically numbered."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Use {lang=en} to change the spell checker language."
 msgstr "Use {lang=en} to change the spell checker language."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Metadata for {type}:"
 msgstr "Metadata for {type}:"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Metadata is added at the beginning of the component"
 msgstr "Metadata is added at the beginning of the component"
 
-#: mdtoepub/views/styles_panel.py
 msgid "(between the --- lines at the start of the file)."
 msgstr "(between the --- lines at the start of the file)."
 
-#: mdtoepub/views/styles_panel.py
 msgid "shared across all books with this theme"
 msgstr "shared across all books with this theme"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Theme"
 msgstr "Theme"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Base: style.css"
 msgstr "Base: style.css"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Read-only — built-in themes cannot be edited"
 msgstr "Read-only — built-in themes cannot be edited"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Edit"
 msgstr "Edit"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Warning: changes will affect ALL books using this theme"
 msgstr "Warning: changes will affect ALL books using this theme"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Type"
 msgstr "Type"
 
-#: mdtoepub/views/styles_panel.py
 msgid "this book only"
 msgstr "this book only"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Edited"
 msgstr "Edited"
 
-#: mdtoepub/views/styles_panel.py
 msgid "No changes"
 msgstr "No changes"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Global Styles"
 msgstr "Global Styles"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Reset"
 msgstr "Reset"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Component Styles"
 msgstr "Component Styles"
 
-#: mdtoepub/views/styles_panel.py
 msgid "this component only"
 msgstr "this component only"
 
-#: mdtoepub/views/styles_panel.py
 msgid "unknown"
 msgstr "unknown"
 
-#: mdtoepub/views/styles_panel.py
 msgid "type"
 msgstr "type"
 
-#: mdtoepub/views/styles_panel.py
 msgid "book"
 msgstr "book"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Type styles: {label}"
 msgstr "Type styles: {label}"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Type styles '{label}' updated"
 msgstr "Type styles '{label}' updated"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Reset type styles '{label}'?\nCustom changes will be lost."
 msgstr "Reset type styles '{label}'?\nCustom changes will be lost."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Type styles '{label}' reset to theme"
 msgstr "Type styles '{label}' reset to theme"
 
-#: mdtoepub/views/styles_panel.py
 msgid "The file {filename} does not exist in the theme."
 msgstr "The file {filename} does not exist in the theme."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Close"
 msgstr "Close"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Changes to this theme will affect ALL books that use it."
 msgstr "Changes to this theme will affect ALL books that use it."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Editing global book styles (affect ALL components)."
 msgstr "Editing global book styles (affect ALL components)."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Main selector"
 msgstr "Main selector"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Sub-elements"
 msgstr "Sub-elements"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Use class prefixes (e.g. <b>.toc-entry</b>) for auto-generated elements."
 msgstr "Use class prefixes (e.g. <b>.toc-entry</b>) for auto-generated elements."
 
-#: mdtoepub/views/styles_panel.py
 msgid "These styles only affect this component."
 msgstr "These styles only affect this component."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Editing theme styles (affect ALL books that use this theme)."
 msgstr "Editing theme styles (affect ALL books that use this theme)."
 
-#: mdtoepub/views/styles_panel.py
 msgid "Open a project first"
 msgstr "Open a project first"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Book Styles"
 msgstr "Book Styles"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Book styles updated"
 msgstr "Book styles updated"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Component styles: {name}"
 msgstr "Component styles: {name}"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Component styles '{name}' updated"
 msgstr "Component styles '{name}' updated"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Manage styles by type"
 msgstr "Manage styles by type"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Status"
 msgstr "Status"
 
-#: mdtoepub/views/styles_panel.py
 msgid "Theme default"
 msgstr "Theme default"
 
-#: mdtoepub/views/editor_view.py
 msgid "Content"
 msgstr "Content"
 
-#: mdtoepub/views/editor_view.py
 msgid "Metadata"
 msgstr "Metadata"
 
-#: mdtoepub/views/editor_view.py
 msgid "Syntax"
 msgstr "Syntax"
 
-#: mdtoepub/views/editor_view.py
 msgid "Markdown Syntax"
 msgstr "Markdown Syntax"
 
-#: mdtoepub/views/editor_view.py
 msgid "Text"
 msgstr "Text"
 
-#: mdtoepub/views/editor_view.py
 msgid "Headings"
 msgstr "Headings"
 
-#: mdtoepub/views/editor_view.py
 msgid "Links and Images"
 msgstr "Links and Images"
 
-#: mdtoepub/views/editor_view.py
 msgid "Lists"
 msgstr "Lists"
 
-#: mdtoepub/views/editor_view.py
 msgid "Separator"
 msgstr "Separator"
 
-#: mdtoepub/views/editor_view.py
 msgid "Active Extensions"
 msgstr "Active Extensions"
 
-#: mdtoepub/views/editor_view.py
 msgid "Tables"
 msgstr "Tables"
 
-#: mdtoepub/views/editor_view.py
 msgid "Alignment with :"
 msgstr "Alignment with :"
 
-#: mdtoepub/views/editor_view.py
 msgid "Code Block"
 msgstr "Code Block"
 
-#: mdtoepub/views/editor_view.py
 msgid "Languages: python, js, html, css, bash, json, yaml..."
 msgstr "Languages: python, js, html, css, bash, json, yaml..."
 
-#: mdtoepub/views/editor_view.py
 msgid "Syntax highlighting with Pygments in exported EPUB."
 msgstr "Syntax highlighting with Pygments in exported EPUB."
 
-#: mdtoepub/views/editor_view.py
 msgid "Definition Lists"
 msgstr "Definition Lists"
 
-#: mdtoepub/views/editor_view.py
 msgid "CSS Attributes"
 msgstr "CSS Attributes"
 
-#: mdtoepub/views/editor_view.py
 msgid "multiple classes"
 msgstr "multiple classes"
 
-#: mdtoepub/views/editor_view.py
 msgid "anchor with id"
 msgstr "anchor with id"
 
-#: mdtoepub/views/editor_view.py
 msgid "Placed on the line after the element."
 msgstr "Placed on the line after the element."
 
-#: mdtoepub/views/editor_view.py
 msgid "Available classes depend on the active theme."
 msgstr "Available classes depend on the active theme."
 
-#: mdtoepub/views/editor_view.py
 msgid "Footnotes"
 msgstr "Footnotes"
 
-#: mdtoepub/views/editor_view.py
 msgid "Auto-numbered per component."
 msgstr "Auto-numbered per component."
 
-#: mdtoepub/views/editor_view.py
 msgid "Collected at the end in the Footnotes component."
 msgstr "Collected at the end in the Footnotes component."
 
-#: mdtoepub/views/editor_view.py
 msgid "Table of Contents"
 msgstr "Table of Contents"
 
-#: mdtoepub/views/editor_view.py
 msgid "Generates a local index within the component itself."
 msgstr "Generates a local index within the component itself."
 
-#: mdtoepub/views/editor_view.py
 msgid "Line Breaks"
 msgstr "Line Breaks"
 
-#: mdtoepub/views/editor_view.py
 msgid "CommonMark standard"
 msgstr "CommonMark standard"
 
-#: mdtoepub/views/editor_view.py
 msgid "A blank line between text blocks creates a new paragraph."
 msgstr "A blank line between text blocks creates a new paragraph."
 
-#: mdtoepub/views/editor_view.py
 msgid "A simple line break joins text in the same paragraph (soft break)."
 msgstr "A simple line break joins text in the same paragraph (soft break)."
 
-#: mdtoepub/views/editor_view.py
 msgid "Two spaces at the end of a line + line break creates an explicit <br> (hard break)."
 msgstr "Two spaces at the end of a line + line break creates an explicit <br> (hard break)."
 
-#: mdtoepub/views/editor_view.py
 msgid "Backslash at the end of a line + line break also creates a hard break."
 msgstr "Backslash at the end of a line + line break also creates a hard break."
 
-#: mdtoepub/views/editor_view.py
 msgid "Custom Syntax"
 msgstr "Custom Syntax"
 
-#: mdtoepub/views/editor_view.py
 msgid "Tables with Title"
 msgstr "Tables with Title"
 
-#: mdtoepub/views/editor_view.py
 msgid "Appear in the List of Tables if numbering is enabled in Project Settings."
 msgstr "Appear in the List of Tables if numbering is enabled in Project Settings."
 
-#: mdtoepub/views/editor_view.py
 msgid "Tables without a comment are not numbered or listed."
 msgstr "Tables without a comment are not numbered or listed."
 
-#: mdtoepub/views/editor_view.py
 msgid "Numbered Figures"
 msgstr "Numbered Figures"
 
-#: mdtoepub/views/editor_view.py
 msgid "Images in images/illustrations/ are automatically numbered and appear in the List of Figures."
 msgstr "Images in images/illustrations/ are automatically numbered and appear in the List of Figures."
 
-#: mdtoepub/views/editor_view.py
 msgid "Decorative Images"
 msgstr "Decorative Images"
 
-#: mdtoepub/views/editor_view.py
 msgid "Excluded from numbering and LOF."
 msgstr "Excluded from numbering and LOF."
 
-#: mdtoepub/views/editor_view.py
 msgid "Still get <figure> with alt as caption."
 msgstr "Still get <figure> with alt as caption."
 
-#: mdtoepub/views/editor_view.py
 msgid "Spell Checker Language"
 msgstr "Spell Checker Language"
 
-#: mdtoepub/views/editor_view.py
 msgid "Changes the spell checker language."
 msgstr "Changes the spell checker language."
 
-#: mdtoepub/views/editor_view.py
 msgid "Markers are removed from the EPUB."
 msgstr "Markers are removed from the EPUB."
 
-#: mdtoepub/views/editor_view.py
 msgid "Component Metadata"
 msgstr "Component Metadata"
 
-#: mdtoepub/views/editor_view.py
 msgid "In YAML, between --- at the beginning of the file."
 msgstr "In YAML, between --- at the beginning of the file."
 
-#: mdtoepub/views/editor_view.py
 msgid "Common variables: show_title, toc_deep, toc_include, split_title."
 msgstr "Common variables: show_title, toc_deep, toc_include, split_title."
 
-#: mdtoepub/views/editor_view.py
 msgid "Project Variables"
 msgstr "Project Variables"
 
-#: mdtoepub/views/editor_view.py
 msgid "interpolation"
 msgstr "interpolation"
 
-#: mdtoepub/views/editor_view.py
 msgid "Replaced by values from project settings (File → Settings)."
 msgstr "Replaced by values from project settings (File → Settings)."
 
-#: mdtoepub/views/editor_view.py
 msgid "{{publication_date:year}} extracts only the year (e.g.: 2025-01-15 → 2025)."
 msgstr "{{publication_date:year}} extracts only the year (e.g.: 2025-01-15 → 2025)."
 
-#: mdtoepub/views/editor_view.py
 msgid "Undefined fields remain as {{key}}."
 msgstr "Undefined fields remain as {{key}}."
 
-#: mdtoepub/views/editor_view.py
 msgid "Spelling Suggestions"
 msgstr "Spelling Suggestions"
 
-#: mdtoepub/views/editor_view.py
 msgid "Ignore word"
 msgstr "Ignore word"
 
-#: mdtoepub/views/editor_view.py
 msgid "Add to book dictionary"
 msgstr "Add to book dictionary"
 
-#: mdtoepub/views/editor_view.py
 msgid "Add to global dictionary"
 msgstr "Add to global dictionary"
 
-#: mdtoepub/views/editor_view.py
 msgid "Insert Image..."
 msgstr "Insert Image..."
 
-#: mdtoepub/views/editor_view.py
 msgid "Insert Image"
 msgstr "Insert Image"
 
-#: mdtoepub/views/editor_view.py
 msgid "Name"
 msgstr "Name"
 
-#: mdtoepub/views/editor_view.py
 msgid "Category"
 msgstr "Category"
 
-#: mdtoepub/views/editor_view.py
 msgid "Illustration"
 msgstr "Illustration"
 
-#: mdtoepub/views/editor_view.py
 msgid "Decorative"
 msgstr "Decorative"
 
-#: mdtoepub/views/editor_view.py
 msgid "Insert"
 msgstr "Insert"
 
-#: mdtoepub/views/editor_view.py
 msgid "All footnotes from the book will appear here automatically."
 msgstr "All footnotes from the book will appear here automatically."
 
-#: mdtoepub/views/editor_view.py
 msgid "The table of contents will appear here automatically."
 msgstr "The table of contents will appear here automatically."
 
-#: mdtoepub/views/editor_view.py
 msgid "The list of figures will appear here automatically."
 msgstr "The list of figures will appear here automatically."
 
-#: mdtoepub/views/editor_view.py
 msgid "The list of tables will appear here automatically."
 msgstr "The list of tables will appear here automatically."
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Select image"
 msgstr "Select image"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Import"
 msgstr "Import"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Images (JPEG, PNG, GIF)"
 msgstr "Images (JPEG, PNG, GIF)"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Image type"
 msgstr "Image type"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Select the image type:"
 msgstr "Select the image type:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Illustration (figures, diagrams)"
 msgstr "Illustration (figures, diagrams)"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Decorative (separators, ornaments)"
 msgstr "Decorative (separators, ornaments)"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Image imported: {name}"
 msgstr "Image imported: {name}"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Error importing image"
 msgstr "Error importing image"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Size"
 msgstr "Size"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Delete"
 msgstr "Delete"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Delete {n} images"
 msgstr "Delete {n} images"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Rename image"
 msgstr "Rename image"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "New name:"
 msgstr "New name:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "The extension must be the same"
 msgstr "The extension must be the same"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Could not rename (does '{name}' already exist?)"
 msgstr "Could not rename (does '{name}' already exist?)"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Image renamed to '{name}' ({n} component(s) updated)"
 msgstr "Image renamed to '{name}' ({n} component(s) updated)"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Select a single image to change type"
 msgstr "Select a single image to change type"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "An image with that name already exists in '{category}'"
 msgstr "An image with that name already exists in '{category}'"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Could not move the image"
 msgstr "Could not move the image"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Image moved to '{category}' ({n} component(s) updated)"
 msgstr "Image moved to '{category}' ({n} component(s) updated)"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "This project is read-only. Changes cannot be saved."
 msgstr "This project is read-only. Changes cannot be saved."
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Book"
 msgstr "Book"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Title"
 msgstr "Title"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Use {{title}} in text to insert this value"
 msgstr "Use {{title}} in text to insert this value"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Subtitle"
 msgstr "Subtitle"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Book subtitle"
 msgstr "Book subtitle"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Use {{subtitle}} in text to insert this value"
 msgstr "Use {{subtitle}} in text to insert this value"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "EPUB file:"
 msgstr "EPUB file:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Author"
 msgstr "Author"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Use {{author}} in text to insert this value"
 msgstr "Use {{author}} in text to insert this value"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Language:"
 msgstr "Language:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "EPUB version:"
 msgstr "EPUB version:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Edition"
 msgstr "Edition"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "1st edition"
 msgstr "1st edition"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Use {{edition}} in text to insert this value"
 msgstr "Use {{edition}} in text to insert this value"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Publication date"
 msgstr "Publication date"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Use {{publication_date}} or {{publication_date:year}} (year only) in text"
 msgstr "Use {{publication_date}} or {{publication_date:year}} (year only) in text"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Publisher"
 msgstr "Publisher"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Use {{publisher}} in text to insert this value"
 msgstr "Use {{publisher}} in text to insert this value"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "* Marked fields can be inserted in text using <tt>{{name}}</tt>. Example: <tt>{{title}}</tt>, <tt>{{isbn}}</tt>, <tt>{{publisher}}</tt>."
 msgstr "* Marked fields can be inserted in text using <tt>{{name}}</tt>. Example: <tt>{{title}}</tt>, <tt>{{isbn}}</tt>, <tt>{{publisher}}</tt>."
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Appearance"
 msgstr "Appearance"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Auto component title:"
 msgstr "Auto component title:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "No"
 msgstr "No"
 
-#: mdtoepub/views/dialogs/project_config.py
-msgid "Chapter <n>"
-msgstr "Chapter <n>"
-
-#: mdtoepub/views/dialogs/project_config.py
-msgid "Chapter <n> + title"
-msgstr "Chapter <n> + title"
-
-#: mdtoepub/views/dialogs/project_config.py
 msgid "title"
 msgstr "title"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Auto part title:"
 msgstr "Auto part title:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Part <n>"
 msgstr "Part <n>"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Part <n> + title"
 msgstr "Part <n> + title"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Theme:"
 msgstr "Theme:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Drop cap:"
 msgstr "Drop cap:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Enable"
 msgstr "Enable"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Types with drop cap:"
 msgstr "Types with drop cap:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Figure numbering:"
 msgstr "Figure numbering:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Number figures automatically"
 msgstr "Number figures automatically"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Style:"
 msgstr "Style:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Arabic numbers"
 msgstr "Arabic numbers"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Roman numerals"
 msgstr "Roman numerals"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Table numbering:"
 msgstr "Table numbering:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Number tables automatically"
 msgstr "Number tables automatically"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Spell checker:"
 msgstr "Spell checker:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Labels"
 msgstr "Labels"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "New Language..."
 msgstr "New Language..."
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Restore Defaults"
 msgstr "Restore Defaults"
 
-#: mdtoepub/views/dialogs/project_config.py
-msgid "These labels replace component type names (e.g. \"Chapter\", \"Table of contents\") in the tree and in the EPUB when the component has no title."
-msgstr "These labels replace component type names (e.g. \"Chapter\", \"Table of contents\") in the tree and in the EPUB when the component has no title."
-
-#: mdtoepub/views/dialogs/project_config.py
 msgid "New Language"
 msgstr "New Language"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Create"
 msgstr "Create"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Language code (e.g. fr, de, it):"
 msgstr "Language code (e.g. fr, de, it):"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Copy labels from:"
 msgstr "Copy labels from:"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Images"
 msgstr "Images"
 
-#: mdtoepub/views/dialogs/project_config.py
 msgid "Project settings saved"
 msgstr "Project settings saved"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Yes"
 msgstr "Yes"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Built-in"
 msgstr "Built-in"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Custom"
 msgstr "Custom"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme activated: {name}"
 msgstr "Theme activated: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Create Blank Theme"
 msgstr "Create Blank Theme"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Description:"
 msgstr "Description:"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Name is required"
 msgstr "Name is required"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme created: {name}"
 msgstr "Theme created: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Could not create theme (ID already exists)"
 msgstr "Could not create theme (ID already exists)"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Select a theme to clone"
 msgstr "Select a theme to clone"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Clone theme: {name}"
 msgstr "Clone theme: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Clone"
 msgstr "Clone"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "copy"
 msgstr "copy"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme cloned: {name}"
 msgstr "Theme cloned: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Could not clone theme (ID already exists)"
 msgstr "Could not clone theme (ID already exists)"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Base"
 msgstr "Base"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "CSS saved: {name}"
 msgstr "CSS saved: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Built-in themes cannot be renamed"
 msgstr "Built-in themes cannot be renamed"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Rename theme"
 msgstr "Rename theme"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme renamed: {name}"
 msgstr "Theme renamed: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Built-in themes cannot be deleted"
 msgstr "Built-in themes cannot be deleted"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "The theme '{name}' is in use.\nSwitch to another theme before deleting it."
 msgstr "The theme '{name}' is in use.\nSwitch to another theme before deleting it."
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Delete theme: {name}"
 msgstr "Delete theme: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "This action cannot be undone.\nAll theme files will be permanently deleted."
 msgstr "This action cannot be undone.\nAll theme files will be permanently deleted."
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme deleted: {name}"
 msgstr "Theme deleted: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Could not delete theme"
 msgstr "Could not delete theme"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Select a theme first"
 msgstr "Select a theme first"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Export theme: {name}"
 msgstr "Export theme: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "_Export"
 msgstr "_Export"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme files (*.mdtotheme)"
 msgstr "Theme files (*.mdtotheme)"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme exported: {path}"
 msgstr "Theme exported: {path}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme '{name}' exported successfully."
 msgstr "Theme '{name}' exported successfully."
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Could not export theme '{name}'"
 msgstr "Could not export theme '{name}'"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Import theme"
 msgstr "Import theme"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "_Import"
 msgstr "_Import"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "All files"
 msgstr "All files"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme imported: {name}"
 msgstr "Theme imported: {name}"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme '{name}' imported successfully."
 msgstr "Theme '{name}' imported successfully."
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Could not import theme.\nMake sure the file is a valid .mdtotheme."
 msgstr "Could not import theme.\nMake sure the file is a valid .mdtotheme."
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Theme Manager"
 msgstr "Theme Manager"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Activate Theme"
 msgstr "Activate Theme"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Clone Theme"
 msgstr "Clone Theme"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "View CSS"
 msgstr "View CSS"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Edit CSS"
 msgstr "Edit CSS"
 
-#: mdtoepub/views/dialogs/theme_manager.py
 msgid "Active"
 msgstr "Active"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Save EPUB as..."
 msgstr "Save EPUB as..."
 
-#: mdtoepub/controllers/export_import.py
 msgid "EPUB exported: {path}"
 msgstr "EPUB exported: {path}"
 
-#: mdtoepub/controllers/export_import.py
 msgid "EPUB generated successfully:\n{path}"
 msgstr "EPUB generated successfully:\n{path}"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Error generating EPUB"
 msgstr "Error generating EPUB"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Cannot import into the sample book"
 msgstr "Cannot import into the sample book"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Import Markdown Book"
 msgstr "Import Markdown Book"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Markdown files (*.md)"
 msgstr "Markdown files (*.md)"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Error reading file: {error}"
 msgstr "Error reading file: {error}"
 
-#: mdtoepub/controllers/export_import.py
 msgid "The file is empty"
 msgstr "The file is empty"
 
-#: mdtoepub/controllers/export_import.py
 msgid "About to import {n} components:"
 msgstr "About to import {n} components:"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Total: {n} characters in {m} components."
 msgstr "Total: {n} characters in {m} components."
 
-#: mdtoepub/controllers/export_import.py
 msgid "New components will be added to existing ones."
 msgstr "New components will be added to existing ones."
 
-#: mdtoepub/controllers/export_import.py
 msgid "Confirm Import"
 msgstr "Confirm Import"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Imported {n} components"
 msgstr "Imported {n} components"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Successfully imported {n} components."
 msgstr "Successfully imported {n} components."
 
-#: mdtoepub/controllers/export_import.py
 msgid "Import EPUB Book"
 msgstr "Import EPUB Book"
 
-#: mdtoepub/controllers/export_import.py
 msgid "EPUB files (*.epub)"
 msgstr "EPUB files (*.epub)"
 
-#: mdtoepub/controllers/export_import.py
 msgid "Error reading EPUB: {error}"
 msgstr "Error reading EPUB: {error}"
 
-#: mdtoepub/controllers/export_import.py
 msgid "The EPUB does not contain importable documents."
 msgstr "The EPUB does not contain importable documents."
 
-#: mdtoepub/controllers/export_import.py
 msgid "Images found: {n}"
 msgstr "Images found: {n}"
 
-#: mdtoepub/controllers/export_import.py
 msgid "No EPUB generated. Export first."
 msgstr "No EPUB generated. Export first."
 
-#: mdtoepub/controllers/export_import.py
 msgid "Could not open EPUB: {error}"
 msgstr "Could not open EPUB: {error}"
 
-#: mdtoepub/controllers/export_import.py
 msgid "The file already exists:\n{path}\n\nOverwrite?"
 msgstr "The file already exists:\n{path}\n\nOverwrite?"
 
-#: mdtoepub/utils/dialogs.py
 msgid "Error"
 msgstr "Error"
 
-#: mdtoepub/utils/dialogs.py
 msgid "Information"
 msgstr "Information"
 
-#: mdtoepub/utils/dialogs.py
 msgid "Confirm"
 msgstr "Confirm"
 
@@ -1547,3 +1153,24 @@ msgstr "Auto (system)"
 
 msgid "Global settings saved. Please restart the application for language changes to take full effect."
 msgstr "Global settings saved. Please restart the application for language changes to take full effect."
+
+msgid "Numbering"
+msgstr "Numbering"
+
+msgid "Auto chapter title:"
+msgstr "Auto chapter title:"
+
+msgid "Auto appendix title:"
+msgstr "Auto appendix title:"
+
+msgid "Chapter <n>"
+msgstr "Chapter <n>"
+
+msgid "Chapter <n> + title"
+msgstr "Chapter <n> + title"
+
+msgid "Appendix <n>"
+msgstr "Appendix <n>"
+
+msgid "Appendix <n> + title"
+msgstr "Appendix <n> + title"

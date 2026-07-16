@@ -611,46 +611,6 @@ def show_project_config(app):
 
     row = 0
 
-    label = Gtk.Label(label=_("Auto component title:"))
-    label.set_xalign(1)
-    grid_app.attach(label, 0, row, 1, 1)
-    combo_auto_title = Gtk.ComboBoxText()
-    interactive_widgets.append(combo_auto_title)
-    combo_auto_title.append_text(_("No"))
-    combo_auto_title.append_text(_("Chapter <n>"))
-    combo_auto_title.append_text("<n>")
-    combo_auto_title.append_text(_("Chapter <n> + title"))
-    combo_auto_title.append_text("<n> + " + _("title"))
-    auto_title_values = ["none", "chapter_number", "number", "chapter_number_with_title", "number_with_title"]
-    auto_title_index = 0
-    for i, v in enumerate(auto_title_values):
-        if v == app.project.auto_chapter_title:
-            auto_title_index = i
-            break
-    combo_auto_title.set_active(auto_title_index)
-    grid_app.attach(combo_auto_title, 1, row, 1, 1)
-    row += 1
-
-    label_part = Gtk.Label(label=_("Auto part title:"))
-    label_part.set_xalign(1)
-    grid_app.attach(label_part, 0, row, 1, 1)
-    combo_auto_part = Gtk.ComboBoxText()
-    interactive_widgets.append(combo_auto_part)
-    combo_auto_part.append_text(_("No"))
-    combo_auto_part.append_text(_("Part <n>"))
-    combo_auto_part.append_text("<n>")
-    combo_auto_part.append_text(_("Part <n> + title"))
-    combo_auto_part.append_text("<n> + " + _("title"))
-    auto_part_values = ["none", "part_number", "number", "part_number_with_title", "number_with_title"]
-    auto_part_index = 0
-    for i, v in enumerate(auto_part_values):
-        if v == app.project.auto_part_title:
-            auto_part_index = i
-            break
-    combo_auto_part.set_active(auto_part_index)
-    grid_app.attach(combo_auto_part, 1, row, 1, 1)
-    row += 1
-
     label = Gtk.Label(label=_("Theme:"))
     label.set_xalign(1)
     grid_app.attach(label, 0, row, 1, 1)
@@ -718,15 +678,110 @@ def show_project_config(app):
     grid_app.attach(sep2, 0, row, 2, 1)
     row += 1
 
+    # ── Spell check language ──
+    label_lang = Gtk.Label(label=_("Spell checker:"))
+    label_lang.set_xalign(1)
+    grid_app.attach(label_lang, 0, row, 1, 1)
+
+    combo_lang = Gtk.ComboBoxText()
+    interactive_widgets.append(combo_lang)
+    langs = app.spell_service.get_language_list()
+    lang_index = 0
+    for i, l in enumerate(langs):
+        combo_lang.append_text(l)
+        if l == app.project.spell_lang:
+            lang_index = i
+    combo_lang.set_active(lang_index)
+    combo_lang.set_hexpand(True)
+    grid_app.attach(combo_lang, 1, row, 1, 1)
+    row += 1
+
+    # ── Tab 3: Numbering ──
+    grid_num = Gtk.Grid()
+    grid_num.set_row_spacing(8)
+    grid_num.set_column_spacing(12)
+    grid_num.set_column_homogeneous(False)
+    grid_num.set_margin_top(12)
+    grid_num.set_margin_bottom(12)
+    grid_num.set_margin_start(12)
+    grid_num.set_margin_end(12)
+    notebook.append_page(grid_num, Gtk.Label(label=_("Numbering")))
+
+    num_row = 0
+
+    label = Gtk.Label(label=_("Auto chapter title:"))
+    label.set_xalign(1)
+    grid_num.attach(label, 0, num_row, 1, 1)
+    combo_auto_title = Gtk.ComboBoxText()
+    interactive_widgets.append(combo_auto_title)
+    combo_auto_title.append_text(_("No"))
+    combo_auto_title.append_text(_("Chapter <n>"))
+    combo_auto_title.append_text("<n>")
+    combo_auto_title.append_text(_("Chapter <n> + title"))
+    combo_auto_title.append_text("<n> + " + _("title"))
+    auto_title_values = ["none", "chapter_number", "number", "chapter_number_with_title", "number_with_title"]
+    auto_title_index = 0
+    for i, v in enumerate(auto_title_values):
+        if v == app.project.auto_chapter_title:
+            auto_title_index = i
+            break
+    combo_auto_title.set_active(auto_title_index)
+    grid_num.attach(combo_auto_title, 1, num_row, 1, 1)
+    num_row += 1
+
+    label_appendix = Gtk.Label(label=_("Auto appendix title:"))
+    label_appendix.set_xalign(1)
+    grid_num.attach(label_appendix, 0, num_row, 1, 1)
+    combo_auto_appendix = Gtk.ComboBoxText()
+    interactive_widgets.append(combo_auto_appendix)
+    combo_auto_appendix.append_text(_("No"))
+    combo_auto_appendix.append_text(_("Appendix <n>"))
+    combo_auto_appendix.append_text("<n>")
+    combo_auto_appendix.append_text(_("Appendix <n> + title"))
+    combo_auto_appendix.append_text("<n> + " + _("title"))
+    auto_appendix_values = ["none", "chapter_number", "number", "chapter_number_with_title", "number_with_title"]
+    auto_appendix_index = 0
+    for i, v in enumerate(auto_appendix_values):
+        if v == app.project.auto_appendix_title:
+            auto_appendix_index = i
+            break
+    combo_auto_appendix.set_active(auto_appendix_index)
+    grid_num.attach(combo_auto_appendix, 1, num_row, 1, 1)
+    num_row += 1
+
+    label_part = Gtk.Label(label=_("Auto part title:"))
+    label_part.set_xalign(1)
+    grid_num.attach(label_part, 0, num_row, 1, 1)
+    combo_auto_part = Gtk.ComboBoxText()
+    interactive_widgets.append(combo_auto_part)
+    combo_auto_part.append_text(_("No"))
+    combo_auto_part.append_text(_("Part <n>"))
+    combo_auto_part.append_text("<n>")
+    combo_auto_part.append_text(_("Part <n> + title"))
+    combo_auto_part.append_text("<n> + " + _("title"))
+    auto_part_values = ["none", "part_number", "number", "part_number_with_title", "number_with_title"]
+    auto_part_index = 0
+    for i, v in enumerate(auto_part_values):
+        if v == app.project.auto_part_title:
+            auto_part_index = i
+            break
+    combo_auto_part.set_active(auto_part_index)
+    grid_num.attach(combo_auto_part, 1, num_row, 1, 1)
+    num_row += 1
+
+    sep_num1 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+    grid_num.attach(sep_num1, 0, num_row, 2, 1)
+    num_row += 1
+
     # ── Figure numbering ──
     label_fig = Gtk.Label(label=_("Figure numbering:"))
     label_fig.set_xalign(1)
     label_fig.set_valign(Gtk.Align.START)
-    grid_app.attach(label_fig, 0, row, 1, 1)
+    grid_num.attach(label_fig, 0, num_row, 1, 1)
 
     fig_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    grid_app.attach(fig_vbox, 1, row, 1, 1)
-    row += 1
+    grid_num.attach(fig_vbox, 1, num_row, 1, 1)
+    num_row += 1
 
     check_figure_numbering = Gtk.CheckButton(label=_("Number figures automatically"))
     interactive_widgets.append(check_figure_numbering)
@@ -756,19 +811,19 @@ def show_project_config(app):
     check_figure_numbering.connect("toggled", _on_fig_numbering_toggle)
     _on_fig_numbering_toggle(check_figure_numbering)
 
-    sep3 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-    grid_app.attach(sep3, 0, row, 2, 1)
-    row += 1
+    sep_num2 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+    grid_num.attach(sep_num2, 0, num_row, 2, 1)
+    num_row += 1
 
     # ── Table numbering ──
     label_tab = Gtk.Label(label=_("Table numbering:"))
     label_tab.set_xalign(1)
     label_tab.set_valign(Gtk.Align.START)
-    grid_app.attach(label_tab, 0, row, 1, 1)
+    grid_num.attach(label_tab, 0, num_row, 1, 1)
 
     tab_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    grid_app.attach(tab_vbox, 1, row, 1, 1)
-    row += 1
+    grid_num.attach(tab_vbox, 1, num_row, 1, 1)
+    num_row += 1
 
     check_table_numbering = Gtk.CheckButton(label=_("Number tables automatically"))
     interactive_widgets.append(check_table_numbering)
@@ -798,29 +853,7 @@ def show_project_config(app):
     check_table_numbering.connect("toggled", _on_tab_numbering_toggle)
     _on_tab_numbering_toggle(check_table_numbering)
 
-    sep4 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-    grid_app.attach(sep4, 0, row, 2, 1)
-    row += 1
-
-    # ── Spell check language ──
-    label_lang = Gtk.Label(label=_("Spell checker:"))
-    label_lang.set_xalign(1)
-    grid_app.attach(label_lang, 0, row, 1, 1)
-
-    combo_lang = Gtk.ComboBoxText()
-    interactive_widgets.append(combo_lang)
-    langs = app.spell_service.get_language_list()
-    lang_index = 0
-    for i, l in enumerate(langs):
-        combo_lang.append_text(l)
-        if l == app.project.spell_lang:
-            lang_index = i
-    combo_lang.set_active(lang_index)
-    combo_lang.set_hexpand(True)
-    grid_app.attach(combo_lang, 1, row, 1, 1)
-    row += 1
-
-    # ── Tab 3: Labels ──
+    # ── Tab 4: Labels ──
     labels_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
     labels_page.set_margin_top(12)
     labels_page.set_margin_bottom(12)
@@ -979,6 +1012,9 @@ def show_project_config(app):
             auto_idx = combo_auto_title.get_active()
             if 0 <= auto_idx < len(auto_title_values):
                 app.project.auto_chapter_title = auto_title_values[auto_idx]
+            auto_appendix_idx = combo_auto_appendix.get_active()
+            if 0 <= auto_appendix_idx < len(auto_appendix_values):
+                app.project.auto_appendix_title = auto_appendix_values[auto_appendix_idx]
             auto_part_idx = combo_auto_part.get_active()
             if 0 <= auto_part_idx < len(auto_part_values):
                 app.project.auto_part_title = auto_part_values[auto_part_idx]
