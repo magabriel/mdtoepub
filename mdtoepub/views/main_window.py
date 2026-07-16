@@ -24,6 +24,8 @@ class MainWindow:
         right_box.set_vexpand(True)
         paned.pack2(right_box, True, True)
 
+        self._setup_statusbar(container)
+
         return (left_box, right_box)
 
     def _setup_menubar(self, container):
