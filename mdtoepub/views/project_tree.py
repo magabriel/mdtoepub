@@ -135,8 +135,8 @@ class ProjectTree:
                 buffer = self.app.text_view.get_buffer()
                 buffer.set_text(content)
                 self.app._update_status(f"Editando: {obj.get_display_name(self.app._resolve_labels())}")
-                self.app._update_styles_panel(obj.type)
-                self.app._update_preview()
+                self.app._styles_panel.update(obj.type)
+                self.app.editor_view._update_preview()
         finally:
             self.app._in_cursor_change = False
 
@@ -220,10 +220,10 @@ class ProjectTree:
             styles_menu = Gtk.Menu()
             type_label = self.app._resolve_labels().get(obj.type.value, COMPONENT_TYPE_LABELS.get(obj.type, obj.type.value))
             s1 = Gtk.MenuItem(label=f"Del tipo «{type_label}»")
-            s1.connect("activate", self.app._on_edit_type_css, obj)
+            s1.connect("activate", self.app._styles_panel._on_edit_type_css, obj)
             styles_menu.append(s1)
             s2 = Gtk.MenuItem(label=f"Del componente «{obj.get_display_name(self.app._resolve_labels())}»")
-            s2.connect("activate", self.app._on_edit_component_css, obj)
+            s2.connect("activate", self.app._styles_panel._on_edit_component_css, obj)
             styles_menu.append(s2)
             item_styles.set_submenu(styles_menu)
             menu.append(item_styles)
@@ -254,7 +254,7 @@ class ProjectTree:
         self.app._styles_current_component = None
         self.app._styles_current_comp_type = None
         self.app.text_view.get_buffer().set_text("")
-        self.app.webview.load_html(self.app.default_html, self.app._get_base_uri())
+        self.app.webview.load_html(self.app.default_html, self.app.editor_view._get_base_uri())
         self._set_read_only_mode(False)
         self.app._update_status("Proyecto cerrado")
 
@@ -548,7 +548,7 @@ class ProjectTree:
             if response == Gtk.ResponseType.YES:
                 if self.app.current_component and self.app.current_component.id == component.id:
                     self.app.text_view.get_buffer().set_text("")
-                    self.app.webview.load_html(self.app.default_html, self.app._get_base_uri())
+                    self.app.webview.load_html(self.app.default_html, self.app.editor_view._get_base_uri())
                     self.app.current_component = None
                 self.app.project.remove_component(component.id)
                 FileService.save_project(self.app.project)
@@ -585,7 +585,7 @@ class ProjectTree:
                 ids = {c.id for c in components}
                 if self.app.current_component and self.app.current_component.id in ids:
                     self.app.text_view.get_buffer().set_text("")
-                    self.app.webview.load_html(self.app.default_html, self.app._get_base_uri())
+                    self.app.webview.load_html(self.app.default_html, self.app.editor_view._get_base_uri())
                     self.app.current_component = None
                 for comp in components:
                     self.app.project.remove_component(comp.id)
@@ -604,7 +604,7 @@ class ProjectTree:
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
         self.app._update_status(f"Tipo cambiado a: {self.app._resolve_labels().get(new_type.value, COMPONENT_TYPE_LABELS[new_type])}")
-        self.app._update_preview()
+        self.app.editor_view._update_preview()
 
     def _on_menu_rename_component(self, widget):
         if not self.app.current_component:

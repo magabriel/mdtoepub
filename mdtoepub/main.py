@@ -132,122 +132,6 @@ class MDToEPUBApp(Gtk.Application):
         self.window.show_all()
         self._load_recent_projects()
 
-    # ─── Delegation: tree & component actions ─────────────────────────
-
-    def _refresh_project_tree(self):
-        self.project_tree_view._refresh_project_tree()
-
-    def _on_tree_cursor_changed(self, tree):
-        self.project_tree_view._on_tree_cursor_changed(tree)
-
-    def _on_tree_button_press(self, tree, event):
-        return self.project_tree_view._on_tree_button_press(tree, event)
-
-    def _on_add_component(self, button, part=None):
-        self.project_tree_view._on_add_component(button, part)
-
-    def _on_add_part(self, button):
-        self.project_tree_view._on_add_part(button)
-
-    def _on_menu_rename_component(self, widget):
-        self.project_tree_view._on_menu_rename_component(widget)
-
-    def _on_menu_delete_component(self, widget):
-        self.project_tree_view._on_menu_delete_component(widget)
-
-    def _on_rename_component(self, menu_item, component, iter_):
-        self.project_tree_view._on_rename_component(menu_item, component, iter_)
-
-    def _on_delete_component(self, menu_item, component):
-        self.project_tree_view._on_delete_component(menu_item, component)
-
-    def _on_delete_multiple_components(self, menu_item, components):
-        self.project_tree_view._on_delete_multiple_components(menu_item, components)
-
-    def _on_rename_part(self, menu_item, part, iter_):
-        self.project_tree_view._on_rename_part(menu_item, part, iter_)
-
-    def _on_delete_part(self, menu_item, part):
-        self.project_tree_view._on_delete_part(menu_item, part)
-
-    def _on_duplicate_component(self, menu_item, component):
-        self.project_tree_view._on_duplicate_component(menu_item, component)
-
-    def _on_move_to_part(self, menu_item, component, part):
-        self.project_tree_view._on_move_to_part(menu_item, component, part)
-
-    def _on_detach_from_part(self, menu_item, component):
-        self.project_tree_view._on_detach_from_part(menu_item, component)
-
-    def _on_change_component_type(self, menu_item, component, new_type):
-        self.project_tree_view._on_change_component_type(menu_item, component, new_type)
-
-    def _get_selected_components(self, selection):
-        return self.project_tree_view._get_selected_components(selection)
-
-    def _on_drag_begin(self, treeview, context):
-        self.project_tree_view._on_drag_begin(treeview, context)
-
-    def _on_drag_motion(self, treeview, context, x, y, time):
-        self.project_tree_view._on_drag_motion(treeview, context, x, y, time)
-
-    def _on_drag_data_get(self, treeview, drag_context, data, info, time_):
-        self.project_tree_view._on_drag_data_get(treeview, drag_context, data, info, time_)
-
-    def _on_drag_data_received(self, treeview, context, x, y, selection_data, info, time_):
-        self.project_tree_view._on_drag_data_received(treeview, context, x, y, selection_data, info, time_)
-
-    def _on_close_project(self, widget):
-        self.project_tree_view._on_close_project(widget)
-
-    def _update_window_title(self):
-        self.project_tree_view._update_window_title()
-
-    def _set_read_only_mode(self, enabled: bool):
-        self.project_tree_view._set_read_only_mode(enabled)
-
-    # ─── Delegation: editor & preview ─────────────────────────────────
-
-    def _update_preview(self):
-        self.editor_view._update_preview()
-
-    def _focus_editor(self):
-        self.editor_view._focus_editor()
-
-    def _focus_preview(self):
-        self.editor_view._focus_preview()
-
-    def _get_base_uri(self) -> str:
-        return self.editor_view._get_base_uri()
-
-    def _get_editor_text(self) -> str:
-        return self.editor_view._get_editor_text()
-
-    def _update_spell_lang(self):
-        self.editor_view._update_spell_lang()
-
-    # ─── Delegation: styles panel ─────────────────────────────────────
-
-    def _update_styles_panel(self, component_type=None):
-        self._styles_panel.update(component_type)
-
-    def _load_theme_css(self, component_type=None):
-        return self._styles_panel._load_theme_css(component_type)
-
-    def _on_edit_book_css(self, widget):
-        self._styles_panel._on_edit_book_css(widget)
-
-    def _on_edit_type_css(self, widget, component):
-        self._styles_panel._on_edit_type_css(widget, component)
-
-    def _on_edit_component_css(self, widget, component):
-        self._styles_panel._on_edit_component_css(widget, component)
-
-    def _on_manage_type_css(self, widget):
-        self._styles_panel._on_manage_type_css(widget)
-
-    # ─── Delegation: dialogs ──────────────────────────────────────────
-
     def _on_project_config(self, button):
         from .views.dialogs.project_config import show_project_config
         show_project_config(self)
@@ -256,26 +140,12 @@ class MDToEPUBApp(Gtk.Application):
         from .views.dialogs.theme_manager import show_theme_manager
         show_theme_manager(self)
 
-    # ─── Delegation: export / import ──────────────────────────────────
-
-    def _on_export_epub(self, button):
-        self.export_import_ctrl.export_epub(button)
-
-    def _on_import_book(self, button):
-        self.export_import_ctrl.import_book(button)
-
-    def _on_import_epub(self, button):
-        self.export_import_ctrl.import_epub(button)
-
-    def _on_open_epub(self, button):
-        self.export_import_ctrl.open_epub(button)
-
     # ─── Core: project lifecycle ──────────────────────────────────────
 
     def _save_current_component(self):
         if self._read_only:
             return False
-        text = self._get_editor_text()
+        text = self.editor_view._get_editor_text()
         frontmatter, markdown_content = YamlService.parse_frontmatter(text)
 
         component = self.current_part or self.current_component
@@ -399,11 +269,11 @@ class MDToEPUBApp(Gtk.Application):
                 FileService.save_project(project_path)
 
                 self.project = project_path
-                self._update_spell_lang()
+                self.editor_view._update_spell_lang()
                 self.current_component = None
-                self._set_read_only_mode(False)
+                self.project_tree_view._set_read_only_mode(False)
                 self._add_recent_project(project_path.path)
-                self._refresh_project_tree()
+                self.project_tree_view._refresh_project_tree()
                 self._update_status(f"Proyecto creado: {name}")
 
             d.destroy()
@@ -429,11 +299,11 @@ class MDToEPUBApp(Gtk.Application):
                     project = FileService.load_project(path)
                     if project:
                         self.project = project
-                        self._update_spell_lang()
+                        self.editor_view._update_spell_lang()
                         self.current_component = None
-                        self._set_read_only_mode(False)
+                        self.project_tree_view._set_read_only_mode(False)
                         self._add_recent_project(project.path)
-                        self._refresh_project_tree()
+                        self.project_tree_view._refresh_project_tree()
                         self.text_view.get_buffer().set_text("")
                         self._update_status(f"Proyecto abierto: {project.name}")
                     else:
@@ -508,7 +378,7 @@ class MDToEPUBApp(Gtk.Application):
                 FileService.save_project(new_project)
                 self.project = new_project
                 self._add_recent_project(new_project.path)
-                self._refresh_project_tree()
+                self.project_tree_view._refresh_project_tree()
                 self._update_status(f"Proyecto guardado en: {new_project.path}")
         dialog.destroy()
 
@@ -524,10 +394,10 @@ class MDToEPUBApp(Gtk.Application):
         if project:
             self.project = project
             self.project.path = sample_dir
-            self._update_spell_lang()
+            self.editor_view._update_spell_lang()
             self.current_component = None
-            self._set_read_only_mode(True)
-            self._refresh_project_tree()
+            self.project_tree_view._set_read_only_mode(True)
+            self.project_tree_view._refresh_project_tree()
             self.text_view.get_buffer().set_text("")
             self._update_status(f"Libro de ejemplo cargado: {project.name} [SOLO LECTURA]")
         else:
@@ -745,10 +615,10 @@ class MDToEPUBApp(Gtk.Application):
         project = FileService.load_project(path)
         if project:
             self.project = project
-            self._update_spell_lang()
+            self.editor_view._update_spell_lang()
             self.current_component = None
-            self._set_read_only_mode(False)
-            self._refresh_project_tree()
+            self.project_tree_view._set_read_only_mode(False)
+            self.project_tree_view._refresh_project_tree()
             self.text_view.get_buffer().set_text("")
             self._update_status(f"Proyecto abierto: {project.name}")
             self._add_recent_project(path)

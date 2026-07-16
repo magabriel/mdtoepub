@@ -140,7 +140,7 @@ class ExportImportController:
                 count = FileService.import_book(self.app.project.path, self.app.project, content, file_path)
                 self.app._update_status(f"Importados {count} componentes")
                 self.app.project_tree_view._refresh_project_tree()
-                self.app._update_preview()
+                self.app.editor_view._update_preview()
                 self.app._show_info(f"Se importaron {count} componentes correctamente.")
             else:
                 confirm.destroy()
@@ -211,7 +211,7 @@ class ExportImportController:
                 count = FileService.import_epub(self.app.project.path, self.app.project, file_path)
                 self.app._update_status(f"Importados {count} componentes")
                 self.app.project_tree_view._refresh_project_tree()
-                self.app._update_preview()
+                self.app.editor_view._update_preview()
                 self.app._show_info(f"Se importaron {count} componentes correctamente.")
             else:
                 confirm.destroy()

@@ -44,7 +44,7 @@ def show_theme_manager(app):
             FileService.save_project(app.project)
             app._style_doc_svc = None
             _refresh_theme_store(store)
-            app._update_preview()
+            app.editor_view._update_preview()
             app._styles_panel.update(
                 app.current_component.type if app.current_component else None
             )
@@ -324,7 +324,7 @@ def show_theme_manager(app):
                     f.write(buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True))
                 app._update_status(f"CSS guardado: {fname}")
                 if app.project and app.project.theme_id == theme_id:
-                    app._update_preview()
+                    app.editor_view._update_preview()
                     app._styles_panel.update()
             d.destroy()
 

@@ -403,7 +403,7 @@ class StylesPanel:
         else:
             self.app.project.type_css_overrides.pop(type_key, None)
         FileService.save_project(self.app.project)
-        self.app._update_preview()
+        self.app.editor_view._update_preview()
         self.update(ct)
         self.app._update_status(f"Estilos del tipo '{label}' actualizados")
 
@@ -417,7 +417,7 @@ class StylesPanel:
             return
         del self.app.project.type_css_overrides[type_key]
         FileService.save_project(self.app.project)
-        self.app._update_preview()
+        self.app.editor_view._update_preview()
         self.update(ct)
         self.app._update_status(f"Estilos del tipo '{label}' restablecidos al tema")
 
@@ -494,7 +494,7 @@ class StylesPanel:
                 with open(fpath, "w") as f:
                     f.write(new_text)
                 self.update(self._styles_current_comp_type)
-                self.app._update_preview()
+                self.app.editor_view._update_preview()
             d.destroy()
 
         editor_dialog.connect("response", on_editor_response)
@@ -602,7 +602,7 @@ class StylesPanel:
             return
         self.app.project.custom_css = css
         FileService.save_project(self.app.project)
-        self.app._update_preview()
+        self.app.editor_view._update_preview()
         self.update(
             self.app.current_component.type if self.app.current_component else None
         )
@@ -622,7 +622,7 @@ class StylesPanel:
         else:
             self.app.project.type_css_overrides.pop(type_key, None)
         FileService.save_project(self.app.project)
-        self.app._update_preview()
+        self.app.editor_view._update_preview()
         self.update(component.type)
         self.app._update_status(f"Estilos del tipo '{label}' actualizados")
 
@@ -639,7 +639,7 @@ class StylesPanel:
             return
         component.custom_css = css
         FileService.save_project(self.app.project)
-        self.app._update_preview()
+        self.app.editor_view._update_preview()
         self.update(component.type)
         self.app._update_status(f"Estilos del componente '{component.get_display_name(self.app._resolve_labels())}' actualizados")
 
@@ -710,7 +710,7 @@ class StylesPanel:
             else:
                 self.app.project.type_css_overrides.pop(type_key, None)
             FileService.save_project(self.app.project)
-            self.app._update_preview()
+            self.app.editor_view._update_preview()
             if self.app.current_component:
                 self.update(self.app.current_component.type)
             self.app._update_status(f"Estilos del tipo '{label}' actualizados")
@@ -728,7 +728,7 @@ class StylesPanel:
                 return
             del self.app.project.type_css_overrides[type_key]
             FileService.save_project(self.app.project)
-            self.app._update_preview()
+            self.app.editor_view._update_preview()
             if self.app.current_component:
                 self.update(self.app.current_component.type)
             self.app._update_status(f"Estilos del tipo '{label}' restablecidos al tema")
