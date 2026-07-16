@@ -17,6 +17,7 @@ msgstr ""
 
 #: mdtoepub/views/main_window.py
 
+
 msgid "File"
 msgstr "Archivo"
 
@@ -887,9 +888,6 @@ msgstr "Numeración de figuras:"
 msgid "Number figures automatically"
 msgstr "Numerar figuras automáticamente"
 
-msgid "Style:"
-msgstr "Estilo:"
-
 msgid "Arabic numbers"
 msgstr "Números arábigos"
 
@@ -1174,3 +1172,6 @@ msgstr "Apéndice <n>"
 
 msgid "Appendix <n> + title"
 msgstr "Apéndice <n> + título"
+
+msgid "Style:"
+msgstr "Estilo:"
