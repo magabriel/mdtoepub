@@ -311,7 +311,7 @@ def _build_image_manager_widget(app, parent_window):
                 if content:
                     buf = app.text_view.get_buffer()
                     buf.set_text(content)
-                    app._update_preview()
+                    app.editor_view._update_preview()
 
             populate_store()
             app._update_status(f"Imagen renombrada a '{new_name}' ({updated} componente(s) actualizados)")
@@ -359,7 +359,7 @@ def _build_image_manager_widget(app, parent_window):
             if content:
                 buf = app.text_view.get_buffer()
                 buf.set_text(content)
-                app._update_preview()
+                app.editor_view._update_preview()
 
         populate_store()
         update_preview()
@@ -1009,15 +1009,15 @@ def show_project_config(app):
             FileService.save_project(app.project)
             global_cfg["labels"] = global_labels
             YamlService.save(global_cfg, config_file)
-            app._update_spell_lang()
-            app._update_window_title()
-            app._refresh_project_tree()
+            app.editor_view._update_spell_lang()
+            app.project_tree_view._update_window_title()
+            app.project_tree_view._refresh_project_tree()
             if app.current_component:
                 app._styles_panel.update(app.current_component.type)
             elif app.current_part:
                 app._styles_panel.update(app.current_part.type)
             app._update_status("Configuracion del proyecto guardada")
-            app._update_preview()
+            app.editor_view._update_preview()
         d.destroy()
 
     dialog.connect("response", on_config_response)

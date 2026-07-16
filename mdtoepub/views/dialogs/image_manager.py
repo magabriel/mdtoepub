@@ -115,8 +115,8 @@ def import_image(app, parent_window=None, on_imported=None):
                 result = ImageService.copy_to_project(src_path, images_dir, category)
                 if result:
                     app._update_status(f"Imagen importada: {os.path.basename(src_path)}")
-                    app._refresh_project_tree()
-                    app._update_preview()
+                    app.project_tree_view._refresh_project_tree()
+                    app.editor_view._update_preview()
                     if on_imported:
                         on_imported()
                 else:
@@ -244,8 +244,8 @@ def build_image_manager_widget(app, parent_dialog):
             ImageService.delete_image(fpath)
         populate_store()
         update_preview()
-        app._refresh_project_tree()
-        app._update_preview()
+        app.project_tree_view._refresh_project_tree()
+        app.editor_view._update_preview()
 
     btn_delete.connect("clicked", on_delete)
 
@@ -312,10 +312,10 @@ def build_image_manager_widget(app, parent_dialog):
                 if content:
                     buf = app.text_view.get_buffer()
                     buf.set_text(content)
-                    app._update_preview()
+                    app.editor_view._update_preview()
 
             populate_store()
-            app._refresh_project_tree()
+            app.project_tree_view._refresh_project_tree()
             app._update_status(f"Imagen renombrada a '{new_name}' ({updated} componente(s) actualizados)")
         else:
             rename_dialog.destroy()
@@ -361,11 +361,11 @@ def build_image_manager_widget(app, parent_dialog):
             if content:
                 buf = app.text_view.get_buffer()
                 buf.set_text(content)
-                app._update_preview()
+                app.editor_view._update_preview()
 
         populate_store()
         update_preview()
-        app._refresh_project_tree()
+        app.project_tree_view._refresh_project_tree()
         app._update_status(f"Imagen movida a '{new_cat_label}' ({updated} componente(s) actualizados)")
 
     btn_change_type.connect("clicked", on_change_type)

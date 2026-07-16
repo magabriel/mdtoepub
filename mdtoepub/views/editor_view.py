@@ -534,7 +534,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         return "file:///"
 
     def _build_preview_html(self, html_content: str, component_type=None, component=None) -> str:
-        css = self.app._load_theme_css(component_type)
+        css = self.app._styles_panel._load_theme_css(component_type)
         if self.app.project and self.app.project.custom_css:
             css += "\n" + self.app.project.custom_css
         if (self.app.project and component_type is not None
