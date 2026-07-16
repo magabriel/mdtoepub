@@ -2,28 +2,32 @@
 
 ## Overview
 
-MDToEPUB is a GTK3 desktop application with a modular architecture. The UI is split across view classes in `views/`, dialog functions in `views/dialogs/`, and controllers in `controllers/`. The `MDToEPUBApp` class in `main.py` (~500 lines) serves as a thin coordinator that wires everything together, holds shared state, and delegates to subordinate modules.
+MDToEPUB is a GTK3 desktop application with a modular architecture. The UI is split across view classes in `views/`, dialog functions in `views/dialogs/`, and controllers in `controllers/`. The `MDToEPUBApp` class in `main.py` (~100 lines) serves as a thin coordinator that wires everything together, holds shared state, and delegates to subordinate modules.
 
 ```
 ┌──────────────────────────────────────────────────────────┐
 │                       main.py                             │
 │  MDToEPUBApp (Gtk.Application) — thin coordinator         │
-│    ├── Project lifecycle (new/open/save/close)           │
-│    ├── Global config & recent projects                   │
-│    └── Delegation to views/controllers                   │
+│    ├── Shared state (project, current_component, ...)    │
+│    ├── do_activate: wiring and build order                │
+│    └── Shared utils (_update_status, _get_config_path)   │
 ├──────────────────────────────────────────────────────────┤
 │                       views/                              │
-│  main_window.py   EditorView + preview                    │
+│  main_window.py   Menubar, toolbar, statusbar, paned      │
 │  editor_view.py   GtkSource editor + WebKit2 preview      │
 │  styles_panel.py  CSS cascade hierarchy panel             │
 │  project_tree.py  Tree navigator + component CRUD         │
 │  dialogs/                                                │
-│    project_config.py  Project settings (book/apariencia)  │
-│    theme_manager.py   Theme CRUD (create/clone/delete)   │
-│    image_manager.py   Image import/categorize widgets     │
+│    project_config.py  Project settings dialog             │
+│    theme_manager.py   Theme lifecycle manager              │
+│    image_manager.py   Image import & categorization       │
 ├──────────────────────────────────────────────────────────┤
 │                    controllers/                            │
-│  export_import.py  EPUB export, Markdown/EPUB import      │
+│  project_manager.py  Component save/load, labels          │
+│  export_import.py    EPUB export, Markdown/EPUB import    │
+├──────────────────────────────────────────────────────────┤
+│                       utils/                               │
+│  dialogs.py   show_error / show_info / confirm helpers    │
 ├──────────────────────────────────────────────────────────┤
 │                      services/                             │
 │  MarkdownService   EpubService   FileService              │
@@ -39,18 +43,21 @@ MDToEPUB is a GTK3 desktop application with a modular architecture. The UI is sp
 
 ```
 mdtoepub/
-├── main.py                      # Entry point, thin app coordinator
+├── main.py                          # Entry point, thin app coordinator
+├── utils/
+│   └── dialogs.py                   # show_error / show_info / confirm
 ├── views/
-│   ├── main_window.py           # Menubar, toolbar, statusbar, paned layout
-│   ├── editor_view.py           # GtkSource editor + WebKit2 preview
-│   ├── styles_panel.py          # CSS 4-level cascade panel
-│   ├── project_tree.py          # Project navigator tree + component CRUD
+│   ├── main_window.py               # Menubar, toolbar, statusbar, paned layout
+│   ├── editor_view.py               # GtkSource editor + WebKit2 preview
+│   ├── styles_panel.py              # CSS 4-level cascade panel
+│   ├── project_tree.py              # Project navigator tree + component CRUD
 │   └── dialogs/
-│       ├── project_config.py    # Project configuration dialog
-│       ├── theme_manager.py     # Theme lifecycle manager
-│       └── image_manager.py     # Image import & categorization
+│       ├── project_config.py        # Project configuration dialog
+│       ├── theme_manager.py         # Theme lifecycle manager
+│       └── image_manager.py         # Image import & categorization
 ├── controllers/
-│   └── export_import.py         # EPUB export/import operations
+│   ├── project_manager.py           # Component save/load, label resolution
+│   └── export_import.py             # EPUB export/import operations
 ├── models/
 │   ├── component.py             # Component dataclass, ComponentType enum
 │   ├── project.py               # Project dataclass (aggregate root)
@@ -470,6 +477,150 @@ EpubService.generate()
 - **CSS classes**: Document utility classes with `/* @doc */` comments for automatic help panel inclusion.
 - **Component types**: Extend `ComponentType` enum and add corresponding CSS and labels.
 - **Markdown extensions**: Add extensions to `MarkdownService.extensions`.
+
+## Coding conventions
+
+These rules are derived from the refactoring of `main.py` from a 4905-line monolith into a modular architecture.
+All new code must follow them.
+
+### 1. Thin coordinator — `main.py`
+
+`MDToEPUBApp` must be minimal. Only these are allowed:
+
+| What | Example |
+|------|---------|
+| `__init__` | Initialize shared state and services |
+| `do_activate` | Create all objects, wire them, call `build()` |
+| Shared state (`self.project`, `self.current_component`, ...) | No business logic, just data holders |
+| Shared utilities (`_update_status`, `_get_config_path`) | One-liners that don't fit elsewhere |
+
+Never add dialog creation, widget building, or business logic to `main.py`.
+
+### 2. View classes — `views/`
+
+Each GTK widget tree goes in its own file. Conventions:
+- Constructor takes `app` and stores as `self.app`
+- Public method `build(parent)` or `build()` creates widgets, returns the root widget
+- Widget references needed by other modules are stored on `self.app` (e.g. `self.app.text_view`)
+- Signals connect to local methods, which access shared state via `self.app.xxx`
+
+```python
+class EditorView:
+    def __init__(self, app):
+        self.app = app
+
+    def build(self, right_box):
+        self.app.text_view = GtkSource.View(...)
+        self.app.text_view.connect("populate-popup", self._on_popup)
+        ...
+
+    def _on_popup(self, textview, popup):
+        if self.app.project:  # shared state
+            ...
+```
+
+### 3. Controllers — `controllers/`
+
+Business logic shared across views. Conventions:
+- Constructor takes `app` and stores as `self.app`
+- Public methods named as actions: `export_epub()`, `save_component_content()`
+- Access shared state via `self.app.xxx`
+- Never create GTK widgets directly — delegate to views or dialogs
+
+```python
+class ExportImportController:
+    def __init__(self, app):
+        self.app = app
+
+    def export_epub(self, button):
+        if not self.app.project:
+            return
+        ...
+```
+
+### 4. Dialog functions — `views/dialogs/`
+
+Standalone functions, not classes. Conventions:
+- Take `app` as first parameter
+- Create and show a modal `Gtk.Dialog`
+- Are self-contained (all widget creation inline)
+- Call `show_info`, `show_error`, `confirm` from `utils/dialogs.py`
+- Return nothing (side-effect only) or return a result
+
+```python
+def show_theme_manager(app):
+    dialog = Gtk.Dialog(transient_for=app.window, ...)
+    ...
+    dialog.show_all()
+```
+
+### 5. Utilities — `utils/`
+
+Pure functions with no `app` dependency. Conventions:
+- Module-level functions, never classes
+- Take explicit parameters (e.g. `parent_window`, not `app`)
+- Imported with `from ..utils.dialogs import show_error`
+
+```python
+def show_error(parent, message):
+    dialog = Gtk.MessageDialog(transient_for=parent, ...)
+    ...
+```
+
+### 6. No delegation wrappers
+
+Never add wrapper methods on `MDToEPUBApp` that just forward to a delegate:
+
+```python
+# ❌ Wrong — wrapper on app
+def _update_preview(self):
+    self.editor_view._update_preview()
+
+# ✅ Right — caller uses delegate directly
+self.app.editor_view._update_preview()
+```
+
+Callers must reference the delegate object directly. The only exception is methods called from GTK signal connections in `MainWindow._setup_menubar()`, which may use `self._on_xxx` directly on MainWindow.
+
+### 7. GTK signal connections
+
+Menu items and toolbar buttons connect to methods on the owning class, not on `app`:
+
+```python
+# ❌ Wrong
+item.connect("activate", self.app._on_new_project)
+
+# ✅ Right
+item.connect("activate", self._on_new_project)
+```
+
+If the handler belongs to another class (e.g. `project_tree_view`), connect directly:
+
+```python
+item.connect("activate", self.app.project_tree_view._on_add_component)
+```
+
+### 8. Object creation order in `do_activate`
+
+All delegate objects must be instantiated BEFORE `MainWindow.build()`, because the menubar and toolbar reference them:
+
+```python
+# 1. Create all delegates first
+self.project_manager = ProjectManager(self)
+self.project_tree_view = ProjectTree(self)
+self._styles_panel = StylesPanel(self)
+self.editor_view = EditorView(self)
+self.export_import_ctrl = ExportImportController(self)
+
+# 2. Build UI (menubar references delegates via self.app.xxx)
+self.main_window = MainWindow(self)
+left_box, right_box = self.main_window.build(main_box)
+
+# 3. Fill panes
+self._styles_scrolled = self._styles_panel.build()
+self.editor_view.build(right_box)
+self.project_tree_view.build(left_box)
+```
 
 ## Testing
 
