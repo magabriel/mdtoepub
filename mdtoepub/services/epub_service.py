@@ -393,7 +393,7 @@ class EpubService:
                         href = part_ch.file_name if part_ch else ""
                         current_part_id = part.id
                         current_section = epub.Section(
-                            part.title or self._part_label(), href
+                            (part_ch.title if part_ch else part.title) or self._part_label(), href
                         )
                         current_children = []
                     # Chapter is at depth 2 (part is depth 1)
@@ -511,6 +511,11 @@ class EpubService:
                     from .markdown_service import MarkdownService as _MS
                     word = _MS._to_word(part_number, self.project.language)
                     number_part = f"{word} {label.lower()}"
+                elif mode == "word_part_with_title":
+                    from .markdown_service import MarkdownService as _MS
+                    word = _MS._to_word(part_number, self.project.language)
+                    number_part = f"{word} {label.lower()}"
+                    title_part = self._component_label(component)
 
         if show_title and not number_part and not title_part:
             title_part = self._component_label(component)
@@ -1115,7 +1120,7 @@ class EpubService:
         default_title = h1_match.group(1).strip() if h1_match else ""
 
         if show_title:
-            replaces_title = self.project.auto_part_title in ("part_number", "number")
+            replaces_title = self.project.auto_part_title in ("part_number", "number", "word_part")
             if default_title and not title_part and not replaces_title:
                 title_part = default_title
             if default_title and title_part and default_title != self._component_label(component):

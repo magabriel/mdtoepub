@@ -1211,3 +1211,6 @@ msgstr "Novena"
 
 msgid "Tenth"
 msgstr "Décima"
+
+msgid "<n> part + title"
+msgstr "<n> parte + título"
