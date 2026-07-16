@@ -684,7 +684,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                         md_text = md_text[:h1_match.start()] + md_text[h1_match.end():]
                         md_text = md_text.strip()
                     md_text = header_html + md_text
-                elif not default_title and editor_fm.get("show_title", True):
+                elif not show_title:
+                    if h1_match:
+                        md_text = md_text[:h1_match.start()] + md_text[h1_match.end():]
+                        md_text = md_text.strip()
+                elif not default_title:
                     display = component.title or epub_svc._labels.get(component.type.value, component.get_display_name())
                     md_text = f"# {display}\n\n{md_text}"
 
