@@ -510,13 +510,21 @@ class MainWindow:
 
     # ─── About dialog ─────────────────────────────────────────────────
 
+    @staticmethod
+    def _get_app_version() -> str:
+        try:
+            from .._version import __version__
+            return __version__
+        except ImportError:
+            return "dev"
+
     def _on_about(self, widget):
         dialog = Gtk.AboutDialog(
             transient_for=self.app.window,
             modal=True,
         )
         dialog.set_program_name(_("MDToEPUB"))
-        dialog.set_version("1.2.0")
+        dialog.set_version(self._get_app_version())
         dialog.set_comments(_("EPUB editor from Markdown"))
         dialog.set_license_type(Gtk.License.GPL_3_0)
         dialog.connect("response", lambda d, r: d.destroy())
