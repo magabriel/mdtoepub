@@ -6,6 +6,20 @@ Use local <project_root>/tmp for temporary files and delete them after use.
 
 Always keep the README and ARCHITECTURE documents updated.
 
+## ⛔ CRITICAL RULE: NEVER MERGE TO MAIN WITHOUT APPROVAL
+
+**This rule has been violated multiple times. It MUST NOT happen again.**
+
+After creating a branch and committing changes:
+1. Inform the user that the branch is ready.
+2. **WAIT** for the user's explicit approval (e.g. "mergea", "dale", "procede con el merge").
+3. Only after receiving approval, merge into main.
+4. Delete the branch.
+
+**Do NOT merge if the user has not said "merge." **
+**Do NOT ask for approval AND merge in the same step.**
+**If in doubt, STOP and ask.**
+
 ## Branching Strategy
 
 Use Github Flow for branching strategy:
@@ -19,12 +33,9 @@ Never commit to main branch.
 Workflow for each fix/feature:
 1. Create a branch from main.
 2. Commit changes on the branch.
-3. Ask the user for permission to merge into main.
-   **Stop and wait for approval. Do not proceed to step 4 without explicit confirmation.**
-4. If they agree, merge into main.
+3. Ask the user for permission to merge into main. **Stop and wait.**
+4. Once approved, merge into main.
 5. Delete the branch after merging.
-
-NEVER merge to main without the user's approval. This is the most important rule.
 
 ## Starting Workflow
 
