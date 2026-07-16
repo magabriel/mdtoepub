@@ -490,13 +490,12 @@ class MainWindow:
         config = YamlService.load(config_file)
 
         if not config:
-            config = {
-                "editor": {"font_size": 12, "tab_size": 4, "auto_save_interval": 30},
-                "preview": {"zoom": 100},
-                "general": {"window_width": 1200, "window_height": 800},
-                "epub_reader_path": "",
-                "ui_language": "",
-            }
+            config = {}
+        config.setdefault("editor", {"font_size": 12, "tab_size": 4, "auto_save_interval": 30})
+        config.setdefault("preview", {"zoom": 100})
+        config.setdefault("general", {"window_width": 1200, "window_height": 800})
+        config.setdefault("epub_reader_path", "")
+        config.setdefault("ui_language", "")
 
         dialog = Gtk.Dialog(
             title=_("Global Settings"),
