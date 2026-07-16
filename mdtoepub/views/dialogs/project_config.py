@@ -15,6 +15,8 @@ from ...services.image_service import ImageService
 from ...models.component import ComponentType, COMPONENT_TYPE_LABELS
 from ...services.labels_service import DEFAULT_LABELS
 
+from ...i18n import _
+
 
 def _show_info(parent, msg):
     d = Gtk.MessageDialog(
@@ -54,16 +56,16 @@ def _import_image(app, parent_window, on_imported=None):
     parent = parent_window or app.window
 
     dialog = Gtk.FileChooserDialog(
-        title="Seleccionar imagen",
+        title=_("Select image"),
         transient_for=parent,
         action=Gtk.FileChooserAction.OPEN,
     )
-    dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-    dialog.add_button("Importar", Gtk.ResponseType.ACCEPT)
+    dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+    dialog.add_button(_("Import"), Gtk.ResponseType.ACCEPT)
     dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
 
     img_filter = Gtk.FileFilter()
-    img_filter.set_name("Imagenes (JPEG, PNG, GIF)")
+    img_filter.set_name(_("Images (JPEG, PNG, GIF)"))
     for ext in ImageService.get_supported_formats():
         img_filter.add_pattern(f"*{ext}")
         img_filter.add_pattern(f"*{ext.upper()}")
@@ -78,12 +80,12 @@ def _import_image(app, parent_window, on_imported=None):
         dialog.destroy()
         if src_path:
             category_dialog = Gtk.Dialog(
-                title="Tipo de imagen",
+                title=_("Image type"),
                 transient_for=parent,
                 modal=True,
             )
-            category_dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-            category_dialog.add_button("Importar", Gtk.ResponseType.ACCEPT)
+            category_dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+            category_dialog.add_button(_("Import"), Gtk.ResponseType.ACCEPT)
 
             cat_content = category_dialog.get_content_area()
             cat_content.set_spacing(12)
@@ -92,12 +94,12 @@ def _import_image(app, parent_window, on_imported=None):
             cat_content.set_margin_start(12)
             cat_content.set_margin_end(12)
 
-            cat_label = Gtk.Label(label="Selecciona el tipo de imagen:")
+            cat_label = Gtk.Label(label=_("Select the image type:"))
             cat_content.add(cat_label)
 
             combo_cat = Gtk.ComboBoxText()
-            combo_cat.append_text("Ilustrativa (figuras, diagramas)")
-            combo_cat.append_text("Decorativa (separadores, adornos)")
+            combo_cat.append_text(_("Illustration (figures, diagrams)"))
+            combo_cat.append_text(_("Decorative (separators, ornaments)"))
             combo_cat.set_active(0)
             cat_content.add(combo_cat)
 
@@ -109,11 +111,11 @@ def _import_image(app, parent_window, on_imported=None):
                 images_dir = os.path.join(app.project.path, "images")
                 result = ImageService.copy_to_project(src_path, images_dir, category)
                 if result:
-                    app._update_status(f"Imagen importada: {os.path.basename(src_path)}")
+                    app._update_status(_("Image imported: {name}").format(name=os.path.basename(src_path)))
                     if on_imported:
                         on_imported()
                 else:
-                    _show_error(parent, "Error al importar la imagen")
+                    _show_error(parent, _("Error importing image"))
             category_dialog.destroy()
     else:
         dialog.destroy()
@@ -146,24 +148,24 @@ def _build_image_manager_widget(app, parent_window):
     tree_view.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
 
     r_name = Gtk.CellRendererText()
-    col_name = Gtk.TreeViewColumn("Nombre", r_name, text=IMG_COL_NAME)
+    col_name = Gtk.TreeViewColumn(_("Name"), r_name, text=IMG_COL_NAME)
     col_name.set_resizable(True)
     col_name.set_expand(True)
     tree_view.append_column(col_name)
 
     r_cat = Gtk.CellRendererText()
-    col_cat = Gtk.TreeViewColumn("Categoria", r_cat, text=IMG_COL_CAT)
+    col_cat = Gtk.TreeViewColumn(_("Category"), r_cat, text=IMG_COL_CAT)
     col_cat.set_resizable(True)
     tree_view.append_column(col_cat)
 
     r_size = Gtk.CellRendererText()
-    col_size = Gtk.TreeViewColumn("Tamano", r_size, text=IMG_COL_SIZE)
+    col_size = Gtk.TreeViewColumn(_("Size"), r_size, text=IMG_COL_SIZE)
     col_size.set_resizable(True)
     tree_view.append_column(col_size)
 
     def populate_store():
         store.clear()
-        for cat_name, cat_label in [("illustrations", "Ilustrativa"), ("decorative", "Decorativa")]:
+        for cat_name, cat_label in [("illustrations", _("Illustration")), ("decorative", _("Decorative"))]:
             cat_dir = images_dir / cat_name
             if cat_dir.exists():
                 for f in sorted(cat_dir.iterdir()):
@@ -180,17 +182,17 @@ def _build_image_manager_widget(app, parent_window):
     btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     left_box.pack_start(btn_box, False, False, 0)
 
-    btn_import = Gtk.Button(label="Importar")
+    btn_import = Gtk.Button(label=_("Import"))
     btn_import.connect("clicked", lambda b: _import_image(app, parent_window=parent_window, on_imported=populate_store))
     btn_box.pack_start(btn_import, False, False, 0)
 
-    btn_delete = Gtk.Button(label="Eliminar")
+    btn_delete = Gtk.Button(label=_("Delete"))
     btn_box.pack_start(btn_delete, False, False, 0)
 
-    btn_rename = Gtk.Button(label="Renombrar")
+    btn_rename = Gtk.Button(label=_("Rename"))
     btn_box.pack_start(btn_rename, False, False, 0)
 
-    btn_change_type = Gtk.Button(label="Cambiar tipo")
+    btn_change_type = Gtk.Button(label=_("Change Type"))
     btn_box.pack_start(btn_change_type, False, False, 0)
 
     right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -198,7 +200,7 @@ def _build_image_manager_widget(app, parent_window):
     hbox.pack_start(right_box, False, False, 0)
 
     preview_img = Gtk.Image()
-    preview_frame = Gtk.Frame(label="Vista previa")
+    preview_frame = Gtk.Frame(label=_("Preview"))
     preview_frame.set_size_request(260, 300)
     preview_frame.add(preview_img)
     right_box.pack_start(preview_frame, True, True, 0)
@@ -223,21 +225,21 @@ def _build_image_manager_widget(app, parent_window):
         sel = tree_view.get_selection()
         model, paths = sel.get_selected_rows()
         if not paths:
-            _show_info(parent_window, "Selecciona una o varias imagenes")
+            _show_info(parent_window, _("Select one or more images"))
             return
         names = []
         for p in paths:
             iter_ = model.get_iter(p)
             names.append(model.get_value(iter_, IMG_COL_NAME))
-        confirm = Gtk.MessageDialog(
+        confirm_dlg = Gtk.MessageDialog(
             transient_for=parent_window, modal=True,
             message_type=Gtk.MessageType.QUESTION,
             buttons=Gtk.ButtonsType.YES_NO,
-            text=f"Eliminar {len(names)} imagenes",
+            text=_("Delete {n} images").format(n=len(names)),
         )
-        confirm.format_secondary_text("\n".join(f"  - {n}" for n in names))
-        if confirm.run() == Gtk.ResponseType.YES:
-            confirm.destroy()
+        confirm_dlg.format_secondary_text("\n".join(f"  - {n}" for n in names))
+        if confirm_dlg.run() == Gtk.ResponseType.YES:
+            confirm_dlg.destroy()
             for p in reversed(sorted(paths)):
                 iter_ = model.get_iter(p)
                 fpath = model.get_value(iter_, IMG_COL_PATH)
@@ -245,7 +247,7 @@ def _build_image_manager_widget(app, parent_window):
             populate_store()
             update_preview()
         else:
-            confirm.destroy()
+            confirm_dlg.destroy()
 
     btn_delete.connect("clicked", on_delete)
 
@@ -253,20 +255,20 @@ def _build_image_manager_widget(app, parent_window):
         sel = tree_view.get_selection()
         model, paths = sel.get_selected_rows()
         if len(paths) != 1:
-            _show_info(parent_window, "Selecciona una sola imagen para renombrar")
+            _show_info(parent_window, _("Select a single image to rename"))
             return
         iter_ = model.get_iter(paths[0])
         old_name = model.get_value(iter_, IMG_COL_NAME)
         fpath = model.get_value(iter_, IMG_COL_PATH)
         cat_label = model.get_value(iter_, IMG_COL_CAT)
-        cat_name = "illustrations" if cat_label == "Ilustrativa" else "decorative"
+        cat_name = "illustrations" if cat_label == _("Illustration") else "decorative"
 
         rename_dialog = Gtk.Dialog(
-            title="Renombrar imagen",
+            title=_("Rename image"),
             transient_for=parent_window, modal=True,
         )
-        rename_dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        rename_dialog.add_button("Renombrar", Gtk.ResponseType.ACCEPT)
+        rename_dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        rename_dialog.add_button(_("Rename"), Gtk.ResponseType.ACCEPT)
 
         r_content = rename_dialog.get_content_area()
         r_content.set_spacing(12)
@@ -275,7 +277,7 @@ def _build_image_manager_widget(app, parent_window):
         r_content.set_margin_start(12)
         r_content.set_margin_end(12)
 
-        r_content.add(Gtk.Label(label="Nuevo nombre:"))
+        r_content.add(Gtk.Label(label=_("New name:")))
         entry = Gtk.Entry()
         entry.set_text(old_name)
         entry.set_hexpand(True)
@@ -295,12 +297,12 @@ def _build_image_manager_widget(app, parent_window):
             src_suffix = Path(old_name).suffix.lower()
             new_suffix = Path(new_name).suffix.lower()
             if new_suffix != src_suffix:
-                _show_error(parent_window, "La extension debe ser la misma")
+                _show_error(parent_window, _("The extension must be the same"))
                 return
 
             result = ImageService.rename_image(fpath, new_name)
             if result is None:
-                _show_error(parent_window, f"No se pudo renombrar (¿ya existe '{new_name}'?)")
+                _show_error(parent_window, _("Could not rename (does '{name}' already exist?)").format(name=new_name))
                 return
 
             updated = FileService.rename_image_references(
@@ -315,7 +317,7 @@ def _build_image_manager_widget(app, parent_window):
                     app.editor_view._update_preview()
 
             populate_store()
-            app._update_status(f"Imagen renombrada a '{new_name}' ({updated} componente(s) actualizados)")
+            app._update_status(_("Image renamed to '{name}' ({n} component(s) updated)").format(name=new_name, n=updated))
         else:
             rename_dialog.destroy()
 
@@ -325,28 +327,28 @@ def _build_image_manager_widget(app, parent_window):
         sel = tree_view.get_selection()
         model, paths = sel.get_selected_rows()
         if len(paths) != 1:
-            _show_info(parent_window, "Selecciona una sola imagen para cambiar de tipo")
+            _show_info(parent_window, _("Select a single image to change type"))
             return
         iter_ = model.get_iter(paths[0])
         name = model.get_value(iter_, IMG_COL_NAME)
         fpath = model.get_value(iter_, IMG_COL_PATH)
         current_cat_label = model.get_value(iter_, IMG_COL_CAT)
-        current_cat = "illustrations" if current_cat_label == "Ilustrativa" else "decorative"
+        current_cat = "illustrations" if current_cat_label == _("Illustration") else "decorative"
         new_cat = "decorative" if current_cat == "illustrations" else "illustrations"
-        new_cat_label = "Decorativa" if new_cat == "decorative" else "Ilustrativa"
+        new_cat_label = _("Decorative") if new_cat == "decorative" else _("Illustration")
 
         new_dir = images_dir / new_cat
         new_dir.mkdir(parents=True, exist_ok=True)
         new_path = new_dir / name
 
         if new_path.exists():
-            _show_error(parent_window, f"Ya existe una imagen con ese nombre en '{new_cat_label}'")
+            _show_error(parent_window, _("An image with that name already exists in '{category}'").format(category=new_cat_label))
             return
 
         try:
             shutil.move(str(fpath), str(new_path))
         except OSError:
-            _show_error(parent_window, "No se pudo mover la imagen")
+            _show_error(parent_window, _("Could not move the image"))
             return
 
         old_rel = f"images/{current_cat}/{name}"
@@ -364,7 +366,7 @@ def _build_image_manager_widget(app, parent_window):
 
         populate_store()
         update_preview()
-        app._update_status(f"Imagen movida a '{new_cat_label}' ({updated} componente(s) actualizados)")
+        app._update_status(_("Image moved to '{category}' ({n} component(s) updated)").format(category=new_cat_label, n=updated))
 
     btn_change_type.connect("clicked", on_change_type)
 
@@ -373,19 +375,19 @@ def _build_image_manager_widget(app, parent_window):
 
 def show_project_config(app):
     if not app.project:
-        _show_info(app.window, "No hay proyecto abierto")
+        _show_info(app.window, _("No project open"))
         return
 
     read_only = app._read_only
 
     dialog = Gtk.Dialog(
-        title="Configuracion del Proyecto" + (" [SOLO LECTURA]" if read_only else ""),
+        title=_("Project Settings") + (" [READ ONLY]" if read_only else ""),
         transient_for=app.window,
         modal=True,
     )
-    dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
+    dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
     if not read_only:
-        dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+        dialog.add_button(_("Save"), Gtk.ResponseType.ACCEPT)
     dialog.set_default_size(520, 420)
 
     content = dialog.get_content_area()
@@ -397,7 +399,7 @@ def show_project_config(app):
 
     if read_only:
         note_rw = Gtk.Label()
-        note_rw.set_markup('<span foreground="#c00"><b>Este proyecto es de solo lectura. No se pueden guardar cambios.</b></span>')
+        note_rw.set_markup(f'<span foreground="#c00"><b>{_("This project is read-only. Changes cannot be saved.")}</b></span>')
         note_rw.set_xalign(0)
         content.pack_start(note_rw, False, False, 0)
 
@@ -416,11 +418,11 @@ def show_project_config(app):
     grid_book.set_margin_start(12)
     grid_book.set_margin_end(12)
     grid_book.set_vexpand(False)
-    notebook.append_page(grid_book, Gtk.Label(label="Libro"))
+    notebook.append_page(grid_book, Gtk.Label(label=_("Book")))
 
     row = 0
 
-    label = Gtk.Label(label="Titulo *:")
+    label = Gtk.Label(label=_("Title") + " *:")
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     entry_title = Gtk.Entry()
@@ -431,29 +433,29 @@ def show_project_config(app):
     title_box.pack_start(entry_title, True, True, 0)
     hint = Gtk.Label(label="{{title}}")
     hint.set_opacity(0.55)
-    hint.set_tooltip_text("Usa {{title}} en el texto para insertar este valor")
+    hint.set_tooltip_text(_("Use {{title}} in text to insert this value"))
     title_box.pack_start(hint, False, False, 0)
     grid_book.attach(title_box, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Subtitulo *:")
+    label = Gtk.Label(label=_("Subtitle") + " *:")
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     entry_subtitle = Gtk.Entry()
     interactive_widgets.append(entry_subtitle)
     entry_subtitle.set_text(app.project.subtitle)
     entry_subtitle.set_hexpand(True)
-    entry_subtitle.set_placeholder_text("Subtitulo del libro")
+    entry_subtitle.set_placeholder_text(_("Book subtitle"))
     sub_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     sub_box.pack_start(entry_subtitle, True, True, 0)
     hint = Gtk.Label(label="{{subtitle}}")
     hint.set_opacity(0.55)
-    hint.set_tooltip_text("Usa {{subtitle}} en el texto para insertar este valor")
+    hint.set_tooltip_text(_("Use {{subtitle}} in text to insert this value"))
     sub_box.pack_start(hint, False, False, 0)
     grid_book.attach(sub_box, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Archivo EPUB:")
+    label = Gtk.Label(label=_("EPUB file:"))
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     entry_export = Gtk.Entry()
@@ -476,7 +478,7 @@ def show_project_config(app):
     grid_book.attach(entry_export, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Autor *:")
+    label = Gtk.Label(label=_("Author") + " *:")
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     entry_author = Gtk.Entry()
@@ -487,12 +489,12 @@ def show_project_config(app):
     aut_box.pack_start(entry_author, True, True, 0)
     hint = Gtk.Label(label="{{author}}")
     hint.set_opacity(0.55)
-    hint.set_tooltip_text("Usa {{author}} en el texto para insertar este valor")
+    hint.set_tooltip_text(_("Use {{author}} in text to insert this value"))
     aut_box.pack_start(hint, False, False, 0)
     grid_book.attach(aut_box, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Idioma:")
+    label = Gtk.Label(label=_("Language:"))
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     entry_lang = Gtk.Entry()
@@ -503,7 +505,7 @@ def show_project_config(app):
     grid_book.attach(entry_lang, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Version EPUB:")
+    label = Gtk.Label(label=_("EPUB version:"))
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     combo_epub = Gtk.ComboBoxText()
@@ -517,24 +519,24 @@ def show_project_config(app):
     grid_book.attach(combo_epub, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Edicion *:")
+    label = Gtk.Label(label=_("Edition") + " *:")
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     entry_edicion = Gtk.Entry()
     interactive_widgets.append(entry_edicion)
     entry_edicion.set_text(app.project.edition)
     entry_edicion.set_hexpand(True)
-    entry_edicion.set_placeholder_text("1ª edicion")
+    entry_edicion.set_placeholder_text(_("1st edition"))
     edi_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     edi_box.pack_start(entry_edicion, True, True, 0)
     hint = Gtk.Label(label="{{edition}}")
     hint.set_opacity(0.55)
-    hint.set_tooltip_text("Usa {{edition}} en el texto para insertar este valor")
+    hint.set_tooltip_text(_("Use {{edition}} in text to insert this value"))
     edi_box.pack_start(hint, False, False, 0)
     grid_book.attach(edi_box, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Fecha de publicacion *:")
+    label = Gtk.Label(label=_("Publication date") + " *:")
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     entry_fecha = Gtk.Entry()
@@ -546,7 +548,7 @@ def show_project_config(app):
     fec_box.pack_start(entry_fecha, True, True, 0)
     hint = Gtk.Label(label="{{publication_date}}  {{publication_date:year}}")
     hint.set_opacity(0.55)
-    hint.set_tooltip_text("Usa {{publication_date}} o {{publication_date:year}} (solo año) en el texto")
+    hint.set_tooltip_text(_("Use {{publication_date}} or {{publication_date:year}} (year only) in text"))
     fec_box.pack_start(hint, False, False, 0)
     grid_book.attach(fec_box, 1, row, 1, 1)
     row += 1
@@ -563,12 +565,12 @@ def show_project_config(app):
     isbn_box.pack_start(entry_isbn, True, True, 0)
     hint = Gtk.Label(label="{{isbn}}")
     hint.set_opacity(0.55)
-    hint.set_tooltip_text("Usa {{isbn}} en el texto para insertar este valor")
+    hint.set_tooltip_text(_("Use {{isbn}} in text to insert this value"))
     isbn_box.pack_start(hint, False, False, 0)
     grid_book.attach(isbn_box, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Editorial *:")
+    label = Gtk.Label(label=_("Publisher") + " *:")
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
     entry_editorial = Gtk.Entry()
@@ -580,7 +582,7 @@ def show_project_config(app):
     pub_box.pack_start(entry_editorial, True, True, 0)
     hint = Gtk.Label(label="{{publisher}}")
     hint.set_opacity(0.55)
-    hint.set_tooltip_text("Usa {{publisher}} en el texto para insertar este valor")
+    hint.set_tooltip_text(_("Use {{publisher}} in text to insert this value"))
     pub_box.pack_start(hint, False, False, 0)
     grid_book.attach(pub_box, 1, row, 1, 1)
     row += 1
@@ -588,10 +590,8 @@ def show_project_config(app):
     note = Gtk.Label()
     note.set_markup(
         '<span size="small" foreground="#555">'
-        '* Los campos marcados pueden insertarse en el texto '
-        'usando <tt>{{nombre}}</tt>. Ejemplo: <tt>{{title}}</tt>, '
-        '<tt>{{isbn}}</tt>, <tt>{{publisher}}</tt>.'
-        '</span>'
+        + _('* Marked fields can be inserted in text using <tt>{{name}}</tt>. Example: <tt>{{title}}</tt>, <tt>{{isbn}}</tt>, <tt>{{publisher}}</tt>.')
+        + '</span>'
     )
     note.set_xalign(0)
     note.set_line_wrap(True)
@@ -607,20 +607,20 @@ def show_project_config(app):
     grid_app.set_margin_bottom(12)
     grid_app.set_margin_start(12)
     grid_app.set_margin_end(12)
-    notebook.append_page(grid_app, Gtk.Label(label="Apariencia"))
+    notebook.append_page(grid_app, Gtk.Label(label=_("Appearance")))
 
     row = 0
 
-    label = Gtk.Label(label="Titulo auto de componentes:")
+    label = Gtk.Label(label=_("Auto component title:"))
     label.set_xalign(1)
     grid_app.attach(label, 0, row, 1, 1)
     combo_auto_title = Gtk.ComboBoxText()
     interactive_widgets.append(combo_auto_title)
-    combo_auto_title.append_text("No")
-    combo_auto_title.append_text("Capitulo <n>")
+    combo_auto_title.append_text(_("No"))
+    combo_auto_title.append_text(_("Chapter <n>"))
     combo_auto_title.append_text("<n>")
-    combo_auto_title.append_text("Capitulo <n> + titulo")
-    combo_auto_title.append_text("<n> + titulo")
+    combo_auto_title.append_text(_("Chapter <n> + title"))
+    combo_auto_title.append_text("<n> + " + _("title"))
     auto_title_values = ["none", "chapter_number", "number", "chapter_number_with_title", "number_with_title"]
     auto_title_index = 0
     for i, v in enumerate(auto_title_values):
@@ -631,16 +631,16 @@ def show_project_config(app):
     grid_app.attach(combo_auto_title, 1, row, 1, 1)
     row += 1
 
-    label_part = Gtk.Label(label="Titulo auto de partes:")
+    label_part = Gtk.Label(label=_("Auto part title:"))
     label_part.set_xalign(1)
     grid_app.attach(label_part, 0, row, 1, 1)
     combo_auto_part = Gtk.ComboBoxText()
     interactive_widgets.append(combo_auto_part)
-    combo_auto_part.append_text("No")
-    combo_auto_part.append_text("Parte <n>")
+    combo_auto_part.append_text(_("No"))
+    combo_auto_part.append_text(_("Part <n>"))
     combo_auto_part.append_text("<n>")
-    combo_auto_part.append_text("Parte <n> + titulo")
-    combo_auto_part.append_text("<n> + titulo")
+    combo_auto_part.append_text(_("Part <n> + title"))
+    combo_auto_part.append_text("<n> + " + _("title"))
     auto_part_values = ["none", "part_number", "number", "part_number_with_title", "number_with_title"]
     auto_part_index = 0
     for i, v in enumerate(auto_part_values):
@@ -651,7 +651,7 @@ def show_project_config(app):
     grid_app.attach(combo_auto_part, 1, row, 1, 1)
     row += 1
 
-    label = Gtk.Label(label="Tema:")
+    label = Gtk.Label(label=_("Theme:"))
     label.set_xalign(1)
     grid_app.attach(label, 0, row, 1, 1)
 
@@ -673,7 +673,7 @@ def show_project_config(app):
     grid_app.attach(sep, 0, row, 2, 1)
     row += 1
 
-    label = Gtk.Label(label="Letra capitular:")
+    label = Gtk.Label(label=_("Drop cap:"))
     label.set_xalign(1)
     label.set_valign(Gtk.Align.START)
     grid_app.attach(label, 0, row, 1, 1)
@@ -682,12 +682,12 @@ def show_project_config(app):
     grid_app.attach(right_vbox, 1, row, 1, 1)
     row += 1
 
-    check_drop_cap = Gtk.CheckButton(label="Activar")
+    check_drop_cap = Gtk.CheckButton(label=_("Enable"))
     interactive_widgets.append(check_drop_cap)
     check_drop_cap.set_active(app.project.drop_cap_enabled)
     right_vbox.pack_start(check_drop_cap, False, False, 0)
 
-    label_cap_types = Gtk.Label(label="Tipos con capitular:", xalign=0)
+    label_cap_types = Gtk.Label(label=_("Types with drop cap:"), xalign=0)
     right_vbox.pack_start(label_cap_types, False, False, 0)
 
     type_list = Gtk.ListBox()
@@ -719,7 +719,7 @@ def show_project_config(app):
     row += 1
 
     # ── Figure numbering ──
-    label_fig = Gtk.Label(label="Numeracion de figuras:")
+    label_fig = Gtk.Label(label=_("Figure numbering:"))
     label_fig.set_xalign(1)
     label_fig.set_valign(Gtk.Align.START)
     grid_app.attach(label_fig, 0, row, 1, 1)
@@ -728,18 +728,18 @@ def show_project_config(app):
     grid_app.attach(fig_vbox, 1, row, 1, 1)
     row += 1
 
-    check_figure_numbering = Gtk.CheckButton(label="Numerar figuras automaticamente")
+    check_figure_numbering = Gtk.CheckButton(label=_("Number figures automatically"))
     interactive_widgets.append(check_figure_numbering)
     check_figure_numbering.set_active(app.project.figure_numbering)
     fig_vbox.pack_start(check_figure_numbering, False, False, 0)
 
     fig_style_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-    fig_style_label = Gtk.Label(label="Estilo:")
+    fig_style_label = Gtk.Label(label=_("Style:"))
     fig_style_box.pack_start(fig_style_label, False, False, 0)
     combo_fig_style = Gtk.ComboBoxText()
     interactive_widgets.append(combo_fig_style)
-    combo_fig_style.append_text("Numeros arabigos")
-    combo_fig_style.append_text("Numeros romanos")
+    combo_fig_style.append_text(_("Arabic numbers"))
+    combo_fig_style.append_text(_("Roman numerals"))
     fig_style_values = ["arabic", "roman"]
     fig_style_index = 0
     for i, v in enumerate(fig_style_values):
@@ -761,7 +761,7 @@ def show_project_config(app):
     row += 1
 
     # ── Table numbering ──
-    label_tab = Gtk.Label(label="Numeracion de tablas:")
+    label_tab = Gtk.Label(label=_("Table numbering:"))
     label_tab.set_xalign(1)
     label_tab.set_valign(Gtk.Align.START)
     grid_app.attach(label_tab, 0, row, 1, 1)
@@ -770,18 +770,18 @@ def show_project_config(app):
     grid_app.attach(tab_vbox, 1, row, 1, 1)
     row += 1
 
-    check_table_numbering = Gtk.CheckButton(label="Numerar tablas automaticamente")
+    check_table_numbering = Gtk.CheckButton(label=_("Number tables automatically"))
     interactive_widgets.append(check_table_numbering)
     check_table_numbering.set_active(app.project.table_numbering)
     tab_vbox.pack_start(check_table_numbering, False, False, 0)
 
     tab_style_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-    tab_style_label = Gtk.Label(label="Estilo:")
+    tab_style_label = Gtk.Label(label=_("Style:"))
     tab_style_box.pack_start(tab_style_label, False, False, 0)
     combo_tab_style = Gtk.ComboBoxText()
     interactive_widgets.append(combo_tab_style)
-    combo_tab_style.append_text("Numeros arabigos")
-    combo_tab_style.append_text("Numeros romanos")
+    combo_tab_style.append_text(_("Arabic numbers"))
+    combo_tab_style.append_text(_("Roman numerals"))
     tab_style_values = ["arabic", "roman"]
     tab_style_index = 0
     for i, v in enumerate(tab_style_values):
@@ -803,7 +803,7 @@ def show_project_config(app):
     row += 1
 
     # ── Spell check language ──
-    label_lang = Gtk.Label(label="Corrector ortografico:")
+    label_lang = Gtk.Label(label=_("Spell checker:"))
     label_lang.set_xalign(1)
     grid_app.attach(label_lang, 0, row, 1, 1)
 
@@ -826,9 +826,9 @@ def show_project_config(app):
     labels_page.set_margin_bottom(12)
     labels_page.set_margin_start(12)
     labels_page.set_margin_end(12)
-    notebook.append_page(labels_page, Gtk.Label(label="Etiquetas"))
+    notebook.append_page(labels_page, Gtk.Label(label=_("Labels")))
 
-    _, config_file = app._get_config_path()
+    __, config_file = app._get_config_path()
     global_cfg = YamlService.load(config_file) or {}
     global_labels = global_cfg.get("labels", {})
     label_keys = [k for k in DEFAULT_LABELS.get("es", {})]
@@ -838,18 +838,18 @@ def show_project_config(app):
             labels_page.remove(child)
 
         top_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        top_row.pack_start(Gtk.Label(label="Idioma:", xalign=0), False, False, 0)
+        top_row.pack_start(Gtk.Label(label=_("Language:"), xalign=0), False, False, 0)
 
         combo_label_lang = Gtk.ComboBoxText()
         for lang in sorted(set(list(DEFAULT_LABELS.keys()) + list(global_labels.keys()))):
             combo_label_lang.append_text(lang)
         top_row.pack_start(combo_label_lang, False, False, 0)
 
-        btn_new_lang = Gtk.Button(label="Nuevo idioma...")
+        btn_new_lang = Gtk.Button(label=_("New Language..."))
         interactive_widgets.append(btn_new_lang)
         top_row.pack_start(btn_new_lang, False, False, 0)
 
-        btn_reset = Gtk.Button(label="Restablecer predeterminados")
+        btn_reset = Gtk.Button(label=_("Restore Defaults"))
         interactive_widgets.append(btn_reset)
         top_row.pack_start(btn_reset, False, False, 0)
         top_row.pack_start(Gtk.Label(label=""), True, True, 0)
@@ -876,9 +876,8 @@ def show_project_config(app):
             current.update(global_labels.get(current_lang, {}))
 
             note = Gtk.Label(
-                label="Estas etiquetas sustituyen los nombres de tipos de "
-                      "componente (p.ej. \"Capitulo\", \"Tabla de contenidos\") "
-                      "en el arbol y en el EPUB cuando el componente no tiene titulo."
+                label=_("These labels replace component type names (e.g. \"Chapter\", \"Table of contents\") "
+                        "in the tree and in the EPUB when the component has no title.")
             )
             note.set_line_wrap(True)
             note.set_xalign(0)
@@ -907,12 +906,12 @@ def show_project_config(app):
 
         def _on_new_lang(btn):
             dlg = Gtk.Dialog(
-                title="Nuevo idioma",
+                title=_("New Language"),
                 transient_for=dialog,
                 modal=True,
             )
-            dlg.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-            dlg.add_button("Crear", Gtk.ResponseType.ACCEPT)
+            dlg.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+            dlg.add_button(_("Create"), Gtk.ResponseType.ACCEPT)
             c = dlg.get_content_area()
             c.set_spacing(8)
             c.set_margin_top(8)
@@ -920,11 +919,11 @@ def show_project_config(app):
             c.set_margin_start(8)
             c.set_margin_end(8)
 
-            c.pack_start(Gtk.Label(label="Codigo de idioma (ej. fr, de, it):"), False, False, 0)
+            c.pack_start(Gtk.Label(label=_("Language code (e.g. fr, de, it):")), False, False, 0)
             code_entry = Gtk.Entry()
             c.pack_start(code_entry, False, False, 0)
 
-            c.pack_start(Gtk.Label(label="Copiar etiquetas de:"), False, False, 0)
+            c.pack_start(Gtk.Label(label=_("Copy labels from:")), False, False, 0)
             src_combo = Gtk.ComboBoxText()
             for lang in sorted(set(list(DEFAULT_LABELS.keys()) + list(global_labels.keys()))):
                 src_combo.append_text(lang)
@@ -968,7 +967,7 @@ def show_project_config(app):
 
     images_page = _build_image_manager_widget(app, dialog)
     if images_page:
-        notebook.append_page(images_page, Gtk.Label(label="Imagenes"))
+        notebook.append_page(images_page, Gtk.Label(label=_("Images")))
 
     def on_config_response(d, response):
         if response == Gtk.ResponseType.ACCEPT:
@@ -1017,7 +1016,7 @@ def show_project_config(app):
                 app._styles_panel.update(app.current_component.type)
             elif app.current_part:
                 app._styles_panel.update(app.current_part.type)
-            app._update_status("Configuracion del proyecto guardada")
+            app._update_status(_("Project settings saved"))
             app.editor_view._update_preview()
         d.destroy()
 

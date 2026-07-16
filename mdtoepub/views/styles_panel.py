@@ -11,19 +11,21 @@ from ..services.theme_service import ThemeService
 from ..services.yaml_service import YamlService
 from ..services.style_doc_service import StyleDocService
 
+from ..i18n import _
+
 FRONTMATTER_DOCS = {
     "toc": [
-        ("toc_include", "Lista de tipos de componente a incluir en el índice (ej: ['chapter', 'appendix'])"),
-        ("toc_deep", "Profundidad maxima de encabezados en el índice (1-6, por defecto 2)"),
+        ("toc_include", _("List of component types to include in the index (e.g.: ['chapter', 'appendix'])")),
+        ("toc_deep", _("Maximum heading depth in the index (1-6, default 2)")),
     ],
     "chapter": [
-        ("show_title", "false para ocultar el titulo del capitulo"),
+        ("show_title", _("false to hide the chapter title")),
     ],
 }
 
 FRONTMATTER_COMMON = [
-    ("show_title", "false para ocultar el titulo del componente (por defecto true)"),
-    ("split_title", "false para desactivar la particion automatica del titulo en subtitulo + titulo al encontrar ' - ', ' -- ' o ' --- ' (por defecto true)"),
+    ("show_title", _("false to hide the component title (default true)")),
+    ("split_title", _("false to disable automatic title splitting into subtitle + title when finding ' - ', ' -- ' or ' --- ' (default true)")),
 ]
 
 
@@ -61,7 +63,7 @@ class StylesPanel:
         header.get_style_context().add_class("heading")
         styles_vbox.pack_start(header, False, False, 0)
 
-        hierarchy_label = Gtk.Label(label="Jerarquia de estilos — los de abajo sobreescriben")
+        hierarchy_label = Gtk.Label(label=_("Style hierarchy \u2014 lower overrides higher"))
         hierarchy_label.set_xalign(0)
         styles_vbox.pack_start(hierarchy_label, False, False, 0)
 
@@ -104,7 +106,7 @@ class StylesPanel:
         self._comp_frame.add(comp_inner)
         styles_vbox.pack_start(self._comp_frame, False, False, 0)
 
-        css_header = Gtk.Label(label="Clases CSS disponibles")
+        css_header = Gtk.Label(label=_("Available CSS classes"))
         css_header.set_xalign(0)
         css_header.get_style_context().add_class("heading")
         styles_vbox.pack_start(css_header, False, False, 0)
@@ -115,7 +117,7 @@ class StylesPanel:
 
         r_sel = Gtk.CellRendererText()
         r_sel.set_property("family", "Monospace")
-        col_sel = Gtk.TreeViewColumn("Selector", r_sel, text=0)
+        col_sel = Gtk.TreeViewColumn(_("Selector"), r_sel, text=0)
         col_sel.set_resizable(True)
         col_sel.set_expand(True)
         self._css_tree.append_column(col_sel)
@@ -123,13 +125,13 @@ class StylesPanel:
         r_desc = Gtk.CellRendererText()
         r_desc.set_property("wrap-mode", Pango.WrapMode.WORD_CHAR)
         r_desc.set_property("wrap-width", 250)
-        col_desc = Gtk.TreeViewColumn("Descripcion", r_desc, text=1)
+        col_desc = Gtk.TreeViewColumn(_("Description"), r_desc, text=1)
         col_desc.set_resizable(True)
         col_desc.set_expand(True)
         self._css_tree.append_column(col_desc)
 
         r_origin = Gtk.CellRendererText()
-        col_origin = Gtk.TreeViewColumn("Origen", r_origin, text=2)
+        col_origin = Gtk.TreeViewColumn(_("Origin"), r_origin, text=2)
         col_origin.set_resizable(True)
         self._css_tree.append_column(col_origin)
 
@@ -142,11 +144,11 @@ class StylesPanel:
         btn_box = Gtk.Box(spacing=6)
         btn_box.set_margin_top(6)
 
-        theme_mgr_btn = Gtk.Button(label="Gestor de temas...")
+        theme_mgr_btn = Gtk.Button(label=_("Theme Manager..."))
         theme_mgr_btn.connect("clicked", self.app.main_window._on_theme_manager)
         btn_box.pack_start(theme_mgr_btn, False, False, 0)
 
-        manage_btn = Gtk.Button(label="Gestionar todos los tipos...")
+        manage_btn = Gtk.Button(label=_("Manage All Types..."))
         manage_btn.connect("clicked", self._on_manage_type_css)
         btn_box.pack_start(manage_btn, False, False, 0)
 
@@ -214,20 +216,18 @@ class StylesPanel:
         front_buf = self.app.front_textview.get_buffer()
         if not self.app.project or component_type is None:
             front_buf.set_text(
-                "Selecciona un componente para ver los metadatos.\n\n"
-                "Consejos de sintaxis Markdown:\n"
-                "  — Usa {.clase} para aplicar una clase CSS.\n"
-                "  — Usa <!-- Table: titulo --> antes de una tabla para\n"
-                "    asignarle un titulo y que aparezca en la Lista de Tablas.\n"
-                "  — Usa ![alt](ruta) para imagenes. Las imagenes en\n"
-                "    images/illustrations/ se numeran automaticamente.\n"
-                "  — Usa {lang=en} para cambiar idioma del corrector."
+                _("Select a component to view its metadata.") + "\n\n"
+                + _("Markdown syntax tips:") + "\n"
+                + "  \u2014 " + _("Use {.class} to apply a CSS class.") + "\n"
+                + "  \u2014 " + _("Use <!-- Table: title --> before a table to assign it a title and list it in the List of Tables.") + "\n"
+                + "  \u2014 " + _("Use ![alt](path) for images. Images in images/illustrations/ are automatically numbered.") + "\n"
+                + "  \u2014 " + _("Use {lang=en} to change the spell checker language.")
             )
         else:
             comp_label = self.app.project_manager.resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, component_type.value))
             type_key = component_type.value
             fm_lines = [
-                f"Metadatos para {comp_label}:",
+                _("Metadata for {type}:").format(type=comp_label),
                 "",
             ]
             type_vars = FRONTMATTER_DOCS.get(type_key, [])
@@ -238,8 +238,8 @@ class StylesPanel:
                 fm_lines.append(f"  {var_name}")
                 fm_lines.append(f"    {description}")
                 fm_lines.append("")
-            fm_lines.append("Los metadatos se añaden al principio del componente")
-            fm_lines.append("(entre las lineas --- al inicio del archivo).")
+            fm_lines.append(_("Metadata is added at the beginning of the component"))
+            fm_lines.append(_("(between the --- lines at the start of the file)."))
             front_buf.set_text("\n".join(fm_lines))
 
         self._styles_current_comp_type = component_type
@@ -265,20 +265,20 @@ class StylesPanel:
                 theme_is_builtin = theme.is_builtin
 
         if project_opened and theme_dir:
-            theme_scope = "compartido entre todos los libros con este tema"
+            theme_scope = _("shared across all books with this theme")
             self._theme_frame_label.set_markup(
-                f"<b>Tema: {theme_name}</b>  <small>({theme_scope})</small>"
+                f"<b>{_('Theme')}: {theme_name}</b>  <small>({theme_scope})</small>"
             )
             self._theme_frame.set_visible(True)
 
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            row.pack_start(Gtk.Label(label="Base: style.css", xalign=0), True, True, 0)
+            row.pack_start(Gtk.Label(label=_("Base: style.css"), xalign=0), True, True, 0)
             if theme_is_builtin:
-                btn = Gtk.Button(label="Ver")
-                btn.set_tooltip_text("Solo lectura — los temas integrados no se editan")
+                btn = Gtk.Button(label=_("View"))
+                btn.set_tooltip_text(_("Read-only \u2014 built-in themes cannot be edited"))
             else:
-                btn = Gtk.Button(label="Editar")
-                btn.set_tooltip_text("Atencion: los cambios afectaran a TODOS los libros que usen este tema")
+                btn = Gtk.Button(label=_("Edit"))
+                btn.set_tooltip_text(_("Warning: changes will affect ALL books using this theme"))
             btn.connect("clicked", lambda b: self._on_view_theme_css_by_file("style.css", theme_name))
             row.pack_start(btn, False, False, 0)
             self._theme_box.pack_start(row, False, False, 0)
@@ -289,12 +289,12 @@ class StylesPanel:
                 type_label = self.app.project_manager.resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, type_value))
                 if type_file:
                     row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                    row2.pack_start(Gtk.Label(label=f"Tipo {type_label}: {type_file}", xalign=0), True, True, 0)
-                    btn2 = Gtk.Button(label="Ver" if theme_is_builtin else "Editar")
+                    row2.pack_start(Gtk.Label(label=f"{_('Type')} {type_label}: {type_file}", xalign=0), True, True, 0)
+                    btn2 = Gtk.Button(label=_("View") if theme_is_builtin else _("Edit"))
                     if theme_is_builtin:
-                        btn2.set_tooltip_text("Solo lectura — los temas integrados no se editan")
+                        btn2.set_tooltip_text(_("Read-only \u2014 built-in themes cannot be edited"))
                     else:
-                        btn2.set_tooltip_text("Atencion: los cambios afectaran a TODOS los libros que usen este tema")
+                        btn2.set_tooltip_text(_("Warning: changes will affect ALL books using this theme"))
                     btn2.connect("clicked", lambda b, f=type_file: self._on_view_theme_css_by_file(f, theme_name))
                     row2.pack_start(btn2, False, False, 0)
                     self._theme_box.pack_start(row2, False, False, 0)
@@ -303,16 +303,16 @@ class StylesPanel:
 
         if project_opened:
             self._project_frame_label.set_markup(
-                f"<b>Proyecto: {self.app.project.title}</b>  <small>(solo este libro)</small>"
+                f"<b>{_('Project')}: {self.app.project.title}</b>  <small>({_('this book only')})</small>"
             )
             self._project_frame.set_visible(True)
 
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            status = "Editado" if self.app.project.custom_css.strip() else "Sin cambios"
-            row.pack_start(Gtk.Label(label="Estilos globales", xalign=0), True, True, 0)
+            status = _("Edited") if self.app.project.custom_css.strip() else _("No changes")
+            row.pack_start(Gtk.Label(label=_("Global Styles"), xalign=0), True, True, 0)
             status_lbl = Gtk.Label(label=status, xalign=0)
             row.pack_start(status_lbl, False, False, 0)
-            btn = Gtk.Button(label="Editar")
+            btn = Gtk.Button(label=_("Edit"))
             btn.connect("clicked", self._on_edit_book_css)
             row.pack_start(btn, False, False, 0)
             self._project_box.pack_start(row, False, False, 0)
@@ -322,14 +322,14 @@ class StylesPanel:
                 type_label = self.app.project_manager.resolve_labels().get(component_type.value, COMPONENT_TYPE_LABELS.get(component_type, type_value))
                 has_override = type_value in self.app.project.type_css_overrides
                 row2 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-                row2.pack_start(Gtk.Label(label=f"Tipo: {type_label}", xalign=0), True, True, 0)
-                status2 = Gtk.Label(label="Editado" if has_override else "Sin cambios", xalign=0)
+                row2.pack_start(Gtk.Label(label=f"{_('Type')}: {type_label}", xalign=0), True, True, 0)
+                status2 = Gtk.Label(label=_("Edited") if has_override else _("No changes"), xalign=0)
                 row2.pack_start(status2, False, False, 0)
-                btn2 = Gtk.Button(label="Editar")
+                btn2 = Gtk.Button(label=_("Edit"))
                 btn2.connect("clicked", lambda b, ct=component_type: self._on_styles_edit_type_css(ct))
                 row2.pack_start(btn2, False, False, 0)
                 if has_override:
-                    reset_btn = Gtk.Button(label="Restablecer")
+                    reset_btn = Gtk.Button(label=_("Reset"))
                     reset_btn.connect("clicked", lambda b, ct=component_type: self._on_styles_reset_type_css(ct))
                     row2.pack_start(reset_btn, False, False, 0)
                 self._project_box.pack_start(row2, False, False, 0)
@@ -339,16 +339,16 @@ class StylesPanel:
         if self._styles_current_component and component_type is not None:
             comp = self._styles_current_component
             self._comp_frame_label.set_markup(
-                f"<b>Componente: {comp.get_display_name(self.app.project_manager.resolve_labels())}</b>  <small>(solo este componente)</small>"
+                f"<b>{_('Component')}: {comp.get_display_name(self.app.project_manager.resolve_labels())}</b>  <small>({_('this component only')})</small>"
             )
             self._comp_frame.set_visible(True)
 
             row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             has_comp_css = bool(comp.custom_css.strip())
-            row.pack_start(Gtk.Label(label="Estilos del componente", xalign=0), True, True, 0)
-            status = Gtk.Label(label="Editado" if has_comp_css else "Sin cambios", xalign=0)
+            row.pack_start(Gtk.Label(label=_("Component Styles"), xalign=0), True, True, 0)
+            status = Gtk.Label(label=_("Edited") if has_comp_css else _("No changes"), xalign=0)
             row.pack_start(status, False, False, 0)
-            btn = Gtk.Button(label="Editar")
+            btn = Gtk.Button(label=_("Edit"))
             btn.connect("clicked", self._on_styles_edit_comp_css)
             row.pack_start(btn, False, False, 0)
             self._comp_box.pack_start(row, False, False, 0)
@@ -361,29 +361,29 @@ class StylesPanel:
 
             theme_global = svc.get_docs("style.css")
             for d in theme_global:
-                all_docs.append((d["markdown_hint"], d["description"], f"Tema ({theme_name or 'desconocido'})"))
+                all_docs.append((d["markdown_hint"], d["description"], f"{_('Theme')} ({theme_name or _('unknown')})"))
 
             if component_type is not None:
                 theme_type_docs = svc.get_docs_for_type(component_type, theme_config)
                 for d in theme_type_docs:
-                    all_docs.append((d["markdown_hint"], d["description"], f"Tema ({theme_name or 'desconocido'}) — tipo"))
+                    all_docs.append((d["markdown_hint"], d["description"], f"{_('Theme')} ({theme_name or _('unknown')}) \u2014 {_('type')}"))
 
             if self.app.project.custom_css:
                 book_docs = svc.get_docs_from_css(self.app.project.custom_css)
                 for d in book_docs:
-                    all_docs.append((d["markdown_hint"], d["description"], "Proyecto (libro)"))
+                    all_docs.append((d["markdown_hint"], d["description"], f"{_('Project')} ({_('book')})"))
 
             if component_type is not None:
                 type_css = self.app.project.type_css_overrides.get(component_type.value, "")
                 if type_css:
                     type_docs = svc.get_docs_from_css(type_css)
                     for d in type_docs:
-                        all_docs.append((d["markdown_hint"], d["description"], f"Proyecto (tipo)"))
+                        all_docs.append((d["markdown_hint"], d["description"], f"{_('Project')} ({_('type')})"))
 
             if self._styles_current_component and self._styles_current_component.custom_css:
                 comp_docs = svc.get_docs_from_css(self._styles_current_component.custom_css)
                 for d in comp_docs:
-                    all_docs.append((d["markdown_hint"], d["description"], "Componente"))
+                    all_docs.append((d["markdown_hint"], d["description"], _("Component")))
 
             for selector, desc, origin in all_docs:
                 self._css_store.append([selector, desc, origin])
@@ -395,7 +395,7 @@ class StylesPanel:
         type_key = ct.value
         current = self.app.project.type_css_overrides.get(type_key, "")
         label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
-        css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=ct.value)
+        css = self._edit_css_dialog(_("Type styles: {label}").format(label=label), current, scope_type="type", scope_type_value=ct.value)
         if css is None:
             return
         if css.strip():
@@ -405,7 +405,7 @@ class StylesPanel:
         FileService.save_project(self.app.project)
         self.app.editor_view._update_preview()
         self.update(ct)
-        self.app._update_status(f"Estilos del tipo '{label}' actualizados")
+        self.app._update_status(_("Type styles '{label}' updated").format(label=label))
 
     def _on_styles_reset_type_css(self, component_type):
         ct = component_type
@@ -413,13 +413,13 @@ class StylesPanel:
         label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
         if type_key not in self.app.project.type_css_overrides:
             return
-        if not confirm(self.app.window, f"Restablecer estilos del tipo «{label}»?\nSe perderan los cambios personalizados."):
+        if not confirm(self.app.window, _("Reset type styles '{label}'?\nCustom changes will be lost.").format(label=label)):
             return
         del self.app.project.type_css_overrides[type_key]
         FileService.save_project(self.app.project)
         self.app.editor_view._update_preview()
         self.update(ct)
-        self.app._update_status(f"Estilos del tipo '{label}' restablecidos al tema")
+        self.app._update_status(_("Type styles '{label}' reset to theme").format(label=label))
 
     def _on_styles_edit_comp_css(self, btn):
         if not self._styles_current_component:
@@ -436,7 +436,7 @@ class StylesPanel:
         theme_dir = theme.path
         fpath = os.path.join(theme_dir, filename)
         if not os.path.exists(fpath):
-            show_info(self.app.window, f"El archivo {filename} no existe en el tema.")
+            show_info(self.app.window, _("The file {filename} does not exist in the theme.").format(filename=filename))
             return
 
         with open(fpath, "r") as f:
@@ -444,16 +444,16 @@ class StylesPanel:
 
         display_name = theme_name or theme.name
         is_read_only = theme.is_builtin
-        mode_title = "Visualizar" if is_read_only else "Editar"
+        mode_title = _("View") if is_read_only else _("Edit")
 
         editor_dialog = Gtk.Dialog(
-            title=f"{mode_title} CSS: {display_name} — {filename}",
+            title=f"{mode_title} CSS: {display_name} \u2014 {filename}",
             transient_for=self.app.window,
             modal=True,
         )
-        editor_dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        editor_dialog.add_button(_("Close"), Gtk.ResponseType.CLOSE)
         if not is_read_only:
-            editor_dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+            editor_dialog.add_button(_("Save"), Gtk.ResponseType.ACCEPT)
         editor_dialog.set_default_size(700, 500)
 
         editor_content = editor_dialog.get_content_area()
@@ -466,7 +466,7 @@ class StylesPanel:
         if not is_read_only:
             warning = Gtk.Label()
             warning.set_markup(
-                "<b>Los cambios en este tema afectaran a TODOS los libros que lo usen.</b>"
+                f"<b>{_('Changes to this theme will affect ALL books that use it.')}</b>"
             )
             warning.set_xalign(0)
             editor_content.pack_start(warning, False, False, 0)
@@ -506,8 +506,8 @@ class StylesPanel:
             transient_for=self.app.window,
             flags=0,
         )
-        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Guardar", Gtk.ResponseType.OK)
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Save"), Gtk.ResponseType.OK)
         dialog.set_default_size(600, 500)
 
         box = dialog.get_content_area()
@@ -515,22 +515,22 @@ class StylesPanel:
         if scope_type:
             hints = []
             if scope_type == "book":
-                hints.append("Editando estilos globales del libro (afectan a TODOS los componentes).")
+                hints.append(_("Editing global book styles (affect ALL components)."))
             elif scope_type == "type" and scope_type_value:
                 hints.append(
-                    f"Selector principal: <b>.component-{scope_type_value}</b>"
+                    f"{_('Main selector')}: <b>.component-{scope_type_value}</b>"
                 )
                 hints.append(
-                    f"Sub-elementos: <b>.component-{scope_type_value}</b> h1, h2, p, ul, li, img, blockquote, etc."
+                    f"{_('Sub-elements')}: <b>.component-{scope_type_value}</b> h1, h2, p, ul, li, img, blockquote, etc."
                 )
-                hints.append("Usa prefijos de clase (p.ej. <b>.toc-entry</b>) para elementos auto-generados.")
+                hints.append(_("Use class prefixes (e.g. <b>.toc-entry</b>) for auto-generated elements."))
             elif scope_type == "component" and scope_type_value:
                 hints.append(
-                    f"Selector principal: <b>.component-{scope_type_value}</b>"
+                    f"{_('Main selector')}: <b>.component-{scope_type_value}</b>"
                 )
-                hints.append("Estos estilos solo afectan a este componente.")
+                hints.append(_("These styles only affect this component."))
             elif scope_type == "theme":
-                hints.append("Editando estilos del tema (afectan a TODOS los libros que usen este tema).")
+                hints.append(_("Editing theme styles (affect ALL books that use this theme)."))
 
             if hints:
                 hint_bar = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
@@ -551,9 +551,9 @@ class StylesPanel:
         if not initial_css.strip() and scope_type_value:
             if scope_type == "type":
                 initial_css = (
-                    f"/* Estilos para el tipo «{scope_type_value}»\n"
-                    f" * Selector principal: .component-{scope_type_value}\n"
-                    f" * Ejemplos:\n"
+                    f"/* Styles for type '{scope_type_value}'\n"
+                    f" * Main selector: .component-{scope_type_value}\n"
+                    f" * Examples:\n"
                     f" *   .component-{scope_type_value} p {{ }}\n"
                     f" *   .component-{scope_type_value} h1 {{ }}\n"
                     f" *   .component-{scope_type_value} blockquote {{ }}\n"
@@ -561,18 +561,18 @@ class StylesPanel:
                 )
             elif scope_type == "component":
                 initial_css = (
-                    f"/* Estilos para este componente (tipo «{scope_type_value}»)\n"
-                    f" * Selector principal: .component-{scope_type_value}\n"
-                    f" * Ejemplos:\n"
+                    f"/* Styles for this component (type '{scope_type_value}')\n"
+                    f" * Main selector: .component-{scope_type_value}\n"
+                    f" * Examples:\n"
                     f" *   .component-{scope_type_value} p {{ }}\n"
                     f" *   .component-{scope_type_value} img {{ }}\n"
                     f" */\n\n"
                 )
             elif scope_type == "book":
                 initial_css = (
-                    "/* Estilos globales del libro\n"
-                    " * Afectan a todos los componentes.\n"
-                    " * Selectores principales:\n"
+                    "/* Global book styles\n"
+                    " * Affect all components.\n"
+                    " * Main selectors:\n"
                     " *   body { }  p { }  h1, h2, h3 { }\n"
                     " *   .component-chapter { }  .component-title { }  etc.\n"
                     " */\n\n"
@@ -595,9 +595,9 @@ class StylesPanel:
 
     def _on_edit_book_css(self, widget):
         if not self.app.project:
-            show_info(self.app.window, "Abre un proyecto primero")
+            show_info(self.app.window, _("Open a project first"))
             return
-        css = self._edit_css_dialog("Estilos del libro", self.app.project.custom_css, scope_type="book")
+        css = self._edit_css_dialog(_("Book Styles"), self.app.project.custom_css, scope_type="book")
         if css is None:
             return
         self.app.project.custom_css = css
@@ -606,7 +606,7 @@ class StylesPanel:
         self.update(
             self.app.current_component.type if self.app.current_component else None
         )
-        self.app._update_status("Estilos del libro actualizados")
+        self.app._update_status(_("Book styles updated"))
 
     def _on_edit_type_css(self, widget, component):
         if not self.app.project:
@@ -614,7 +614,7 @@ class StylesPanel:
         type_key = component.type.value
         current = self.app.project.type_css_overrides.get(type_key, "")
         label = self.app.project_manager.resolve_labels().get(component.type.value, COMPONENT_TYPE_LABELS.get(component.type, type_key))
-        css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=component.type.value)
+        css = self._edit_css_dialog(_("Type styles: {label}").format(label=label), current, scope_type="type", scope_type_value=component.type.value)
         if css is None:
             return
         if css.strip():
@@ -624,13 +624,13 @@ class StylesPanel:
         FileService.save_project(self.app.project)
         self.app.editor_view._update_preview()
         self.update(component.type)
-        self.app._update_status(f"Estilos del tipo '{label}' actualizados")
+        self.app._update_status(_("Type styles '{label}' updated").format(label=label))
 
     def _on_edit_component_css(self, widget, component):
         if not self.app.project:
             return
         css = self._edit_css_dialog(
-            f"Estilos del componente: {component.get_display_name(self.app.project_manager.resolve_labels())}",
+            _("Component styles: {name}").format(name=component.get_display_name(self.app.project_manager.resolve_labels())),
             component.custom_css,
             scope_type="component",
             scope_type_value=component.type.value,
@@ -641,37 +641,37 @@ class StylesPanel:
         FileService.save_project(self.app.project)
         self.app.editor_view._update_preview()
         self.update(component.type)
-        self.app._update_status(f"Estilos del componente '{component.get_display_name(self.app.project_manager.resolve_labels())}' actualizados")
+        self.app._update_status(_("Component styles '{name}' updated").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
 
     def _on_manage_type_css(self, widget):
         if not self.app.project:
-            show_info(self.app.window, "Abre un proyecto primero")
+            show_info(self.app.window, _("Open a project first"))
             return
 
         dialog = Gtk.Dialog(
-            title="Gestionar estilos por tipo",
+            title=_("Manage styles by type"),
             transient_for=self.app.window,
             flags=0,
         )
-        dialog.add_button("Cerrar", Gtk.ResponseType.CLOSE)
+        dialog.add_button(_("Close"), Gtk.ResponseType.CLOSE)
         dialog.set_default_size(450, 400)
 
         store = Gtk.ListStore(str, str, str)
         for ct in ComponentType:
             label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             has_css = ct.value in self.app.project.type_css_overrides
-            status = "Editado" if has_css else "Por defecto del tema"
+            status = _("Edited") if has_css else _("Theme default")
             store.append([label, status, ct.value])
 
         tree = Gtk.TreeView(model=store)
         tree.set_headers_visible(True)
         renderer_label = Gtk.CellRendererText()
-        col_label = Gtk.TreeViewColumn("Tipo", renderer_label, text=0)
+        col_label = Gtk.TreeViewColumn(_("Type"), renderer_label, text=0)
         col_label.set_resizable(True)
         col_label.set_expand(True)
         tree.append_column(col_label)
         renderer_status = Gtk.CellRendererText()
-        col_status = Gtk.TreeViewColumn("Estado", renderer_status, text=1)
+        col_status = Gtk.TreeViewColumn(_("Status"), renderer_status, text=1)
         col_status.set_resizable(True)
         tree.append_column(col_status)
 
@@ -682,8 +682,8 @@ class StylesPanel:
         box.pack_start(scrolled, True, True, 0)
 
         btn_box = Gtk.Box(spacing=6)
-        btn_edit = Gtk.Button(label="Editar")
-        btn_reset = Gtk.Button(label="Restablecer")
+        btn_edit = Gtk.Button(label=_("Edit"))
+        btn_reset = Gtk.Button(label=_("Reset"))
         btn_box.pack_start(btn_edit, False, False, 0)
         btn_box.pack_start(btn_reset, False, False, 0)
         box.pack_start(btn_box, False, False, 0)
@@ -702,7 +702,7 @@ class StylesPanel:
             ct = ComponentType(type_key)
             label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             current = self.app.project.type_css_overrides.get(type_key, "")
-            css = self._edit_css_dialog(f"Estilos del tipo: {label}", current, scope_type="type", scope_type_value=ct.value)
+            css = self._edit_css_dialog(_("Type styles: {label}").format(label=label), current, scope_type="type", scope_type_value=ct.value)
             if css is None:
                 return
             if css.strip():
@@ -713,7 +713,7 @@ class StylesPanel:
             self.app.editor_view._update_preview()
             if self.app.current_component:
                 self.update(self.app.current_component.type)
-            self.app._update_status(f"Estilos del tipo '{label}' actualizados")
+            self.app._update_status(_("Type styles '{label}' updated").format(label=label))
             _refresh_list()
 
         def _on_reset(btn):
@@ -724,14 +724,14 @@ class StylesPanel:
             label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
             if type_key not in self.app.project.type_css_overrides:
                 return
-            if not confirm(self.app.window, f"Restablecer estilos del tipo «{label}»?\nSe perderán los cambios personalizados."):
+            if not confirm(self.app.window, _("Reset type styles '{label}'?\nCustom changes will be lost.").format(label=label)):
                 return
             del self.app.project.type_css_overrides[type_key]
             FileService.save_project(self.app.project)
             self.app.editor_view._update_preview()
             if self.app.current_component:
                 self.update(self.app.current_component.type)
-            self.app._update_status(f"Estilos del tipo '{label}' restablecidos al tema")
+            self.app._update_status(_("Type styles '{label}' reset to theme").format(label=label))
             _refresh_list()
 
         def _refresh_list():
@@ -739,7 +739,7 @@ class StylesPanel:
             for ct in ComponentType:
                 label = self.app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS[ct])
                 has_css = ct.value in self.app.project.type_css_overrides
-                status = "Editado" if has_css else "Por defecto del tema"
+                status = _("Edited") if has_css else _("Theme default")
                 store.append([label, status, ct.value])
 
         tree.connect("row-activated", lambda t, path, col: _on_edit(None))

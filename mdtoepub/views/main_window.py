@@ -9,6 +9,8 @@ from ..models.component import Component
 from ..services.file_service import FileService
 from ..services.yaml_service import YamlService
 
+from ..i18n import _
+
 
 class MainWindow:
     def __init__(self, app):
@@ -44,115 +46,115 @@ class MainWindow:
     def _setup_menubar(self, container):
         menubar = Gtk.MenuBar()
 
-        # Archivo
-        archivo = Gtk.MenuItem(label="Archivo")
+        # File
+        archivo = Gtk.MenuItem(label=_("File"))
         archivo_menu = Gtk.Menu()
         archivo.set_submenu(archivo_menu)
-        item = Gtk.MenuItem(label="Nuevo proyecto")
+        item = Gtk.MenuItem(label=_("New Project"))
         item.connect("activate", self._on_new_project)
         archivo_menu.append(item)
-        item = Gtk.MenuItem(label="Abrir proyecto")
+        item = Gtk.MenuItem(label=_("Open Project"))
         item.connect("activate", self._on_open_project)
         archivo_menu.append(item)
-        item = Gtk.MenuItem(label="Guardar")
+        item = Gtk.MenuItem(label=_("Save"))
         item.connect("activate", self._on_save_project)
         archivo_menu.append(item)
-        item = Gtk.MenuItem(label="Guardar como")
+        item = Gtk.MenuItem(label=_("Save As"))
         item.connect("activate", self._on_save_project_as)
         archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
-        item = Gtk.MenuItem(label="Cerrar proyecto")
+        item = Gtk.MenuItem(label=_("Close Project"))
         item.connect("activate", self.app.project_tree_view._on_close_project)
         archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
         self._recent_menu = Gtk.Menu()
-        recent_item = Gtk.MenuItem(label="Proyectos recientes")
+        recent_item = Gtk.MenuItem(label=_("Recent Projects"))
         recent_item.set_submenu(self._recent_menu)
         archivo_menu.append(recent_item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
-        item = Gtk.MenuItem(label="Importar libro...")
+        item = Gtk.MenuItem(label=_("Import Book..."))
         item.connect("activate", self.app.export_import_ctrl.import_book)
         archivo_menu.append(item)
-        item = Gtk.MenuItem(label="Importar libro EPUB...")
+        item = Gtk.MenuItem(label=_("Import EPUB Book..."))
         item.connect("activate", self.app.export_import_ctrl.import_epub)
         archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
-        item = Gtk.MenuItem(label="Salir")
+        item = Gtk.MenuItem(label=_("Quit"))
         item.connect("activate", lambda w: self.app.window.destroy())
         archivo_menu.append(item)
         menubar.append(archivo)
 
-        # Componente
-        componente = Gtk.MenuItem(label="Componente")
+        # Component
+        componente = Gtk.MenuItem(label=_("Component"))
         componente_menu = Gtk.Menu()
         componente.set_submenu(componente_menu)
-        item = Gtk.MenuItem(label="Anadir componente")
+        item = Gtk.MenuItem(label=_("Add Component"))
         item.connect("activate", self.app.project_tree_view._on_add_component)
         componente_menu.append(item)
         componente_menu.append(Gtk.SeparatorMenuItem())
-        item = Gtk.MenuItem(label="Renombrar componente")
+        item = Gtk.MenuItem(label=_("Rename Component"))
         item.connect("activate", self.app.project_tree_view._on_menu_rename_component)
         componente_menu.append(item)
-        item = Gtk.MenuItem(label="Eliminar componente")
+        item = Gtk.MenuItem(label=_("Delete Component"))
         item.connect("activate", self.app.project_tree_view._on_menu_delete_component)
         componente_menu.append(item)
         menubar.append(componente)
 
-        # Ver
-        ver = Gtk.MenuItem(label="Ver")
+        # View
+        ver = Gtk.MenuItem(label=_("View"))
         ver_menu = Gtk.Menu()
         ver.set_submenu(ver_menu)
-        item = Gtk.MenuItem(label="Editor")
+        item = Gtk.MenuItem(label=_("Editor"))
         item.connect("activate", lambda w: self.app.editor_view._focus_editor())
         ver_menu.append(item)
-        item = Gtk.MenuItem(label="Preview")
+        item = Gtk.MenuItem(label=_("Preview"))
         item.connect("activate", lambda w: self.app.editor_view._focus_preview())
         ver_menu.append(item)
         menubar.append(ver)
 
-        # Exportar
-        exportar = Gtk.MenuItem(label="Exportar")
+        # Export
+        exportar = Gtk.MenuItem(label=_("Export"))
         exportar_menu = Gtk.Menu()
         exportar.set_submenu(exportar_menu)
-        item = Gtk.MenuItem(label="Exportar EPUB")
+        item = Gtk.MenuItem(label=_("Export EPUB"))
         item.connect("activate", self.app.export_import_ctrl.export_epub)
         exportar_menu.append(item)
-        item = Gtk.MenuItem(label="Abrir EPUB")
+        item = Gtk.MenuItem(label=_("Open EPUB"))
         item.connect("activate", self.app.export_import_ctrl.open_epub)
         exportar_menu.append(item)
         menubar.append(exportar)
 
-        # Configuracion
-        config = Gtk.MenuItem(label="Configuracion")
+        # Settings
+        config = Gtk.MenuItem(label=_("Settings"))
         config_menu = Gtk.Menu()
         config.set_submenu(config_menu)
-        item = Gtk.MenuItem(label="Proyecto")
+        item = Gtk.MenuItem(label=_("Project"))
         item.connect("activate", self._on_project_config)
         config_menu.append(item)
-        item = Gtk.MenuItem(label="Global")
+        item = Gtk.MenuItem(label=_("Global"))
         item.connect("activate", self._on_global_config)
         config_menu.append(item)
-        item = Gtk.MenuItem(label="Temas")
+        item = Gtk.MenuItem(label=_("Themes"))
         item.connect("activate", self._on_theme_manager)
         config_menu.append(item)
         menubar.append(config)
 
-        # Ayuda
-        ayuda = Gtk.MenuItem(label="Ayuda")
+        # Help
+        ayuda = Gtk.MenuItem(label=_("Help"))
         ayuda_menu = Gtk.Menu()
         ayuda.set_submenu(ayuda_menu)
-        libros_ejemplo = Gtk.MenuItem(label="Libros de ejemplo")
+        libros_ejemplo = Gtk.MenuItem(label=_("Sample Books"))
         libros_menu = Gtk.Menu()
         libros_ejemplo.set_submenu(libros_menu)
-        item = Gtk.MenuItem(label="Novela clásica")
+        item = Gtk.MenuItem(label=_("Classic Novel"))
         item.connect("activate", self._on_load_sample_book, "sample_book")
         libros_menu.append(item)
-        item = Gtk.MenuItem(label="Libro de texto")
+        item = Gtk.MenuItem(label=_("Textbook"))
         item.connect("activate", self._on_load_sample_book, "sample_book_textbook")
         libros_menu.append(item)
         ayuda_menu.append(libros_ejemplo)
         ayuda_menu.append(Gtk.SeparatorMenuItem())
-        item = Gtk.MenuItem(label="Acerca de")
+        item = Gtk.MenuItem(label=_("About"))
         item.connect("activate", self._on_about)
         ayuda_menu.append(item)
         menubar.append(ayuda)
@@ -166,20 +168,20 @@ class MainWindow:
         toolbar.get_style_context().add_class("primary-toolbar")
 
         new_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-new-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
-        new_btn.set_label("Nuevo")
-        new_btn.set_tooltip_text("Nuevo proyecto")
+        new_btn.set_label(_("New"))
+        new_btn.set_tooltip_text(_("New Project"))
         new_btn.connect("clicked", self._on_new_project)
         toolbar.insert(new_btn, -1)
 
         open_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("folder-open-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
-        open_btn.set_label("Abrir")
-        open_btn.set_tooltip_text("Abrir proyecto")
+        open_btn.set_label(_("Open"))
+        open_btn.set_tooltip_text(_("Open Project"))
         open_btn.connect("clicked", self._on_open_project)
         toolbar.insert(open_btn, -1)
 
         self.app._toolbar_save_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-save-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
-        self.app._toolbar_save_btn.set_label("Guardar")
-        self.app._toolbar_save_btn.set_tooltip_text("Guardar proyecto")
+        self.app._toolbar_save_btn.set_label(_("Save"))
+        self.app._toolbar_save_btn.set_tooltip_text(_("Save"))
         self.app._toolbar_save_btn.connect("clicked", self._on_save_project)
         toolbar.insert(self.app._toolbar_save_btn, -1)
 
@@ -187,8 +189,8 @@ class MainWindow:
         toolbar.insert(sep1, -1)
 
         project_config_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("preferences-system-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
-        project_config_btn.set_label("Configurar")
-        project_config_btn.set_tooltip_text("Configuracion del proyecto")
+        project_config_btn.set_label(_("Configure"))
+        project_config_btn.set_tooltip_text(_("Project Settings"))
         project_config_btn.connect("clicked", self._on_project_config)
         toolbar.insert(project_config_btn, -1)
 
@@ -196,15 +198,15 @@ class MainWindow:
         toolbar.insert(sep2, -1)
 
         export_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-send-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
-        export_btn.set_label("Exportar EPUB")
-        export_btn.set_tooltip_text("Exportar a EPUB")
+        export_btn.set_label(_("Export EPUB"))
+        export_btn.set_tooltip_text(_("Export EPUB"))
         export_btn.get_style_context().add_class("suggested-action")
         export_btn.connect("clicked", self.app.export_import_ctrl.export_epub)
         toolbar.insert(export_btn, -1)
 
         open_epub_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-open-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
-        open_epub_btn.set_label("Abrir EPUB")
-        open_epub_btn.set_tooltip_text("Abrir EPUB generado")
+        open_epub_btn.set_label(_("Open EPUB"))
+        open_epub_btn.set_tooltip_text(_("Open EPUB"))
         open_epub_btn.connect("clicked", self.app.export_import_ctrl.open_epub)
         toolbar.insert(open_epub_btn, -1)
 
@@ -220,7 +222,7 @@ class MainWindow:
         status_box.set_margin_end(8)
         container.pack_start(status_box, False, False, 0)
 
-        self.app.status_label = Gtk.Label(label="Listo")
+        self.app.status_label = Gtk.Label(label=_("Ready"))
         self.app.status_label.set_xalign(0)
         self.app.status_label.set_hexpand(True)
         status_box.pack_start(self.app.status_label, True, True, 0)
@@ -234,18 +236,18 @@ class MainWindow:
     def _confirm_discard_project(self):
         if self.app.project is None:
             return True
-        return confirm(self.app.window, "Se cerrará el proyecto actual. ¿Continuar?")
+        return confirm(self.app.window, _("The current project will be closed. Continue?"))
 
     def _on_new_project(self, button):
         if not self._confirm_discard_project():
             return
         dialog = Gtk.Dialog(
-            title="Nuevo Proyecto",
+            title=_("New Project"),
             transient_for=self.app.window,
             modal=True,
         )
-        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Crear", Gtk.ResponseType.ACCEPT)
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Create"), Gtk.ResponseType.ACCEPT)
         dialog.set_default_size(500, -1)
 
         content = dialog.get_content_area()
@@ -256,7 +258,7 @@ class MainWindow:
         content.set_margin_end(12)
 
         folder_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        folder_label = Gtk.Label(label="Carpeta padre:")
+        folder_label = Gtk.Label(label=_("Parent folder:"))
         folder_label.set_size_request(80, -1)
         folder_box.pack_start(folder_label, False, False, 0)
 
@@ -266,11 +268,11 @@ class MainWindow:
 
         def on_folder_clicked(btn):
             fc_dialog = Gtk.FileChooserNative(
-                title="Seleccionar carpeta",
+                title=_("Select folder"),
                 transient_for=dialog,
                 action=Gtk.FileChooserAction.SELECT_FOLDER,
-                accept_label="_Seleccionar",
-                cancel_label="_Cancelar",
+                accept_label=_("_Select"),
+                cancel_label=_("_Cancel"),
             )
             if fc_dialog.run() == Gtk.ResponseType.ACCEPT:
                 path = fc_dialog.get_filename()
@@ -284,7 +286,7 @@ class MainWindow:
         content.add(folder_box)
 
         name_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        name_label = Gtk.Label(label="Nombre:")
+        name_label = Gtk.Label(label=_("Name:"))
         name_label.set_size_request(80, -1)
         name_box.pack_start(name_label, False, False, 0)
         entry_name = Gtk.Entry()
@@ -294,7 +296,7 @@ class MainWindow:
         content.add(name_box)
 
         title_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        title_label = Gtk.Label(label="Titulo:")
+        title_label = Gtk.Label(label=_("Title:"))
         title_label.set_size_request(80, -1)
         title_box.pack_start(title_label, False, False, 0)
         entry_title = Gtk.Entry()
@@ -304,7 +306,7 @@ class MainWindow:
         content.add(title_box)
 
         author_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-        author_label = Gtk.Label(label="Autor:")
+        author_label = Gtk.Label(label=_("Author:"))
         author_label.set_size_request(80, -1)
         author_box.pack_start(author_label, False, False, 0)
         entry_author = Gtk.Entry()
@@ -320,7 +322,7 @@ class MainWindow:
                 author = entry_author.get_text().strip()
 
                 if not name:
-                    show_error(self.app.window, "El nombre del proyecto es obligatorio")
+                    show_error(self.app.window, _("Project name is required"))
                     d.destroy()
                     return
 
@@ -335,7 +337,7 @@ class MainWindow:
                 self.app.project_tree_view._set_read_only_mode(False)
                 self._add_recent_project(project_path.path)
                 self.app.project_tree_view._refresh_project_tree()
-                self.app._update_status(f"Proyecto creado: {name}")
+                self.app._update_status(_("Project created: {name}").format(name=name))
 
             d.destroy()
 
@@ -346,11 +348,11 @@ class MainWindow:
         if not self._confirm_discard_project():
             return
         dialog = Gtk.FileChooserNative(
-            title="Abrir Proyecto",
+            title=_("Open Project"),
             transient_for=self.app.window,
             action=Gtk.FileChooserAction.SELECT_FOLDER,
-            accept_label="_Abrir",
-            cancel_label="_Cancelar",
+            accept_label=_("_Open"),
+            cancel_label=_("_Cancel"),
         )
         if dialog.run() == Gtk.ResponseType.ACCEPT:
             path = dialog.get_filename()
@@ -366,36 +368,36 @@ class MainWindow:
                         self._add_recent_project(project.path)
                         self.app.project_tree_view._refresh_project_tree()
                         self.app.text_view.get_buffer().set_text("")
-                        self.app._update_status(f"Proyecto abierto: {project.name}")
+                        self.app._update_status(_("Project opened: {name}").format(name=project.name))
                     else:
-                        show_error(self.app.window, "Error al cargar el proyecto")
+                        show_error(self.app.window, _("Error loading project"))
                 else:
-                    show_error(self.app.window, "No se encontro project.yaml en esta carpeta")
+                    show_error(self.app.window, _("No project.yaml found in this folder"))
         dialog.destroy()
 
     def _on_save_project(self, button):
         if not self.app.project:
-            show_info(self.app.window, "No hay proyecto abierto")
+            show_info(self.app.window, _("No project open"))
             return
         if self.app._read_only:
             return
         if self.app.current_component:
             self.app.project_manager.save_component_content()
         FileService.save_project(self.app.project)
-        self.app._update_status("Proyecto guardado")
+        self.app._update_status(_("Project saved"))
 
     def _on_save_project_as(self, button):
         if not self.app.project:
-            show_info(self.app.window, "No hay proyecto abierto")
+            show_info(self.app.window, _("No project open"))
             return
         if self.app._read_only:
             return
         dialog = Gtk.FileChooserNative(
-            title="Guardar Proyecto Como",
+            title=_("Save Project As"),
             transient_for=self.app.window,
             action=Gtk.FileChooserAction.SELECT_FOLDER,
-            accept_label="_Guardar",
-            cancel_label="_Cancelar",
+            accept_label=_("_Save"),
+            cancel_label=_("_Cancel"),
         )
         if dialog.run() == Gtk.ResponseType.ACCEPT:
             path = dialog.get_filename()
@@ -440,7 +442,7 @@ class MainWindow:
                 self.app.project = new_project
                 self._add_recent_project(new_project.path)
                 self.app.project_tree_view._refresh_project_tree()
-                self.app._update_status(f"Proyecto guardado en: {new_project.path}")
+                self.app._update_status(_("Project saved to: {path}").format(path=new_project.path))
         dialog.destroy()
 
     def _on_load_sample_book(self, widget, book_dir="sample_book"):
@@ -449,7 +451,7 @@ class MainWindow:
         sample_dir = os.path.join(os.path.dirname(__file__), "..", "data", book_dir)
         yaml_path = os.path.join(sample_dir, "project.yaml")
         if not os.path.exists(yaml_path):
-            show_error(self.app.window, "No se encontro el libro de ejemplo")
+            show_error(self.app.window, _("Sample book not found"))
             return
         project = FileService.load_project(sample_dir)
         if project:
@@ -460,9 +462,9 @@ class MainWindow:
             self.app.project_tree_view._set_read_only_mode(True)
             self.app.project_tree_view._refresh_project_tree()
             self.app.text_view.get_buffer().set_text("")
-            self.app._update_status(f"Libro de ejemplo cargado: {project.name} [SOLO LECTURA]")
+            self.app._update_status(_("Sample book loaded: {name} [READ ONLY]").format(name=project.name))
         else:
-            show_error(self.app.window, "Error al cargar el libro de ejemplo")
+            show_error(self.app.window, _("Error loading sample book"))
 
     # ─── About dialog ─────────────────────────────────────────────────
 
@@ -471,9 +473,9 @@ class MainWindow:
             transient_for=self.app.window,
             modal=True,
         )
-        dialog.set_program_name("MDToEPUB")
+        dialog.set_program_name(_("MDToEPUB"))
         dialog.set_version("1.2.0")
-        dialog.set_comments("Editor de EPUB a partir de Markdown")
+        dialog.set_comments(_("EPUB editor from Markdown"))
         dialog.set_license_type(Gtk.License.GPL_3_0)
         dialog.connect("response", lambda d, r: d.destroy())
         dialog.show_all()
@@ -487,20 +489,20 @@ class MainWindow:
         config = YamlService.load(config_file)
 
         if not config:
-            config = {
-                "editor": {"font_size": 12, "tab_size": 4, "auto_save_interval": 30},
-                "preview": {"zoom": 100},
-                "general": {"window_width": 1200, "window_height": 800},
-                "epub_reader_path": "",
-            }
+            config = {}
+        config.setdefault("editor", {"font_size": 12, "tab_size": 4, "auto_save_interval": 30})
+        config.setdefault("preview", {"zoom": 100})
+        config.setdefault("general", {"window_width": 1200, "window_height": 800})
+        config.setdefault("epub_reader_path", "")
+        config.setdefault("ui_language", "")
 
         dialog = Gtk.Dialog(
-            title="Configuracion Global",
+            title=_("Global Settings"),
             transient_for=self.app.window,
             modal=True,
         )
-        dialog.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-        dialog.add_button("Guardar", Gtk.ResponseType.ACCEPT)
+        dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+        dialog.add_button(_("Save"), Gtk.ResponseType.ACCEPT)
         dialog.set_default_size(500, -1)
 
         content = dialog.get_content_area()
@@ -519,7 +521,7 @@ class MainWindow:
         editor_page.set_margin_bottom(8)
         editor_page.set_margin_start(8)
         editor_page.set_margin_end(8)
-        notebook.append_page(editor_page, Gtk.Label(label="Editor"))
+        notebook.append_page(editor_page, Gtk.Label(label=_("Editor")))
 
         grid = Gtk.Grid()
         grid.set_row_spacing(8)
@@ -528,7 +530,7 @@ class MainWindow:
         editor_page.pack_start(grid, False, False, 0)
 
         row = 0
-        label = Gtk.Label(label="Tamano fuente:")
+        label = Gtk.Label(label=_("Font size:"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         spin_font_size = Gtk.SpinButton()
@@ -537,7 +539,7 @@ class MainWindow:
         grid.attach(spin_font_size, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Tamano tab:")
+        label = Gtk.Label(label=_("Tab size:"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         spin_tab = Gtk.SpinButton()
@@ -546,7 +548,7 @@ class MainWindow:
         grid.attach(spin_tab, 1, row, 1, 1)
         row += 1
 
-        label = Gtk.Label(label="Auto-guardado (s):")
+        label = Gtk.Label(label=_("Auto-save (s):"))
         label.set_xalign(1)
         grid.attach(label, 0, row, 1, 1)
         spin_auto = Gtk.SpinButton()
@@ -559,7 +561,7 @@ class MainWindow:
         general_page.set_margin_bottom(8)
         general_page.set_margin_start(8)
         general_page.set_margin_end(8)
-        notebook.append_page(general_page, Gtk.Label(label="General"))
+        notebook.append_page(general_page, Gtk.Label(label=_("General")))
 
         grid_general = Gtk.Grid()
         grid_general.set_row_spacing(8)
@@ -568,25 +570,25 @@ class MainWindow:
         general_page.pack_start(grid_general, False, False, 0)
 
         reader_row = 0
-        reader_label = Gtk.Label(label="Lector EPUB:")
+        reader_label = Gtk.Label(label=_("EPUB reader:"))
         reader_label.set_xalign(1)
         grid_general.attach(reader_label, 0, reader_row, 1, 1)
 
         reader_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
         entry_reader = Gtk.Entry()
         entry_reader.set_hexpand(True)
-        entry_reader.set_placeholder_text("Dejar vacio para usar el visor del sistema")
+        entry_reader.set_placeholder_text(_("Leave empty to use system viewer"))
         entry_reader.set_text(config.get("epub_reader_path", ""))
         reader_box.pack_start(entry_reader, True, True, 0)
 
         def on_reader_browse(btn):
             fc = Gtk.FileChooserDialog(
-                title="Seleccionar lector EPUB",
+                title=_("Select EPUB reader"),
                 transient_for=dialog,
                 action=Gtk.FileChooserAction.OPEN,
             )
-            fc.add_button("Cancelar", Gtk.ResponseType.CANCEL)
-            fc.add_button("Seleccionar", Gtk.ResponseType.ACCEPT)
+            fc.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+            fc.add_button(_("Select"), Gtk.ResponseType.ACCEPT)
             def on_fc_response(d, response):
                 if response == Gtk.ResponseType.ACCEPT:
                     entry_reader.set_text(d.get_filename())
@@ -594,10 +596,31 @@ class MainWindow:
             fc.connect("response", on_fc_response)
             fc.show_all()
 
-        browse_btn = Gtk.Button(label="Examinar...")
+        browse_btn = Gtk.Button(label=_("Browse..."))
         browse_btn.connect("clicked", on_reader_browse)
         reader_box.pack_start(browse_btn, False, False, 0)
         grid_general.attach(reader_box, 1, reader_row, 1, 1)
+
+        # UI language selector
+        reader_row += 1
+        lang_label = Gtk.Label(label=_("UI Language:"))
+        lang_label.set_xalign(1)
+        grid_general.attach(lang_label, 0, reader_row, 1, 1)
+
+        lang_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        combo_lang = Gtk.ComboBoxText()
+        combo_lang.append_text(_("Auto (system)"))
+        combo_lang.append_text("English")
+        combo_lang.append_text("Español")
+        current_lang = config.get("ui_language", "").strip()
+        if current_lang == "en":
+            combo_lang.set_active(1)
+        elif current_lang == "es":
+            combo_lang.set_active(2)
+        else:
+            combo_lang.set_active(0)
+        lang_box.pack_start(combo_lang, True, True, 0)
+        grid_general.attach(lang_box, 1, reader_row, 1, 1)
 
         def on_global_response(d, response):
             if response == Gtk.ResponseType.ACCEPT:
@@ -605,8 +628,13 @@ class MainWindow:
                 config["editor"]["tab_size"] = int(spin_tab.get_value())
                 config["editor"]["auto_save_interval"] = int(spin_auto.get_value())
                 config["epub_reader_path"] = entry_reader.get_text().strip()
+                lang_idx = combo_lang.get_active()
+                lang_map = {0: "", 1: "en", 2: "es"}
+                config["ui_language"] = lang_map.get(lang_idx, "")
                 YamlService.save(config, config_file)
-                show_info(self.app.window, "Configuracion global guardada")
+                from ..i18n import setup_i18n
+                setup_i18n(config)
+                show_info(self.app.window, _("Global settings saved. Please restart the application for language changes to take full effect."))
             d.destroy()
 
         dialog.connect("response", on_global_response)
@@ -659,7 +687,7 @@ class MainWindow:
         for child in self._recent_menu.get_children():
             self._recent_menu.remove(child)
         if not self._recent_projects:
-            item = Gtk.MenuItem(label="(sin proyectos recientes)")
+            item = Gtk.MenuItem(label=_("(no recent projects)"))
             item.set_sensitive(False)
             self._recent_menu.append(item)
         else:
@@ -675,7 +703,7 @@ class MainWindow:
             return
         yaml_file = os.path.join(path, "project.yaml")
         if not os.path.exists(yaml_file):
-            show_error(self.app.window, f"El proyecto ya no existe:\n{path}")
+            show_error(self.app.window, _("Project no longer exists:\n{path}").format(path=path))
             self._recent_projects = [p for p in self._recent_projects if p != path]
             self._save_recent_projects()
             self._rebuild_recent_menu()
@@ -688,7 +716,7 @@ class MainWindow:
             self.app.project_tree_view._set_read_only_mode(False)
             self.app.project_tree_view._refresh_project_tree()
             self.app.text_view.get_buffer().set_text("")
-            self.app._update_status(f"Proyecto abierto: {project.name}")
+            self.app._update_status(_("Project opened: {name}").format(name=project.name))
             self._add_recent_project(path)
         else:
-            show_error(self.app.window, "Error al cargar el proyecto")
+            show_error(self.app.window, _("Error loading project"))
