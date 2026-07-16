@@ -19,6 +19,9 @@ class MainWindow:
         self._recent_projects = []
         self.selected_folder = ""
         self.folder_chooser_btn = None
+        self._project_config_btn = None
+        self._project_config_menu_item = None
+        self._project_dependent_items = []
 
     def build(self, container):
         self._setup_menubar(container)
@@ -58,13 +61,19 @@ class MainWindow:
         archivo_menu.append(item)
         item = Gtk.MenuItem(label=_("Save"))
         item.connect("activate", self._on_save_project)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         archivo_menu.append(item)
         item = Gtk.MenuItem(label=_("Save As"))
         item.connect("activate", self._on_save_project_as)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label=_("Close Project"))
         item.connect("activate", self.app.project_tree_view._on_close_project)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
         self._recent_menu = Gtk.Menu()
@@ -74,9 +83,13 @@ class MainWindow:
         archivo_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label=_("Import Book..."))
         item.connect("activate", self.app.export_import_ctrl.import_book)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         archivo_menu.append(item)
         item = Gtk.MenuItem(label=_("Import EPUB Book..."))
         item.connect("activate", self.app.export_import_ctrl.import_epub)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label=_("Quit"))
@@ -90,13 +103,19 @@ class MainWindow:
         componente.set_submenu(componente_menu)
         item = Gtk.MenuItem(label=_("Add Component"))
         item.connect("activate", self.app.project_tree_view._on_add_component)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         componente_menu.append(item)
         componente_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label=_("Rename Component"))
         item.connect("activate", self.app.project_tree_view._on_menu_rename_component)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         componente_menu.append(item)
         item = Gtk.MenuItem(label=_("Delete Component"))
         item.connect("activate", self.app.project_tree_view._on_menu_delete_component)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         componente_menu.append(item)
         menubar.append(componente)
 
@@ -118,9 +137,13 @@ class MainWindow:
         exportar.set_submenu(exportar_menu)
         item = Gtk.MenuItem(label=_("Export EPUB"))
         item.connect("activate", self.app.export_import_ctrl.export_epub)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         exportar_menu.append(item)
         item = Gtk.MenuItem(label=_("Open EPUB"))
         item.connect("activate", self.app.export_import_ctrl.open_epub)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         exportar_menu.append(item)
         menubar.append(exportar)
 
@@ -128,14 +151,17 @@ class MainWindow:
         config = Gtk.MenuItem(label=_("Settings"))
         config_menu = Gtk.Menu()
         config.set_submenu(config_menu)
-        item = Gtk.MenuItem(label=_("Project"))
-        item.connect("activate", self._on_project_config)
-        config_menu.append(item)
+        self._project_config_menu_item = Gtk.MenuItem(label=_("Project"))
+        self._project_config_menu_item.connect("activate", self._on_project_config)
+        self._project_config_menu_item.set_sensitive(False)
+        config_menu.append(self._project_config_menu_item)
         item = Gtk.MenuItem(label=_("Global"))
         item.connect("activate", self._on_global_config)
         config_menu.append(item)
         item = Gtk.MenuItem(label=_("Themes"))
         item.connect("activate", self._on_theme_manager)
+        item.set_sensitive(False)
+        self._project_dependent_items.append(item)
         config_menu.append(item)
         menubar.append(config)
 
@@ -188,11 +214,12 @@ class MainWindow:
         sep1 = Gtk.SeparatorToolItem()
         toolbar.insert(sep1, -1)
 
-        project_config_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("preferences-system-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
-        project_config_btn.set_label(_("Configure"))
-        project_config_btn.set_tooltip_text(_("Project Settings"))
-        project_config_btn.connect("clicked", self._on_project_config)
-        toolbar.insert(project_config_btn, -1)
+        self._project_config_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("preferences-system-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        self._project_config_btn.set_label(_("Configure"))
+        self._project_config_btn.set_tooltip_text(_("Project Settings"))
+        self._project_config_btn.connect("clicked", self._on_project_config)
+        self._project_config_btn.set_sensitive(False)
+        toolbar.insert(self._project_config_btn, -1)
 
         sep2 = Gtk.SeparatorToolItem()
         toolbar.insert(sep2, -1)
@@ -204,7 +231,7 @@ class MainWindow:
         export_btn.connect("clicked", self.app.export_import_ctrl.export_epub)
         toolbar.insert(export_btn, -1)
 
-        open_epub_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-open-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        open_epub_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("x-office-document-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
         open_epub_btn.set_label(_("Open EPUB"))
         open_epub_btn.set_tooltip_text(_("Open EPUB"))
         open_epub_btn.connect("clicked", self.app.export_import_ctrl.open_epub)
@@ -230,6 +257,15 @@ class MainWindow:
         self.app.project_label = Gtk.Label(label="")
         self.app.project_label.set_xalign(1)
         status_box.pack_end(self.app.project_label, False, False, 0)
+
+    def update_project_sensitivity(self, has_project: bool):
+        """Enable/disable project-dependent UI elements."""
+        for item in self._project_dependent_items:
+            item.set_sensitive(has_project)
+        if self._project_config_btn:
+            self._project_config_btn.set_sensitive(has_project)
+        if self._project_config_menu_item:
+            self._project_config_menu_item.set_sensitive(has_project)
 
     # ─── Project lifecycle ────────────────────────────────────────────
 
@@ -332,6 +368,7 @@ class MainWindow:
                 FileService.save_project(project_path)
 
                 self.app.project = project_path
+                self.update_project_sensitivity(True)
                 self.app.editor_view._update_spell_lang()
                 self.app.current_component = None
                 self.app.project_tree_view._set_read_only_mode(False)
@@ -362,6 +399,7 @@ class MainWindow:
                     project = FileService.load_project(path)
                     if project:
                         self.app.project = project
+                        self.update_project_sensitivity(True)
                         self.app.editor_view._update_spell_lang()
                         self.app.current_component = None
                         self.app.project_tree_view._set_read_only_mode(False)
@@ -460,6 +498,7 @@ class MainWindow:
         if project:
             self.app.project = project
             self.app.project.path = sample_dir
+            self.update_project_sensitivity(True)
             self.app.editor_view._update_spell_lang()
             self.app.current_component = None
             self.app.project_tree_view._set_read_only_mode(True)
@@ -714,6 +753,7 @@ class MainWindow:
         project = FileService.load_project(path)
         if project:
             self.app.project = project
+            self.update_project_sensitivity(True)
             self.app.editor_view._update_spell_lang()
             self.app.current_component = None
             self.app.project_tree_view._set_read_only_mode(False)
