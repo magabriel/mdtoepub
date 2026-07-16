@@ -23,6 +23,8 @@ Workflow for each fix/feature:
 4. If they agree, merge into main.
 5. Delete the branch after merging.
 
+NEVER merge to main without the user's approval.
+
 ## Starting Workflow
 
 When the user says they want to start fixing a bug or implementing a feature:

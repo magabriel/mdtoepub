@@ -1,3 +1,4 @@
+from ...utils.dialogs import show_error, show_info, confirm
 import os
 import shutil
 from pathlib import Path
@@ -700,7 +701,7 @@ def show_project_config(app):
     for ct in ComponentType:
         if ct in skip_types:
             continue
-        label_text = app._resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS.get(ct, ct.value))
+        label_text = app.project_manager.resolve_labels().get(ct.value, COMPONENT_TYPE_LABELS.get(ct, ct.value))
         cb = Gtk.CheckButton(label=label_text)
         cb.set_active(ct.value in app.project.drop_cap_types)
         drop_cap_checkbuttons[ct.value] = cb

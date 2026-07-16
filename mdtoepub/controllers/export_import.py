@@ -1,3 +1,4 @@
+from ..utils.dialogs import show_error, show_info, confirm
 import os
 import subprocess
 
@@ -14,10 +15,10 @@ class ExportImportController:
 
     def export_epub(self, button):
         if not self.app.project:
-            self.app._show_info("No hay proyecto abierto")
+            show_info(self.app.window, "No hay proyecto abierto")
             return
 
-        self.app._save_current_component()
+        self.app.project_manager.save_component_content()
 
         epub_name = self.app.project.export_filename or slugify(
             self.app.project.title or self.app.project.name
@@ -62,7 +63,7 @@ class ExportImportController:
 
         os.makedirs(os.path.dirname(epub_path) or ".", exist_ok=True)
         if os.path.exists(epub_path):
-            if not self.app._confirm(f"El archivo ya existe:\n{epub_path}\n\n¿Sobrescribirlo?"):
+            if not confirm(self.app.window, f"El archivo ya existe:\n{epub_path}\n\n¿Sobrescribirlo?"):
                 return
         epub_service = EpubService(self.app.project)
         _, config_file = self.app._get_config_path()
@@ -71,16 +72,16 @@ class ExportImportController:
         if result:
             self.app._last_epub_path = result
             self.app._update_status(f"EPUB exportado: {result}")
-            self.app._show_info(f"EPUB generado correctamente:\n{result}")
+            show_info(self.app.window, f"EPUB generado correctamente:\n{result}")
         else:
-            self.app._show_error("Error al generar el EPUB")
+            show_error(self.app.window, "Error al generar el EPUB")
 
     def import_book(self, button):
         if not self.app.project:
-            self.app._show_info("No hay proyecto abierto")
+            show_info(self.app.window, "No hay proyecto abierto")
             return
         if self.app._read_only:
-            self.app._show_info("No se puede importar en el libro de ejemplo")
+            show_info(self.app.window, "No se puede importar en el libro de ejemplo")
             return
 
         dialog = Gtk.FileChooserNative(
@@ -108,11 +109,11 @@ class ExportImportController:
                 with open(file_path, "r", encoding="utf-8") as f:
                     content = f.read()
             except Exception as e:
-                self.app._show_error(f"Error al leer el archivo: {e}")
+                show_error(self.app.window, f"Error al leer el archivo: {e}")
                 return
 
             if not content.strip():
-                self.app._show_info("El archivo esta vacio")
+                show_info(self.app.window, "El archivo esta vacio")
                 return
 
             parsed = FileService.parse_imported_markdown(content)
@@ -141,7 +142,7 @@ class ExportImportController:
                 self.app._update_status(f"Importados {count} componentes")
                 self.app.project_tree_view._refresh_project_tree()
                 self.app.editor_view._update_preview()
-                self.app._show_info(f"Se importaron {count} componentes correctamente.")
+                show_info(self.app.window, f"Se importaron {count} componentes correctamente.")
             else:
                 confirm.destroy()
         else:
@@ -149,10 +150,10 @@ class ExportImportController:
 
     def import_epub(self, button):
         if not self.app.project:
-            self.app._show_info("No hay proyecto abierto")
+            show_info(self.app.window, "No hay proyecto abierto")
             return
         if self.app._read_only:
-            self.app._show_info("No se puede importar en el libro de ejemplo")
+            show_info(self.app.window, "No se puede importar en el libro de ejemplo")
             return
 
         dialog = Gtk.FileChooserNative(
@@ -179,11 +180,11 @@ class ExportImportController:
             try:
                 components, images = FileService.parse_imported_epub(file_path)
             except Exception as e:
-                self.app._show_error(f"Error al leer el EPUB: {e}")
+                show_error(self.app.window, f"Error al leer el EPUB: {e}")
                 return
 
             if not components:
-                self.app._show_info("El EPUB no contiene documentos importables.")
+                show_info(self.app.window, "El EPUB no contiene documentos importables.")
                 return
 
             total_chars = sum(len(md) for _, _, md in components)
@@ -212,7 +213,7 @@ class ExportImportController:
                 self.app._update_status(f"Importados {count} componentes")
                 self.app.project_tree_view._refresh_project_tree()
                 self.app.editor_view._update_preview()
-                self.app._show_info(f"Se importaron {count} componentes correctamente.")
+                show_info(self.app.window, f"Se importaron {count} componentes correctamente.")
             else:
                 confirm.destroy()
         else:
@@ -220,7 +221,7 @@ class ExportImportController:
 
     def open_epub(self, button):
         if not self.app._last_epub_path or not os.path.exists(self.app._last_epub_path):
-            self.app._show_info("No hay EPUB generado. Exportalo primero.")
+            show_info(self.app.window, "No hay EPUB generado. Exportalo primero.")
             return
         try:
             config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
@@ -232,4 +233,4 @@ class ExportImportController:
             else:
                 subprocess.Popen(["xdg-open", self.app._last_epub_path])
         except Exception as e:
-            self.app._show_error(f"No se pudo abrir el EPUB: {e}")
+            show_error(self.app.window, f"No se pudo abrir el EPUB: {e}")
