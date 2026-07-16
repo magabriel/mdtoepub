@@ -1,6 +1,7 @@
 import uuid
 
 import gi
+from mdtoepub.models.component import Component, ComponentType
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gdk, GdkPixbuf, Pango
 
@@ -8,7 +9,42 @@ from ..models.project import Project
 from ..models.component import Component, ComponentType, COMPONENT_TYPE_LABELS
 from ..services.file_service import FileService
 from ..services.labels_service import resolve_labels
-from ..main import _component_icon, _component_label
+
+
+def _component_icon(comp: Component) -> str:
+    mapping = {
+        ComponentType.ACKNOWLEDGEMENT: "emblem-people",
+        ComponentType.AFTERWORD: "text-x-preview",
+        ComponentType.APPENDIX: "emblem-documents",
+        ComponentType.AUTHOR: "avatar-default",
+        ComponentType.CHAPTER: "text-x-generic",
+        ComponentType.CONCLUSION: "text-x-preview",
+        ComponentType.COVER: "image-x-generic",
+        ComponentType.DEDICATION: "emblem-favorite",
+        ComponentType.EDITION: "text-x-preview",
+        ComponentType.EPILOGUE: "text-x-preview",
+        ComponentType.FOREWORD: "text-x-preview",
+        ComponentType.FOOTNOTES: "accessories-dictionary",
+        ComponentType.GLOSSARY: "accessories-dictionary",
+        ComponentType.INTRODUCTION: "text-x-preview",
+        ComponentType.LICENSE: "application-certificate",
+        ComponentType.LOF: "x-office-document",
+        ComponentType.LOT: "x-office-document",
+        ComponentType.PART: "folder",
+        ComponentType.PREFACE: "text-x-preview",
+        ComponentType.PROLOGUE: "text-x-preview",
+        ComponentType.TITLE: "text-x-generic",
+        ComponentType.TOC: "x-office-document",
+    }
+    return mapping.get(comp.type, "text-x-generic")
+
+
+def _component_label(comp: Component, labels=None) -> str:
+    if labels:
+        span = labels.get(comp.type.value, COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value))
+        return f"{comp.get_display_name(labels)} ({span})"
+    span = COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value)
+    return f"{comp.get_display_name()} ({span})"
 
 
 class ProjectTree:

@@ -18,7 +18,7 @@ gi.require_version("GtkSource", "4")
 from gi.repository import Gtk, Gio, GLib, Gdk, GdkPixbuf, Pango
 
 from .models.project import Project
-from .models.component import Component, ComponentType, COMPONENT_TYPE_LABELS
+from .models.component import Component
 from .services.file_service import FileService
 from .services.epub_service import EpubService
 from .services.yaml_service import YamlService
@@ -28,42 +28,6 @@ from .services.style_doc_service import StyleDocService
 from .services.spell_service import SpellCheckService
 from .services.theme_service import ThemeService
 from .services.labels_service import resolve_labels
-
-
-def _component_icon(comp: Component) -> str:
-    mapping = {
-        ComponentType.ACKNOWLEDGEMENT: "emblem-people",
-        ComponentType.AFTERWORD: "text-x-preview",
-        ComponentType.APPENDIX: "emblem-documents",
-        ComponentType.AUTHOR: "avatar-default",
-        ComponentType.CHAPTER: "text-x-generic",
-        ComponentType.CONCLUSION: "text-x-preview",
-        ComponentType.COVER: "image-x-generic",
-        ComponentType.DEDICATION: "emblem-favorite",
-        ComponentType.EDITION: "text-x-preview",
-        ComponentType.EPILOGUE: "text-x-preview",
-        ComponentType.FOREWORD: "text-x-preview",
-        ComponentType.FOOTNOTES: "accessories-dictionary",
-        ComponentType.GLOSSARY: "accessories-dictionary",
-        ComponentType.INTRODUCTION: "text-x-preview",
-        ComponentType.LICENSE: "application-certificate",
-        ComponentType.LOF: "x-office-document",
-        ComponentType.LOT: "x-office-document",
-        ComponentType.PART: "folder",
-        ComponentType.PREFACE: "text-x-preview",
-        ComponentType.PROLOGUE: "text-x-preview",
-        ComponentType.TITLE: "text-x-generic",
-        ComponentType.TOC: "x-office-document",
-    }
-    return mapping.get(comp.type, "text-x-generic")
-
-
-def _component_label(comp: Component, labels=None) -> str:
-    if labels:
-        span = labels.get(comp.type.value, COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value))
-        return f"{comp.get_display_name(labels)} ({span})"
-    span = COMPONENT_TYPE_LABELS.get(comp.type, comp.type.value)
-    return f"{comp.get_display_name()} ({span})"
 
 
 class MDToEPUBApp(Gtk.Application):
@@ -108,25 +72,24 @@ class MDToEPUBApp(Gtk.Application):
 
         main_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 
+        from .views.project_tree import ProjectTree
+        from .views.styles_panel import StylesPanel
+        from .views.editor_view import EditorView
         from .views.main_window import MainWindow
+        from .controllers.export_import import ExportImportController
+
+        self.project_tree_view = ProjectTree(self)
+        self._styles_panel = StylesPanel(self)
+        self.editor_view = EditorView(self)
+        self.export_import_ctrl = ExportImportController(self)
+
         self.main_window = MainWindow(self)
         left_box, right_box = self.main_window.build(main_box)
 
-        from .views.styles_panel import StylesPanel
-        self._styles_panel = StylesPanel(self)
         self._styles_scrolled = self._styles_panel.build()
-
-        from .views.editor_view import EditorView
-        self.editor_view = EditorView(self)
         self.editor_view.build(right_box)
-
-        from .views.project_tree import ProjectTree
-        self.project_tree_view = ProjectTree(self)
         self.project_tree_view.build(left_box)
         self.project_tree = self.project_tree_view.project_tree
-
-        from .controllers.export_import import ExportImportController
-        self.export_import_ctrl = ExportImportController(self)
 
         self.window.add(main_box)
         self.window.show_all()
