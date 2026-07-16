@@ -1175,3 +1175,39 @@ msgstr "Apéndice <n> + título"
 
 msgid "Style:"
 msgstr "Estilo:"
+
+msgid "Word numbers"
+msgstr "Números con palabras"
+
+msgid "<n> part"
+msgstr "<n> parte"
+
+msgid "First"
+msgstr "Primera"
+
+msgid "Second"
+msgstr "Segunda"
+
+msgid "Third"
+msgstr "Tercera"
+
+msgid "Fourth"
+msgstr "Cuarta"
+
+msgid "Fifth"
+msgstr "Quinta"
+
+msgid "Sixth"
+msgstr "Sexta"
+
+msgid "Seventh"
+msgstr "Séptima"
+
+msgid "Eighth"
+msgstr "Octava"
+
+msgid "Ninth"
+msgstr "Novena"
+
+msgid "Tenth"
+msgstr "Décima"
