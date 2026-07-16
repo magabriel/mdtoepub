@@ -20,10 +20,11 @@ Workflow for each fix/feature:
 1. Create a branch from main.
 2. Commit changes on the branch.
 3. Ask the user for permission to merge into main.
+   **Stop and wait for approval. Do not proceed to step 4 without explicit confirmation.**
 4. If they agree, merge into main.
 5. Delete the branch after merging.
 
-NEVER merge to main without the user's approval.
+NEVER merge to main without the user's approval. This is the most important rule.
 
 ## Starting Workflow
 
