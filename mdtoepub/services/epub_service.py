@@ -903,7 +903,12 @@ class EpubService:
                 if not default_title:
                     # No user h1, no header: prepend title as h1
                     markdown_content = f"# {self._component_label(component)}\n\n{markdown_content}"
-            # else show_title=False, no header: just render content as-is
+            else:
+                # show_title=False: strip any user-written h1
+                if h1_match:
+                    markdown_content = (markdown_content[:h1_match.start()]
+                                        + markdown_content[h1_match.end():])
+                    markdown_content = markdown_content.strip()
             html_content = self.markdown_service.render(markdown_content, component.type, component.id, start_number,
                                                           figure_num_start, figure_num_style,
                                                           table_num_start, table_num_style,
@@ -1015,6 +1020,10 @@ class EpubService:
             markdown_content = header_html + markdown_content
         elif show_title and not default_title:
             markdown_content = f"# {display_title}\n\n{markdown_content}"
+        elif not show_title and h1_match:
+            markdown_content = (markdown_content[:h1_match.start()]
+                                + markdown_content[h1_match.end():])
+            markdown_content = markdown_content.strip()
 
         user_html = self.markdown_service.render(markdown_content, component.type, component.id,
                                                   variables=variables, labels=self._labels)
@@ -1105,6 +1114,10 @@ class EpubService:
             markdown_content = header_html + markdown_content
         elif show_title and not default_title:
             markdown_content = f"# {self._component_label(component)}\n\n{markdown_content}"
+        elif not show_title and h1_match:
+            markdown_content = (markdown_content[:h1_match.start()]
+                                + markdown_content[h1_match.end():])
+            markdown_content = markdown_content.strip()
 
         import markdown
         md = markdown.Markdown(extensions=self.markdown_service.extensions,
