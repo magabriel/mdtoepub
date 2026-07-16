@@ -1544,3 +1544,6 @@ msgstr "Idioma de la interfaz:"
 
 msgid "Auto (system)"
 msgstr "Auto (sistema)"
+
+msgid "Global settings saved. Please restart the application for language changes to take full effect."
+msgstr "Configuración global guardada. Reinicia la aplicación para que los cambios de idioma surtan efecto completo."

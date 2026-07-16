@@ -14,6 +14,7 @@ gi.require_version("WebKit2", "4.1")
 gi.require_version("GtkSource", "4")
 from gi.repository import Gtk, Gio, GLib
 
+from .i18n import setup_i18n
 from .services.markdown_service import MarkdownService
 
 
@@ -37,6 +38,12 @@ class MDToEPUBApp(Gtk.Application):
         self._toolbar_save_btn = None
         self._styles_current_component = None
         self._styles_current_comp_type = None
+
+        config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
+        config_file = os.path.join(config_dir, "config.yaml")
+        from .services.yaml_service import YamlService
+        config = YamlService.load(config_file) if os.path.exists(config_file) else {}
+        setup_i18n(config)
 
     def do_activate(self):
         settings = Gtk.Settings.get_default()

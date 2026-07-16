@@ -632,7 +632,9 @@ class MainWindow:
                 lang_map = {0: "", 1: "en", 2: "es"}
                 config["ui_language"] = lang_map.get(lang_idx, "")
                 YamlService.save(config, config_file)
-                show_info(self.app.window, _("Global settings saved"))
+                from ..i18n import setup_i18n
+                setup_i18n(config)
+                show_info(self.app.window, _("Global settings saved. Please restart the application for language changes to take full effect."))
             d.destroy()
 
         dialog.connect("response", on_global_response)

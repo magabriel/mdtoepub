@@ -1544,3 +1544,6 @@ msgstr "UI Language:"
 
 msgid "Auto (system)"
 msgstr "Auto (system)"
+
+msgid "Global settings saved. Please restart the application for language changes to take full effect."
+msgstr "Global settings saved. Please restart the application for language changes to take full effect."
