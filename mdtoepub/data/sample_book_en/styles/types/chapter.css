@@ -1,0 +1,9 @@
+/* @doc Chapter number colour in header */
+.component-header .header-number {
+  color: #4a6741;
+}
+
+/* @doc Drop cap colour */
+.drop-cap {
+  color: #4a6741;
+}

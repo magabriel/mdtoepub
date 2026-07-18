@@ -1,0 +1,213 @@
+author: Elena M. Vasquez
+auto_chapter_title: chapter_number_with_title
+auto_part_title: word_part_with_title
+components:
+- filename: cover.md
+  frontmatter:
+    subtitle: A mystery of archives and memory
+  id: cover-001
+  order: 0
+  part_id: null
+  title: Cover
+  type: cover
+- filename: title.md
+  frontmatter: {}
+  id: title-001
+  order: 1
+  part_id: null
+  title: Title page
+  type: title
+- filename: author.md
+  frontmatter:
+    birth: "Lisbon, 1978"
+  id: author-001
+  order: 2
+  part_id: null
+  title: About the author
+  type: author
+- filename: license.md
+  frontmatter: {}
+  id: license-001
+  order: 3
+  part_id: null
+  title: License
+  type: license
+- filename: dedication.md
+  frontmatter: {}
+  id: dedication-001
+  order: 4
+  part_id: null
+  title: Dedication
+  type: dedication
+- filename: edition.md
+  frontmatter:
+    city: London
+    editor: Meridian Books
+    isbn: 978-1-234567-01-2
+    year: 2025
+  id: edition-001
+  order: 5
+  part_id: null
+  title: Edition
+  type: edition
+- filename: toc.md
+  frontmatter:
+    toc_include:
+    - cover
+    - title
+    - author
+    - dedication
+    - foreword
+    - prologue
+    - preface
+    - introduction
+    - chapter
+    - conclusion
+    - epilogue
+    - afterword
+    - appendix
+    - glossary
+    - acknowledgement
+  id: toc-001
+  order: 6
+  part_id: null
+  title: Table of Contents
+  type: toc
+- filename: foreword.md
+  frontmatter: {}
+  id: foreword-001
+  order: 7
+  part_id: null
+  title: Foreword
+  type: foreword
+- filename: prologue.md
+  frontmatter:
+    date: "London, 1888"
+  id: prologue-001
+  order: 8
+  part_id: null
+  title: Prologue
+  type: prologue
+- filename: preface.md
+  frontmatter: {}
+  id: preface-001
+  order: 9
+  part_id: null
+  title: Preface
+  type: preface
+- filename: acknowledgement.md
+  frontmatter: {}
+  id: acknowledgement-001
+  order: 10
+  part_id: null
+  title: Acknowledgements
+  type: acknowledgement
+- filename: introduction.md
+  frontmatter: {}
+  id: introduction-001
+  order: 11
+  part_id: null
+  title: Introduction
+  type: introduction
+- filename: chapter_01.md
+  frontmatter:
+    location: London, 1897
+  id: chapter-001
+  order: 12
+  part_id: part-001
+  title: The Awakening
+  type: chapter
+- filename: chapter_02.md
+  frontmatter:
+    location: Oxford, 1897
+  id: chapter-002
+  order: 13
+  part_id: part-001
+  title: The Sealed Letter
+  type: chapter
+- filename: chapter_03.md
+  frontmatter:
+    location: Edinburgh, 1898
+  id: chapter-003
+  order: 14
+  part_id: part-001
+  title: The Lost Archive
+  type: chapter
+- filename: chapter_04.md
+  frontmatter:
+    location: Bath, 1898
+  id: chapter-004
+  order: 15
+  part_id: part-002
+  title: The Secret Library
+  type: chapter
+- filename: chapter_05.md
+  frontmatter:
+    location: Cambridge, 1899
+  id: chapter-005
+  order: 16
+  part_id: part-002
+  title: The Star Map
+  type: chapter
+- filename: conclusion.md
+  frontmatter: {}
+  id: conclusion-001
+  order: 17
+  part_id: null
+  title: Conclusion
+  type: conclusion
+- filename: epilogue.md
+  frontmatter: {}
+  id: epilogue-001
+  order: 18
+  part_id: null
+  title: Epilogue
+  type: epilogue
+- filename: afterword.md
+  frontmatter: {}
+  id: afterword-001
+  order: 19
+  part_id: null
+  title: Afterword
+  type: afterword
+- filename: appendix.md
+  frontmatter: {}
+  id: appendix-001
+  order: 20
+  part_id: null
+  title: Historical Notes
+  type: appendix
+- filename: glossary.md
+  frontmatter: {}
+  id: glossary-001
+  order: 21
+  part_id: null
+  title: Glossary
+  type: glossary
+drop_cap_enabled: true
+drop_cap_types:
+- chapter
+- preface
+edition: 1st edition
+epub_version: epub3
+export_filename: the-vestige-of-centuries
+figure_numbering: false
+figure_numbering_style: arabic
+isbn: 978-1-234567-01-2
+labels: {}
+language: en
+name: sample_book_en
+publication_date: "2025"
+publisher: Meridian Books
+spell_lang: en_US
+spell_words: []
+subtitle: A mystery of archives and memory
+table_numbering: false
+table_numbering_style: arabic
+theme_id: classic
+title: The Vestige of Centuries
+parts:
+- id: part-001
+  title: Part I
+- id: part-002
+  title: Part II

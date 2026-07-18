@@ -1,0 +1,180 @@
+author: Clara M. Rivers
+auto_chapter_title: chapter_number_with_title
+components:
+- filename: cover.md
+  frontmatter: {}
+  id: cover-001
+  order: 0
+  part_id: null
+  title: Cover
+  type: cover
+- filename: title.md
+  frontmatter: {}
+  id: title-001
+  order: 1
+  part_id: null
+  title: Title page
+  type: title
+- filename: author.md
+  frontmatter: {}
+  id: author-001
+  order: 2
+  part_id: null
+  title: About the author
+  type: author
+- filename: license.md
+  frontmatter: {}
+  id: license-001
+  order: 3
+  part_id: null
+  title: License
+  type: license
+- filename: dedication.md
+  frontmatter: {}
+  id: dedication-001
+  order: 4
+  part_id: null
+  title: Dedication
+  type: dedication
+- filename: edition.md
+  frontmatter: {}
+  id: edition-001
+  order: 5
+  part_id: null
+  title: Edition
+  type: edition
+- filename: toc.md
+  frontmatter:
+    toc_include:
+    - cover
+    - title
+    - author
+    - dedication
+    - foreword
+    - preface
+    - introduction
+    - chapter
+    - conclusion
+    - appendix
+    - glossary
+    - footnotes
+    - acknowledgement
+    - lof
+    - lot
+  id: toc-001
+  order: 6
+  part_id: null
+  title: Table of Contents
+  type: toc
+- filename: lof.md
+  frontmatter: {}
+  id: lof-001
+  order: 7
+  part_id: null
+  title: List of Figures
+  type: lof
+- filename: lot.md
+  frontmatter: {}
+  id: lot-001
+  order: 8
+  part_id: null
+  title: List of Tables
+  type: lot
+- filename: foreword.md
+  frontmatter: {}
+  id: foreword-001
+  order: 9
+  part_id: null
+  title: Foreword
+  type: foreword
+- filename: preface.md
+  frontmatter: {}
+  id: preface-001
+  order: 10
+  part_id: null
+  title: Preface
+  type: preface
+- filename: introduction.md
+  frontmatter: {}
+  id: introduction-001
+  order: 11
+  part_id: null
+  title: Introduction
+  type: introduction
+- filename: chapter_01.md
+  frontmatter:
+    focus: Attention as the gateway to learning
+  id: chapter-001
+  order: 12
+  part_id: null
+  title: The Power of Attention
+  type: chapter
+- filename: chapter_02.md
+  frontmatter:
+    focus: Strategies for lasting knowledge
+  id: chapter-002
+  order: 13
+  part_id: null
+  title: Building Solid Knowledge
+  type: chapter
+- filename: chapter_03.md
+  frontmatter:
+    focus: Overcoming limiting beliefs
+  id: chapter-003
+  order: 14
+  part_id: null
+  title: The Learner's Mindset
+  type: chapter
+- filename: conclusion.md
+  frontmatter: {}
+  id: conclusion-001
+  order: 15
+  part_id: null
+  title: Conclusion
+  type: conclusion
+- filename: appendix.md
+  frontmatter: {}
+  id: appendix-001
+  order: 16
+  part_id: null
+  title: Resources and Recommended Reading
+  type: appendix
+- filename: glossary.md
+  frontmatter: {}
+  id: glossary-001
+  order: 17
+  part_id: null
+  title: Glossary
+  type: glossary
+- filename: footnotes.md
+  frontmatter: {}
+  id: footnotes-001
+  order: 18
+  part_id: null
+  title: Notes
+  type: footnotes
+- filename: acknowledgement.md
+  frontmatter: {}
+  id: acknowledgement-001
+  order: 19
+  part_id: null
+  title: Acknowledgements
+  type: acknowledgement
+drop_cap_enabled: true
+drop_cap_types:
+- chapter
+epub_version: epub3
+figure_numbering: true
+figure_numbering_style: arabic
+table_numbering: true
+table_numbering_style: arabic
+language: en
+name: sample_book_textbook_en
+parts: []
+edition: 1st edition
+publication_date: "2025"
+isbn: 978-1-987654-01-5
+publisher: Bright Horizon Press
+theme_id: textbook
+title: The Art of Learning
+subtitle: How to master any skill with method and discipline
