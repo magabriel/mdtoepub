@@ -8,11 +8,9 @@ Always keep the README and ARCHITECTURE documents updated.
 
 ## ⛔ CRITICAL RULE: NEVER MERGE TO MAIN WITHOUT APPROVAL
 
-**This rule has been violated multiple times. It MUST NOT happen again.**
-
 After creating a branch and committing changes:
 1. Inform the user that the branch is ready.
-2. **WAIT** for the user's explicit approval (e.g. "mergea", "dale", "procede con el merge").
+2. **WAIT** for the user's explicit approval.
 3. Only after receiving approval, merge into main.
 4. Delete the branch.
 

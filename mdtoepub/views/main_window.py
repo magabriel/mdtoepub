@@ -527,6 +527,16 @@ class MainWindow:
         dialog.set_version(self._get_app_version())
         dialog.set_comments(_("EPUB editor from Markdown"))
         dialog.set_license_type(Gtk.License.GPL_3_0)
+        try:
+            from gi.repository import GdkPixbuf
+            icon_path = os.path.join(os.path.dirname(__file__), "..", "..",
+                                      "data", "icons", "hicolor", "scalable",
+                                      "apps", "com.github.mdtoepub.svg")
+            if os.path.exists(icon_path):
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, 128, 128)
+                dialog.set_logo(pixbuf)
+        except Exception:
+            pass
         dialog.connect("response", lambda d, r: d.destroy())
         dialog.show_all()
 
@@ -632,19 +642,17 @@ class MainWindow:
         reader_box.pack_start(entry_reader, True, True, 0)
 
         def on_reader_browse(btn):
-            fc = Gtk.FileChooserDialog(
+            fc = Gtk.FileChooserNative(
                 title=_("Select EPUB reader"),
                 transient_for=dialog,
                 action=Gtk.FileChooserAction.OPEN,
+                accept_label=_("_Select"),
+                cancel_label=_("_Cancel"),
             )
-            fc.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
-            fc.add_button(_("Select"), Gtk.ResponseType.ACCEPT)
-            def on_fc_response(d, response):
-                if response == Gtk.ResponseType.ACCEPT:
-                    entry_reader.set_text(d.get_filename())
-                d.destroy()
-            fc.connect("response", on_fc_response)
-            fc.show_all()
+            response = fc.run()
+            if response == Gtk.ResponseType.ACCEPT:
+                entry_reader.set_text(fc.get_filename())
+            fc.destroy()
 
         browse_btn = Gtk.Button(label=_("Browse..."))
         browse_btn.connect("clicked", on_reader_browse)
