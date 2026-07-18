@@ -1,0 +1,7 @@
+/* @doc Decorative sidebar in foreword */
+.component-foreword {
+  border-left: 3px solid #4a6741;
+  padding-left: 1.5em;
+  font-style: italic;
+  font-size: 0.95em;
+}

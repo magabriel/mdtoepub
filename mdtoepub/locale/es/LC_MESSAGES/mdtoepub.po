@@ -1214,3 +1214,9 @@ msgstr "Décima"
 
 msgid "<n> part + title"
 msgstr "<n> parte + título"
+
+msgid "Spanish"
+msgstr "Español"
+
+msgid "English"
+msgstr "Inglés"

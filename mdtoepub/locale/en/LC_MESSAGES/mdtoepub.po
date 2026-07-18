@@ -1214,3 +1214,9 @@ msgstr "Tenth"
 
 msgid "<n> part + title"
 msgstr "<n> part + title"
+
+msgid "Spanish"
+msgstr "Spanish"
+
+msgid "English"
+msgstr "English"
