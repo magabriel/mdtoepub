@@ -12,7 +12,19 @@ sync_metainfo_version() {
     local xml_file="data/com.github.mdtoepub.metainfo.xml"
     local today
     today=$(date +%Y-%m-%d)
+    if [ ! -f "$xml_file" ]; then
+        echo "ERROR: $xml_file no encontrado."
+        exit 1
+    fi
+    if ! grep -q '<release version="' "$xml_file"; then
+        echo "ERROR: No se encontró tag <release> en $xml_file"
+        exit 1
+    fi
     sed -i "s|<release version=\"[^\"]*\" date=\"[^\"]*\"|<release version=\"${VERSION}\" date=\"${today}\"|" "$xml_file"
+    if ! grep -q "<release version=\"${VERSION}\"" "$xml_file"; then
+        echo "ERROR: sync_metainfo_version falló. El metainfo no se actualizó a ${VERSION}."
+        exit 1
+    fi
 }
 RUNTIME="org.gnome.Platform"
 RUNTIME_VERSION="48"
@@ -118,6 +130,15 @@ main() {
             echo "=== Instalando bundle: $BUNDLE ==="
             flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
             flatpak install --user -y "$BUNDLE"
+            installed_version=$(flatpak list --app --user 2>/dev/null | grep "$APP_ID" | awk -F'\t' '{print $3}')
+            if [ "$installed_version" != "$VERSION" ]; then
+                echo ""
+                echo "ERROR: Se esperaba instalar v${VERSION} pero flatpak reporta v${installed_version}."
+                echo "       El bundle probablemente se generó con una versión anterior."
+                echo "       Ejecuta './build.sh' para regenerar el bundle e inténtalo de nuevo."
+                exit 1
+            fi
+            echo "=== v${VERSION} instalada correctamente ==="
         else
             echo "ERROR: $BUNDLE no encontrado. Ejecuta './build.sh' primero."
             exit 1
@@ -128,6 +149,15 @@ main() {
         flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
         if [ -f "$BUNDLE" ]; then
             flatpak install --user -y "$BUNDLE"
+            installed_version=$(flatpak list --app --user 2>/dev/null | grep "$APP_ID" | awk -F'\t' '{print $3}')
+            if [ "$installed_version" != "$VERSION" ]; then
+                echo ""
+                echo "ERROR: Se esperaba instalar v${VERSION} pero flatpak reporta v${installed_version}."
+                echo "       El bundle probablemente se generó con una versión anterior."
+                echo "       Ejecuta './build.sh' para regenerar el bundle e inténtalo de nuevo."
+                exit 1
+            fi
+            echo "=== v${VERSION} instalada correctamente ==="
         else
             echo "ERROR: $BUNDLE no encontrado. Ejecuta './build.sh' primero."
             exit 1
