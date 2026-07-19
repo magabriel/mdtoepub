@@ -111,11 +111,13 @@ set_version() {
         exit 1
     fi
     local xml_file="data/com.github.mdtoepub.metainfo.xml"
+    local version_file="mdtoepub/_version.py"
     local today
     today=$(date +%Y-%m-%d)
     sed -i "s|^version = \".*\"|version = \"${new_version}\"|" pyproject.toml
     sed -i "s|<release version=\"[^\"]*\" date=\"[^\"]*\"|<release version=\"${new_version}\" date=\"${today}\"|" "$xml_file"
-    git add pyproject.toml "$xml_file"
+    sed -i "s|^__version__ = \".*\"|__version__ = \"${new_version}\"|" "$version_file"
+    git add pyproject.toml "$xml_file" "$version_file"
     git commit -m "chore: bump version to ${new_version}"
     git tag -a "v${new_version}" -m "v${new_version}"
     echo "Versión actualizada a ${new_version} y tag creado."
