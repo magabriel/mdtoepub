@@ -103,26 +103,6 @@ show_help() {
     echo "  ${REPO_DIR}/"
 }
 
-set_version() {
-    local new_version="$1"
-    if [ -z "$new_version" ]; then
-        echo "Uso: $0 set-version <version>"
-        echo "Ejemplo: $0 set-version 1.6.0"
-        exit 1
-    fi
-    local xml_file="data/com.github.mdtoepub.metainfo.xml"
-    local version_file="mdtoepub/_version.py"
-    local today
-    today=$(date +%Y-%m-%d)
-    sed -i "s|^version = \".*\"|version = \"${new_version}\"|" pyproject.toml
-    sed -i "s|<release version=\"[^\"]*\" date=\"[^\"]*\"|<release version=\"${new_version}\" date=\"${today}\"|" "$xml_file"
-    sed -i "s|^__version__ = \".*\"|__version__ = \"${new_version}\"|" "$version_file"
-    git add pyproject.toml "$xml_file" "$version_file"
-    git commit -m "chore: bump version to ${new_version}"
-    git tag -a "v${new_version}" -m "v${new_version}"
-    echo "Versión actualizada a ${new_version} y tag creado."
-}
-
 main() {
     case "${1:-all}" in
         all)
@@ -143,9 +123,6 @@ main() {
         clean)
             rm -rf /tmp/mdtoepub "$BUNDLE" 2>/dev/null || true
             echo "Limpieza completada."
-            ;;
-        set-version)
-            set_version "$2"
             ;;
         install-local)
         if [ -f "$BUNDLE" ]; then
@@ -186,7 +163,7 @@ main() {
         fi
         ;;
         *)
-            echo "Uso: $0 {all|build|bundle|clean|set-version <ver>|install-local|reinstall}"
+            echo "Uso: $0 {all|build|bundle|clean|install-local|reinstall}"
             exit 1
             ;;
     esac
