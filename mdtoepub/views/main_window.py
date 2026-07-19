@@ -545,12 +545,10 @@ class MainWindow:
         dialog.set_comments(_("EPUB editor from Markdown"))
         dialog.set_license_type(Gtk.License.GPL_3_0)
         try:
-            from gi.repository import GdkPixbuf
-            icon_path = os.path.join(os.path.dirname(__file__), "..", "..",
-                                      "data", "icons", "hicolor", "scalable",
-                                      "apps", "com.github.mdtoepub.svg")
-            if os.path.exists(icon_path):
-                pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(icon_path, 128, 128)
+            icon_theme = Gtk.IconTheme.get_default()
+            icon_info = icon_theme.lookup_icon("com.github.mdtoepub", 128, 0)
+            if icon_info:
+                pixbuf = icon_info.load_icon()
                 dialog.set_logo(pixbuf)
         except Exception:
             pass
