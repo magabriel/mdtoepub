@@ -161,7 +161,7 @@ class MainWindow:
         item.connect("activate", self._on_global_config)
         config_menu.append(item)
         item = Gtk.MenuItem(label=_("Themes"))
-        item.connect("activate", self._on_theme_manager)
+        item.connect("activate", self.on_theme_manager)
         item.set_sensitive(False)
         self._project_dependent_items.append(item)
         config_menu.append(item)
