@@ -53,43 +53,17 @@ def _confirm(parent, msg):
     return response == Gtk.ResponseType.YES
 
 
+def _build_book_info_tab(app, interactive_widgets):
+    """Build the Book info tab with title, author, metadata fields.
 
-def show_project_config(app):
-    if not app.project:
-        _show_info(app.window, _("No project open"))
-        return
+    Args:
+        app: The application instance.
+        interactive_widgets: List to append widgets that need read-only toggling.
 
-    read_only = app.read_only
-
-    dialog = Gtk.Dialog(
-        title=_("Project Settings") + (" [READ ONLY]" if read_only else ""),
-        transient_for=app.window,
-        modal=True,
-    )
-    dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
-    if not read_only:
-        dialog.add_button(_("Save"), Gtk.ResponseType.ACCEPT)
-    dialog.set_default_size(520, 420)
-
-    content = dialog.get_content_area()
-    content.set_spacing(12)
-    content.set_margin_top(12)
-    content.set_margin_bottom(12)
-    content.set_margin_start(12)
-    content.set_margin_end(12)
-
-    if read_only:
-        note_rw = Gtk.Label()
-        note_rw.set_markup(f'<span foreground="#c00"><b>{_("This project is read-only. Changes cannot be saved.")}</b></span>')
-        note_rw.set_xalign(0)
-        content.pack_start(note_rw, False, False, 0)
-
-    interactive_widgets = []
-
-    notebook = Gtk.Notebook()
-    content.add(notebook)
-
-    # ── Tab 1: Book info ──
+    Returns:
+        Tuple of (grid_widget, entry_title, entry_subtitle, entry_export, entry_author,
+        entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial).
+    """
     grid_book = Gtk.Grid()
     grid_book.set_row_spacing(8)
     grid_book.set_column_spacing(12)
@@ -99,7 +73,6 @@ def show_project_config(app):
     grid_book.set_margin_start(12)
     grid_book.set_margin_end(12)
     grid_book.set_vexpand(False)
-    notebook.append_page(grid_book, Gtk.Label(label=_("Book")))
 
     row = 0
 
@@ -277,9 +250,22 @@ def show_project_config(app):
     note.set_xalign(0)
     note.set_line_wrap(True)
     grid_book.attach(note, 0, row, 2, 1)
-    row += 1
 
-    # ── Tab 2: Appearance ──
+    return (grid_book, entry_title, entry_subtitle, entry_export, entry_author,
+            entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial)
+
+
+def _build_appearance_tab(app, interactive_widgets):
+    """Build the Appearance tab with theme, drop cap, and spell check settings.
+
+    Args:
+        app: The application instance.
+        interactive_widgets: List to append widgets that need read-only toggling.
+
+    Returns:
+        Tuple of (grid_widget, combo_theme, available_themes, check_drop_cap,
+        drop_cap_checkbuttons, combo_lang, langs).
+    """
     grid_app = Gtk.Grid()
     grid_app.set_row_spacing(8)
     grid_app.set_column_spacing(12)
@@ -288,7 +274,6 @@ def show_project_config(app):
     grid_app.set_margin_bottom(12)
     grid_app.set_margin_start(12)
     grid_app.set_margin_end(12)
-    notebook.append_page(grid_app, Gtk.Label(label=_("Appearance")))
 
     row = 0
 
@@ -354,12 +339,10 @@ def show_project_config(app):
     sw.add(type_list)
     right_vbox.pack_start(sw, True, True, 0)
 
-    # Separator
     sep2 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
     grid_app.attach(sep2, 0, row, 2, 1)
     row += 1
 
-    # ── Spell check language ──
     label_lang = Gtk.Label(label=_("Spell checker:"))
     label_lang.set_xalign(1)
     grid_app.attach(label_lang, 0, row, 1, 1)
@@ -375,9 +358,25 @@ def show_project_config(app):
     combo_lang.set_active(lang_index)
     combo_lang.set_hexpand(True)
     grid_app.attach(combo_lang, 1, row, 1, 1)
-    row += 1
 
-    # ── Tab 3: Numbering ──
+    return (grid_app, combo_theme, available_themes, check_drop_cap,
+            drop_cap_checkbuttons, combo_lang, langs)
+
+
+def _build_numbering_tab(app, interactive_widgets):
+    """Build the Numbering tab with auto-title and figure/table numbering settings.
+
+    Args:
+        app: The application instance.
+        interactive_widgets: List to append widgets that need read-only toggling.
+
+    Returns:
+        Tuple of (grid_widget, combo_auto_title, auto_title_values, combo_chapter_style,
+        chapter_style_values, combo_auto_appendix, auto_appendix_values, combo_appendix_style,
+        appendix_style_values, combo_auto_part, auto_part_values, combo_part_style,
+        part_style_values, check_figure_numbering, combo_fig_style, fig_style_values,
+        check_table_numbering, combo_tab_style, tab_style_values).
+    """
     grid_num = Gtk.Grid()
     grid_num.set_row_spacing(8)
     grid_num.set_column_spacing(12)
@@ -386,7 +385,6 @@ def show_project_config(app):
     grid_num.set_margin_bottom(12)
     grid_num.set_margin_start(12)
     grid_num.set_margin_end(12)
-    notebook.append_page(grid_num, Gtk.Label(label=_("Numbering")))
 
     num_row = 0
 
@@ -526,7 +524,6 @@ def show_project_config(app):
     grid_num.attach(sep_num1, 0, num_row, 2, 1)
     num_row += 1
 
-    # ── Figure numbering ──
     label_fig = Gtk.Label(label=_("Figure numbering:"))
     label_fig.set_xalign(1)
     label_fig.set_valign(Gtk.Align.START)
@@ -568,7 +565,6 @@ def show_project_config(app):
     grid_num.attach(sep_num2, 0, num_row, 2, 1)
     num_row += 1
 
-    # ── Table numbering ──
     label_tab = Gtk.Label(label=_("Table numbering:"))
     label_tab.set_xalign(1)
     label_tab.set_valign(Gtk.Align.START)
@@ -606,13 +602,30 @@ def show_project_config(app):
     check_table_numbering.connect("toggled", _on_tab_numbering_toggle)
     _on_tab_numbering_toggle(check_table_numbering)
 
-    # ── Tab 4: Labels ──
+    return (grid_num, combo_auto_title, auto_title_values, combo_chapter_style,
+            chapter_style_values, combo_auto_appendix, auto_appendix_values,
+            combo_appendix_style, appendix_style_values, combo_auto_part,
+            auto_part_values, combo_part_style, part_style_values,
+            check_figure_numbering, combo_fig_style, fig_style_values,
+            check_table_numbering, combo_tab_style, tab_style_values)
+
+
+def _build_labels_tab(app, interactive_widgets, dialog):
+    """Build the Labels tab with per-language label editing.
+
+    Args:
+        app: The application instance.
+        interactive_widgets: List to append widgets that need read-only toggling.
+        dialog: Parent dialog for sub-dialogs.
+
+    Returns:
+        Tuple of (labels_page_widget, global_labels, config_file).
+    """
     labels_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
     labels_page.set_margin_top(12)
     labels_page.set_margin_bottom(12)
     labels_page.set_margin_start(12)
     labels_page.set_margin_end(12)
-    notebook.append_page(labels_page, Gtk.Label(label=_("Labels")))
 
     __, config_file = app.get_config_path()
     global_cfg = YamlService.load(config_file) or {}
@@ -751,71 +764,176 @@ def show_project_config(app):
 
     _build_labels_page(app.project.language)
 
+    return labels_page, global_labels, config_file
+
+
+def _save_project_config(app, dialog, widgets):
+    """Save all project configuration from the dialog widgets.
+
+    Args:
+        app: The application instance.
+        dialog: The config dialog.
+        widgets: Dict of all widget references needed for saving.
+    """
+    (entry_title, entry_subtitle, entry_export, entry_author, entry_lang,
+     combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial,
+     combo_theme, available_themes, check_drop_cap, drop_cap_checkbuttons,
+     combo_lang, langs, combo_auto_title, auto_title_values,
+     combo_chapter_style, chapter_style_values, combo_auto_appendix,
+     auto_appendix_values, combo_appendix_style, appendix_style_values,
+     combo_auto_part, auto_part_values, combo_part_style, part_style_values,
+     check_figure_numbering, combo_fig_style, fig_style_values,
+     check_table_numbering, combo_tab_style, tab_style_values,
+     global_labels, config_file) = widgets
+
+    app.project.title = entry_title.get_text().strip()
+    app.project.author = entry_author.get_text().strip()
+    app.project.language = entry_lang.get_text().strip() or "es"
+    epub_idx = combo_epub.get_active()
+    app.project.epub_version = ["epub2", "epub3"][epub_idx]
+    auto_idx = combo_auto_title.get_active()
+    if 0 <= auto_idx < len(auto_title_values):
+        app.project.auto_chapter_title = auto_title_values[auto_idx]
+    chapter_style_idx = combo_chapter_style.get_active()
+    if 0 <= chapter_style_idx < len(chapter_style_values):
+        app.project.chapter_numbering_style = chapter_style_values[chapter_style_idx]
+    auto_appendix_idx = combo_auto_appendix.get_active()
+    if 0 <= auto_appendix_idx < len(auto_appendix_values):
+        app.project.auto_appendix_title = auto_appendix_values[auto_appendix_idx]
+    appendix_style_idx = combo_appendix_style.get_active()
+    if 0 <= appendix_style_idx < len(appendix_style_values):
+        app.project.appendix_numbering_style = appendix_style_values[appendix_style_idx]
+    auto_part_idx = combo_auto_part.get_active()
+    if 0 <= auto_part_idx < len(auto_part_values):
+        app.project.auto_part_title = auto_part_values[auto_part_idx]
+    part_style_idx = combo_part_style.get_active()
+    if 0 <= part_style_idx < len(part_style_values):
+        app.project.part_numbering_style = part_style_values[part_style_idx]
+    theme_idx = combo_theme.get_active()
+    if theme_idx >= 0 and theme_idx < len(available_themes):
+        app.project.theme_id = available_themes[theme_idx][0]
+    app.project.drop_cap_enabled = check_drop_cap.get_active()
+    app.project.drop_cap_types = [
+        t for t, cb in drop_cap_checkbuttons.items() if cb.get_active()
+    ] or ["chapter"]
+    app.project.figure_numbering = check_figure_numbering.get_active()
+    fig_style_idx = combo_fig_style.get_active()
+    if 0 <= fig_style_idx < len(fig_style_values):
+        app.project.figure_numbering_style = fig_style_values[fig_style_idx]
+    app.project.table_numbering = check_table_numbering.get_active()
+    tab_style_idx = combo_tab_style.get_active()
+    if 0 <= tab_style_idx < len(tab_style_values):
+        app.project.table_numbering_style = tab_style_values[tab_style_idx]
+    app.project.export_filename = entry_export.get_text().strip()
+    app.project.edition = entry_edicion.get_text().strip()
+    app.project.publication_date = entry_fecha.get_text().strip()
+    app.project.isbn = entry_isbn.get_text().strip()
+    app.project.publisher = entry_editorial.get_text().strip()
+    app.project.subtitle = entry_subtitle.get_text().strip()
+    lang_idx = combo_lang.get_active()
+    if lang_idx >= 0 and lang_idx < len(langs):
+        app.project.spell_lang = langs[lang_idx]
+    FileService.save_project(app.project)
+    global_cfg = YamlService.load(config_file) or {}
+    global_cfg["labels"] = global_labels
+    YamlService.save(global_cfg, config_file)
+    app.editor_view.update_spell_lang()
+    app.project_tree_view.update_window_title()
+    app.project_tree_view.refresh_project_tree()
+    if app.current_component:
+        app.styles_panel.update(app.current_component.type)
+    elif app.current_part:
+        app.styles_panel.update(app.current_part.type)
+    app.update_status(_("Project settings saved"))
+    app.editor_view.update_preview()
+
+
+def show_project_config(app):
+    """Show the project configuration dialog.
+
+    Args:
+        app: The application instance.
+    """
+    if not app.project:
+        _show_info(app.window, _("No project open"))
+        return
+
+    read_only = app.read_only
+
+    dialog = Gtk.Dialog(
+        title=_("Project Settings") + (" [READ ONLY]" if read_only else ""),
+        transient_for=app.window,
+        modal=True,
+    )
+    dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+    if not read_only:
+        dialog.add_button(_("Save"), Gtk.ResponseType.ACCEPT)
+    dialog.set_default_size(520, 420)
+
+    content = dialog.get_content_area()
+    content.set_spacing(12)
+    content.set_margin_top(12)
+    content.set_margin_bottom(12)
+    content.set_margin_start(12)
+    content.set_margin_end(12)
+
+    if read_only:
+        note_rw = Gtk.Label()
+        note_rw.set_markup(f'<span foreground="#c00"><b>{_("This project is read-only. Changes cannot be saved.")}</b></span>')
+        note_rw.set_xalign(0)
+        content.pack_start(note_rw, False, False, 0)
+
+    interactive_widgets = []
+
+    notebook = Gtk.Notebook()
+    content.add(notebook)
+
+    # Tab 1: Book info
+    (grid_book, entry_title, entry_subtitle, entry_export, entry_author,
+     entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn,
+     entry_editorial) = _build_book_info_tab(app, interactive_widgets)
+    notebook.append_page(grid_book, Gtk.Label(label=_("Book")))
+
+    # Tab 2: Appearance
+    (grid_app, combo_theme, available_themes, check_drop_cap,
+     drop_cap_checkbuttons, combo_lang, langs) = _build_appearance_tab(app, interactive_widgets)
+    notebook.append_page(grid_app, Gtk.Label(label=_("Appearance")))
+
+    # Tab 3: Numbering
+    (grid_num, combo_auto_title, auto_title_values, combo_chapter_style,
+     chapter_style_values, combo_auto_appendix, auto_appendix_values,
+     combo_appendix_style, appendix_style_values, combo_auto_part,
+     auto_part_values, combo_part_style, part_style_values,
+     check_figure_numbering, combo_fig_style, fig_style_values,
+     check_table_numbering, combo_tab_style,
+     tab_style_values) = _build_numbering_tab(app, interactive_widgets)
+    notebook.append_page(grid_num, Gtk.Label(label=_("Numbering")))
+
+    # Tab 4: Labels
+    labels_page, global_labels, config_file = _build_labels_tab(app, interactive_widgets, dialog)
+    notebook.append_page(labels_page, Gtk.Label(label=_("Labels")))
+
+    # Tab 5: Images
     images_page = build_image_manager_widget(app, dialog)
     if images_page:
         notebook.append_page(images_page, Gtk.Label(label=_("Images")))
 
     def on_config_response(d, response):
         if response == Gtk.ResponseType.ACCEPT:
-            app.project.title = entry_title.get_text().strip()
-            app.project.author = entry_author.get_text().strip()
-            app.project.language = entry_lang.get_text().strip() or "es"
-            epub_idx = combo_epub.get_active()
-            app.project.epub_version = ["epub2", "epub3"][epub_idx]
-            auto_idx = combo_auto_title.get_active()
-            if 0 <= auto_idx < len(auto_title_values):
-                app.project.auto_chapter_title = auto_title_values[auto_idx]
-            chapter_style_idx = combo_chapter_style.get_active()
-            if 0 <= chapter_style_idx < len(chapter_style_values):
-                app.project.chapter_numbering_style = chapter_style_values[chapter_style_idx]
-            auto_appendix_idx = combo_auto_appendix.get_active()
-            if 0 <= auto_appendix_idx < len(auto_appendix_values):
-                app.project.auto_appendix_title = auto_appendix_values[auto_appendix_idx]
-            appendix_style_idx = combo_appendix_style.get_active()
-            if 0 <= appendix_style_idx < len(appendix_style_values):
-                app.project.appendix_numbering_style = appendix_style_values[appendix_style_idx]
-            auto_part_idx = combo_auto_part.get_active()
-            if 0 <= auto_part_idx < len(auto_part_values):
-                app.project.auto_part_title = auto_part_values[auto_part_idx]
-            part_style_idx = combo_part_style.get_active()
-            if 0 <= part_style_idx < len(part_style_values):
-                app.project.part_numbering_style = part_style_values[part_style_idx]
-            theme_idx = combo_theme.get_active()
-            if theme_idx >= 0 and theme_idx < len(available_themes):
-                app.project.theme_id = available_themes[theme_idx][0]
-            app.project.drop_cap_enabled = check_drop_cap.get_active()
-            app.project.drop_cap_types = [
-                t for t, cb in drop_cap_checkbuttons.items() if cb.get_active()
-            ] or ["chapter"]
-            app.project.figure_numbering = check_figure_numbering.get_active()
-            fig_style_idx = combo_fig_style.get_active()
-            if 0 <= fig_style_idx < len(fig_style_values):
-                app.project.figure_numbering_style = fig_style_values[fig_style_idx]
-            app.project.table_numbering = check_table_numbering.get_active()
-            tab_style_idx = combo_tab_style.get_active()
-            if 0 <= tab_style_idx < len(tab_style_values):
-                app.project.table_numbering_style = tab_style_values[tab_style_idx]
-            app.project.export_filename = entry_export.get_text().strip()
-            app.project.edition = entry_edicion.get_text().strip()
-            app.project.publication_date = entry_fecha.get_text().strip()
-            app.project.isbn = entry_isbn.get_text().strip()
-            app.project.publisher = entry_editorial.get_text().strip()
-            app.project.subtitle = entry_subtitle.get_text().strip()
-            lang_idx = combo_lang.get_active()
-            if lang_idx >= 0 and lang_idx < len(langs):
-                app.project.spell_lang = langs[lang_idx]
-            FileService.save_project(app.project)
-            global_cfg["labels"] = global_labels
-            YamlService.save(global_cfg, config_file)
-            app.editor_view.update_spell_lang()
-            app.project_tree_view.update_window_title()
-            app.project_tree_view.refresh_project_tree()
-            if app.current_component:
-                app.styles_panel.update(app.current_component.type)
-            elif app.current_part:
-                app.styles_panel.update(app.current_part.type)
-            app.update_status(_("Project settings saved"))
-            app.editor_view.update_preview()
+            widgets = (
+                entry_title, entry_subtitle, entry_export, entry_author,
+                entry_lang, combo_epub, entry_edicion, entry_fecha,
+                entry_isbn, entry_editorial, combo_theme, available_themes,
+                check_drop_cap, drop_cap_checkbuttons, combo_lang, langs,
+                combo_auto_title, auto_title_values, combo_chapter_style,
+                chapter_style_values, combo_auto_appendix, auto_appendix_values,
+                combo_appendix_style, appendix_style_values, combo_auto_part,
+                auto_part_values, combo_part_style, part_style_values,
+                check_figure_numbering, combo_fig_style, fig_style_values,
+                check_table_numbering, combo_tab_style, tab_style_values,
+                global_labels, config_file,
+            )
+            _save_project_config(app, d, widgets)
         d.destroy()
 
     dialog.connect("response", on_config_response)
