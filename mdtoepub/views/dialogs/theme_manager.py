@@ -46,11 +46,11 @@ def show_theme_manager(app):
             FileService.save_project(app.project)
             app._style_doc_svc = None
             _refresh_theme_store(store)
-            app.editor_view._update_preview()
-            app._styles_panel.update(
+            app.editor_view.update_preview()
+            app.styles_panel.update(
                 app.current_component.type if app.current_component else None
             )
-            app._update_status(_("Theme activated: {name}").format(name=model.get_value(iter_, 0)))
+            app.update_status(_("Theme activated: {name}").format(name=model.get_value(iter_, 0)))
             dialog.destroy()
 
     def _on_create_blank_theme(tree, store):
@@ -116,7 +116,7 @@ def show_theme_manager(app):
                 )
                 if theme:
                     _refresh_theme_store(store)
-                    app._update_status(_("Theme created: {name}").format(name=name))
+                    app.update_status(_("Theme created: {name}").format(name=name))
                 else:
                     info_dlg = Gtk.MessageDialog(
                         transient_for=app.window,
@@ -215,7 +215,7 @@ def show_theme_manager(app):
                 )
                 if theme:
                     _refresh_theme_store(store)
-                    app._update_status(_("Theme cloned: {name}").format(name=name))
+                    app.update_status(_("Theme cloned: {name}").format(name=name))
                 else:
                     info_dlg = Gtk.MessageDialog(
                         transient_for=app.window,
@@ -324,10 +324,10 @@ def show_theme_manager(app):
                 fpath = os.path.join(theme_dir, fname)
                 with open(fpath, "w", encoding="utf-8") as f:
                     f.write(buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True))
-                app._update_status(_("CSS saved: {name}").format(name=fname))
+                app.update_status(_("CSS saved: {name}").format(name=fname))
                 if app.project and app.project.theme_id == theme_id:
-                    app.editor_view._update_preview()
-                    app._styles_panel.update()
+                    app.editor_view.update_preview()
+                    app.styles_panel.update()
             d.destroy()
 
         editor_dialog.connect("response", on_editor_response)
@@ -381,7 +381,7 @@ def show_theme_manager(app):
                 if new_name:
                     ThemeService.rename_theme(theme_id, new_name)
                     _refresh_theme_store(store)
-                    app._update_status(_("Theme renamed: {name}").format(name=new_name))
+                    app.update_status(_("Theme renamed: {name}").format(name=new_name))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -438,7 +438,7 @@ def show_theme_manager(app):
         if resp == Gtk.ResponseType.YES:
             if ThemeService.delete_theme(theme_id):
                 _refresh_theme_store(store)
-                app._update_status(_("Theme deleted: {name}").format(name=theme_name))
+                app.update_status(_("Theme deleted: {name}").format(name=theme_name))
             else:
                 info_dlg = Gtk.MessageDialog(
                     transient_for=app.window,
@@ -489,7 +489,7 @@ def show_theme_manager(app):
                 output_path += ".mdtotheme"
 
             if ThemeService.export_theme(theme_id, output_path):
-                app._update_status(_("Theme exported: {path}").format(path=output_path))
+                app.update_status(_("Theme exported: {path}").format(path=output_path))
                 info_dlg = Gtk.MessageDialog(
                     transient_for=app.window,
                     modal=True,
@@ -537,7 +537,7 @@ def show_theme_manager(app):
             imported = ThemeService.import_theme(file_path)
             if imported:
                 _refresh_theme_store(store)
-                app._update_status(_("Theme imported: {name}").format(name=imported.name))
+                app.update_status(_("Theme imported: {name}").format(name=imported.name))
                 info_dlg = Gtk.MessageDialog(
                     transient_for=app.window,
                     modal=True,

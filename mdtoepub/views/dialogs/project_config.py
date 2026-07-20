@@ -111,7 +111,7 @@ def _import_image(app, parent_window, on_imported=None):
                 images_dir = os.path.join(app.project.path, "images")
                 result = ImageService.copy_to_project(src_path, images_dir, category)
                 if result:
-                    app._update_status(_("Image imported: {name}").format(name=os.path.basename(src_path)))
+                    app.update_status(_("Image imported: {name}").format(name=os.path.basename(src_path)))
                     if on_imported:
                         on_imported()
                 else:
@@ -314,10 +314,10 @@ def _build_image_manager_widget(app, parent_window):
                 if content:
                     buf = app.text_view.get_buffer()
                     buf.set_text(content)
-                    app.editor_view._update_preview()
+                    app.editor_view.update_preview()
 
             populate_store()
-            app._update_status(_("Image renamed to '{name}' ({n} component(s) updated)").format(name=new_name, n=updated))
+            app.update_status(_("Image renamed to '{name}' ({n} component(s) updated)").format(name=new_name, n=updated))
         else:
             rename_dialog.destroy()
 
@@ -362,11 +362,11 @@ def _build_image_manager_widget(app, parent_window):
             if content:
                 buf = app.text_view.get_buffer()
                 buf.set_text(content)
-                app.editor_view._update_preview()
+                app.editor_view.update_preview()
 
         populate_store()
         update_preview()
-        app._update_status(_("Image moved to '{category}' ({n} component(s) updated)").format(category=new_cat_label, n=updated))
+        app.update_status(_("Image moved to '{category}' ({n} component(s) updated)").format(category=new_cat_label, n=updated))
 
     btn_change_type.connect("clicked", on_change_type)
 
@@ -378,7 +378,7 @@ def show_project_config(app):
         _show_info(app.window, _("No project open"))
         return
 
-    read_only = app._read_only
+    read_only = app.read_only
 
     dialog = Gtk.Dialog(
         title=_("Project Settings") + (" [READ ONLY]" if read_only else ""),
@@ -933,7 +933,7 @@ def show_project_config(app):
     labels_page.set_margin_end(12)
     notebook.append_page(labels_page, Gtk.Label(label=_("Labels")))
 
-    __, config_file = app._get_config_path()
+    __, config_file = app.get_config_path()
     global_cfg = YamlService.load(config_file) or {}
     global_labels = global_cfg.get("labels", {})
     label_keys = [k for k in DEFAULT_LABELS.get("es", {})]
@@ -1126,15 +1126,15 @@ def show_project_config(app):
             FileService.save_project(app.project)
             global_cfg["labels"] = global_labels
             YamlService.save(global_cfg, config_file)
-            app.editor_view._update_spell_lang()
-            app.project_tree_view._update_window_title()
-            app.project_tree_view._refresh_project_tree()
+            app.editor_view.update_spell_lang()
+            app.project_tree_view.update_window_title()
+            app.project_tree_view.refresh_project_tree()
             if app.current_component:
-                app._styles_panel.update(app.current_component.type)
+                app.styles_panel.update(app.current_component.type)
             elif app.current_part:
-                app._styles_panel.update(app.current_part.type)
-            app._update_status(_("Project settings saved"))
-            app.editor_view._update_preview()
+                app.styles_panel.update(app.current_part.type)
+            app.update_status(_("Project settings saved"))
+            app.editor_view.update_preview()
         d.destroy()
 
     dialog.connect("response", on_config_response)

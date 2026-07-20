@@ -5,6 +5,8 @@ import uuid
 
 
 class ComponentType(Enum):
+    """Enumeration of all supported component types."""
+
     ACKNOWLEDGEMENT = "acknowledgement"
     AFTERWORD = "afterword"
     APPENDIX = "appendix"
@@ -57,6 +59,11 @@ COMPONENT_TYPE_LABELS = {
 
 @dataclass
 class Component:
+    """Represents a section of the book (chapter, part, cover, etc.).
+
+    Each component has a type, title, filename, and optional metadata.
+    """
+
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
     type: ComponentType = ComponentType.CHAPTER
     title: str = ""
@@ -67,6 +74,17 @@ class Component:
     custom_css: str = ""
 
     def get_display_name(self, labels: Optional[Dict[str, str]] = None) -> str:
+        """Return the display name for this component.
+
+        Uses the title if set, otherwise falls back to the localized label
+        for the component type.
+
+        Args:
+            labels: Optional label overrides dict.
+
+        Returns:
+            Display name string.
+        """
         if self.title:
             return self.title
         if labels:
@@ -74,6 +92,11 @@ class Component:
         return COMPONENT_TYPE_LABELS.get(self.type, self.type.value)
 
     def should_use_numbering(self) -> bool:
+        """Check if this component type supports auto-numbering.
+
+        Returns:
+            True for CHAPTER and APPENDIX types.
+        """
         return self.type in (
             ComponentType.CHAPTER,
             ComponentType.APPENDIX,
