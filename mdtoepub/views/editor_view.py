@@ -113,7 +113,7 @@ hr { border: none; border-top: 1px solid #ccc; }
 </style></head><body>
 <p style="color:#999;text-align:center;margin-top:4em;">Markdown content preview</p>
 </body></html>"""
-        self.app.webview.load_html(self.app.default_html, self._get_base_uri())
+        self.app.webview.load_html(self.app.default_html, self.get_base_uri())
 
         self.app.text_view.get_buffer().connect("changed", self._on_text_changed)
 
@@ -456,7 +456,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                         ComponentType.LOF, ComponentType.LOT, ComponentType.PART)):
                 text = '\u200b'
             else:
-                self.app.webview.load_html(self.app.default_html, self._get_base_uri())
+        self.app.webview.load_html(self.app.default_html, self.get_base_uri())
                 return
 
         if text.strip():
@@ -504,7 +504,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 </head><body>
 <img src="{src}" alt="{alt}"/>
 </body></html>"""
-                        self.app.webview.load_html(preview_html, self._get_base_uri())
+                        self.app.webview.load_html(preview_html, self.get_base_uri())
                         return
                 chapter_number = None
                 part_number = None
@@ -615,9 +615,9 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                     )
 
             full_html = self._build_preview_html(html, component_type, component)
-            self.app.webview.load_html(full_html, self._get_base_uri())
+            self.app.webview.load_html(full_html, self.get_base_uri())
         else:
-            self.app.webview.load_html(self.app.default_html, self._get_base_uri())
+            self.app.webview.load_html(self.app.default_html, self.get_base_uri())
 
     def get_editor_text(self) -> str:
         buffer = self.app.text_view.get_buffer()
