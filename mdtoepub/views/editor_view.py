@@ -447,7 +447,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         if not self.app.webview:
             return
 
-        text = self._get_editor_text()
+        text = self.get_editor_text()
         component = self.app.current_component
         if not text.strip():
             if (self.app.project and component
@@ -626,4 +626,4 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         return buffer.get_text(start, end, True)
 
     def _on_text_changed(self, buffer):
-        self._update_preview()
+        self.update_preview()
