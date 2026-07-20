@@ -95,9 +95,10 @@ class TestTocClassForType:
     def test_all_types_return_toc_entry(self):
         p = Project()
         svc = EpubService(p)
+        svc.resolve_labels()
         all_types = list(ComponentType)
         for ct in all_types:
-            assert svc.toc_class_for_type(ct) == "toc-entry", f"{ct} should be toc-entry"
+            assert svc._toc_builder.toc_class_for_type(ct) == "toc-entry", f"{ct} should be toc-entry"
 
 
 class TestEmbedImages:
@@ -199,17 +200,19 @@ class TestFootnotes:
     def test_strip_footnotes_none(self):
         """No footnotes in HTML returns unchanged."""
         svc = EpubService(Project())
+        svc.resolve_labels()
         html = '<section class="component-chapter"><p>Hello world.</p></section>'
         comp = Component(type=ComponentType.CHAPTER, filename="test.md")
-        cleaned, fn_data = svc.strip_footnotes_from_html(html, comp)
+        cleaned, fn_data = svc._footnotes_processor.strip_footnotes_from_html(html, comp)
         assert cleaned == html
         assert fn_data == []
 
     def test_strip_footnotes_single(self):
         """Extracts a single footnote from rendered HTML."""
         svc = EpubService(Project())
+        svc.resolve_labels()
         comp = Component(type=ComponentType.CHAPTER, filename="test.md")
-        svc.get_footnotes_component = lambda: Component(
+        svc._footnotes_processor.get_footnotes_component = lambda: Component(
             type=ComponentType.FOOTNOTES, filename="notas.md"
         )
         html = (
@@ -226,7 +229,7 @@ class TestFootnotes:
             '</section>'
         )
 
-        cleaned, fn_data = svc.strip_footnotes_from_html(html, comp)
+        cleaned, fn_data = svc._footnotes_processor.strip_footnotes_from_html(html, comp)
 
         assert len(fn_data) == 1
         fn_id, fn_inner = fn_data[0]
@@ -237,7 +240,8 @@ class TestFootnotes:
     def test_strip_footnotes_multiple(self):
         """Extracts multiple footnotes from one chapter."""
         svc = EpubService(Project())
-        svc.get_footnotes_component = lambda: Component(
+        svc.resolve_labels()
+        svc._footnotes_processor.get_footnotes_component = lambda: Component(
             type=ComponentType.FOOTNOTES, filename="notas.md"
         )
         comp = Component(type=ComponentType.CHAPTER, filename="cap1.md")
@@ -253,7 +257,7 @@ class TestFootnotes:
             '</div>'
             '</section>'
         )
-        cleaned, fn_data = svc.strip_footnotes_from_html(html, comp)
+        cleaned, fn_data = svc._footnotes_processor.strip_footnotes_from_html(html, comp)
 
         assert len(fn_data) == 2
         assert fn_data[0][0] == "fn:cap1-1"

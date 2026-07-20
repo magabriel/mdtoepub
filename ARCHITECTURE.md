@@ -31,6 +31,8 @@ MDToEPUB is a GTK3 desktop application with a modular architecture. The UI is sp
 ├──────────────────────────────────────────────────────────┤
 │                      services/                           │
 │  MarkdownService   EpubService   HeaderBuilder            │
+│  TocBuilder        FootnotesProcessor                     │
+│  FigureTableProcessor  StyleManager                      │
 │  FileService       YamlService   ImageService             │
 │  SpellCheckService StyleDocService  ThemeService          │
 │  LabelsService                                          │
@@ -65,8 +67,12 @@ mdtoepub/
 │   └── theme.py                 # Theme dataclass
 ├── services/
 │   ├── markdown_service.py      # Markdown → HTML rendering
-│   ├── epub_service.py          # EPUB generation pipeline
+│   ├── epub_service.py          # EPUB generation pipeline (orchestrator)
 │   ├── header_builder.py        # Component/part header building with auto-numbering
+│   ├── toc_builder.py           # TOC HTML + reader navigation generation
+│   ├── footnotes_processor.py   # Footnotes extraction + chapter building
+│   ├── figure_table_processor.py # Figure/table scanning + LOF/LOT generation
+│   ├── style_manager.py         # CSS loading + style item management
 │   ├── file_service.py          # File I/O, project structure management
 │   ├── yaml_service.py          # YAML load/save/frontmatter parsing
 │   ├── image_service.py         # Image validation and optimization
@@ -173,49 +179,112 @@ Key implementation details:
 
 `services/epub_service.py:1`
 
-Full EPUB generation pipeline using `ebooklib`.
+Orchestrates the EPUB generation pipeline using `ebooklib`. Delegates specific responsibilities to specialized classes.
 
 ```
 EpubService.generate(output_path, epub_version)
-  ├── resolve_labels()
-  ├── _create_book()
-  ├── _build_variables()
-  ├── _create_style_items(book)
-  ├── _create_css_override_items(book)
+  ├── resolve_labels() — creates HeaderBuilder, TocBuilder, FootnotesProcessor, FigureTableProcessor, StyleManager
+  ├── _create_book() + _build_variables()
+  ├── StyleManager.create_style_items(book)
+  ├── StyleManager.create_css_override_items(book)
   ├── _prescan_footnote_numbers()
-  ├── _prescan_figures()
-  ├── _prescan_tables()
+  ├── FigureTableProcessor.prescan_figures()
+  ├── FigureTableProcessor.prescan_tables()
   ├── _create_part_chapters(book, style_items)
+  │     └── HeaderBuilder.get_part_header → build header HTML
   ├── _create_component_chapters(book, ...)
-  │     └── _create_chapter(component, ...)
+  │     └── _create_chapter(component, ...) — dispatcher
   │           ├── _create_cover_image_chapter()  (cover with single image)
-  │           ├── _generate_toc_component_html() (TOC component)
-  │           ├── _generate_lof_component_html() (List of Figures)
-  │           ├── _generate_lot_component_html() (List of Tables)
-  │           └── _generate_standard_chapter_html() (standard chapters)
-  ├── _create_footnotes_chapter_if_needed(book, ...)
+  │           ├── _generate_toc_component_html() → TocBuilder
+  │           ├── _generate_lof_component_html() → FigureTableProcessor
+  │           ├── _generate_lot_component_html() → FigureTableProcessor
+  │           └── _generate_standard_chapter_html() → HeaderBuilder
+  ├── _create_footnotes_chapter_if_needed() → FootnotesProcessor
   ├── _build_ordered_chapters(chapter_map, part_chapters)
-  ├── _build_reader_toc(book, chapter_map, part_chapters)
+  ├── TocBuilder.build_reader_toc(book, chapter_map, part_chapters)
   ├── _build_spine(book, ordered_chapters, epub_version)
   └── _write_epub(book, output_path)
 ```
 
 Public methods:
 - `generate(output_path, epub_version, global_config)` — full EPUB generation pipeline.
-- `resolve_labels(global_config)` — resolve component labels for the project language.
+- `resolve_labels(global_config)` — resolve labels and create all helper instances.
 - `is_cover_only_image(md_content)` — static, check if content is a single image.
 - `extract_cover_image(md_content)` — static, extract alt/src from image markdown.
 - `apply_drop_cap(html)` — wrap first alphanumeric chars in `<span class="drop-cap">`.
 - `embed_images(book, html_content, comp_id, embedded)` — embed local images into EPUB.
-- `strip_footnotes_from_html(html, component)` — extract footnotes from rendered HTML.
-- `get_footnotes_component()` — find the FOOTNOTES component in the project.
-- `toc_class_for_type(comp_type)` — return CSS class for TOC entries.
 
 Key implementation details:
 - Drop cap: replaces the first alphanumeric character(s) with `<span class="drop-cap">`.
-- `toc_include` / `toc_deep`: read from the TOC component's frontmatter to filter heading depth.
 - Images: embedded by scanning HTML for `<img src="...">`, skipping URLs.
-- Header building is delegated to `HeaderBuilder`.
+- Delegates to: `HeaderBuilder`, `TocBuilder`, `FootnotesProcessor`, `FigureTableProcessor`, `StyleManager`.
+
+### TocBuilder
+
+`services/toc_builder.py:1`
+
+Generates TOC structures: in-book HTML and reader navigation.
+
+```
+TocBuilder(project, labels, header_builder)
+  ├── generate_toc_html(toc_include, toc_deep) — in-book TOC HTML
+  ├── build_reader_toc(book, chapter_map, part_chapters, toc_filter) — EPUB navigation
+  ├── get_toc_include_filter() — read toc_include from TOC component frontmatter
+  ├── toc_class_for_type(comp_type) — CSS class for TOC entries
+  ├── normalize_toc_deep(value, default) — static, clamp toc_deep to [1, 6]
+  ├── slugify(text) — static, match markdown's toc extension slugify
+  ├── parse_headings_from_md(md_text, max_depth) — parse headings from markdown
+  └── get_heading_toc_entries(comp, toc_deep) — TOC lines for sub-headings
+```
+
+### FootnotesProcessor
+
+`services/footnotes_processor.py:1`
+
+Extracts, collects, and renders footnotes for EPUB generation.
+
+```
+FootnotesProcessor(project, labels, header_builder, markdown_service)
+  ├── get_footnotes_component() — find the FOOTNOTES component
+  ├── strip_footnotes_from_html(html, component) — extract footnotes from rendered HTML
+  └── build_footnotes_chapter(component, collected, style_items, variables)
+        — build the footnotes chapter with user content + collected footnotes
+```
+
+Key implementation details:
+- Regex-based extraction of footnote divs and list items.
+- Namespaces footnote IDs to avoid collisions across chapters.
+- Rewrites backlinks and references for cross-chapter navigation.
+
+### FigureTableProcessor
+
+`services/figure_table_processor.py:1`
+
+Scans components for figures/tables and generates LOF/LOT HTML.
+
+```
+FigureTableProcessor(project, labels)
+  ├── prescan_figures() — scan figure info + numbering
+  ├── prescan_tables() — scan table info + numbering
+  ├── generate_lof_html(figure_info) — List of Figures HTML
+  └── generate_lot_html(table_info) — List of Tables HTML
+```
+
+### StyleManager
+
+`services/style_manager.py:1`
+
+Manages CSS loading, theme stylesheets, and style item creation.
+
+```
+StyleManager(project)
+  ├── load_stylesheet() — combine all CSS layers (theme + book + Pygments)
+  ├── create_css_item(uid, filename, css_text) — static, create CSS EpubItem
+  ├── create_style_items(book) — create main stylesheet item
+  ├── create_css_override_items(book) — create type-level + component-level CSS items
+  └── build_chapter_styles(style_items, type_css_items, comp_css_items, component)
+        — static, combine base + type + component style items
+```
 
 ### FileService
 
@@ -484,33 +553,33 @@ When no marker is present, the project's default `spell_lang` is used.
 ```
 EpubService.generate()
   │
-  ├── 1. Resolve labels (resolve_labels)
+  ├── 1. Resolve labels → creates all helper instances
   │
-  ├── 2. Create EpubBook + metadata (_create_book, _build_variables)
+  ├── 2. Create EpubBook + metadata
   │
-  ├── 3. Load stylesheet + CSS overrides (_create_style_items, _create_css_override_items)
+  ├── 3. StyleManager: load stylesheet + CSS overrides
   │
-  ├── 4. Pre-scan numbering (_prescan_footnote_numbers, _prescan_figures, _prescan_tables)
+  ├── 4. Pre-scan numbering (_prescan_footnote_numbers)
+  │     FigureTableProcessor: prescan_figures, prescan_tables
   │
-  ├── 5. Create part chapters (_create_part_chapters)
+  ├── 5. Create part chapters
   │     └── HeaderBuilder.get_part_header → build header HTML
   │
-  ├── 6. Create component chapters (_create_component_chapters)
+  ├── 6. Create component chapters
   │     └── _create_chapter (dispatcher)
   │           ├── _create_cover_image_chapter (cover with single image)
-  │           ├── _generate_toc_component_html (TOC)
-  │           ├── _generate_lof_component_html (List of Figures)
-  │           ├── _generate_lot_component_html (List of Tables)
-  │           └── _generate_standard_chapter_html (standard chapters)
-  │           └── HeaderBuilder.get_component_header → build header HTML
+  │           ├── TocBuilder.generate_toc_html (TOC)
+  │           ├── FigureTableProcessor.generate_lof_html (List of Figures)
+  │           ├── FigureTableProcessor.generate_lot_html (List of Tables)
+  │           └── _generate_standard_chapter_html → HeaderBuilder
   │
-  ├── 7. Create footnotes chapter (_create_footnotes_chapter_if_needed)
+  ├── 7. FootnotesProcessor.build_footnotes_chapter (if FOOTNOTES component)
   │
-  ├── 8. Build reader TOC (_build_reader_toc)
+  ├── 8. TocBuilder.build_reader_toc (EPUB navigation)
   │
-  ├── 9. Build spine + navigation (_build_spine)
+  ├── 9. Build spine + navigation
   │
-  └── 10. Write EPUB (_write_epub)
+  └── 10. Write EPUB
 ```
 
 ## Extension points
