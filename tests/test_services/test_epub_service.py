@@ -2,85 +2,91 @@ import pytest
 from pathlib import Path
 from ebooklib import epub
 from mdtoepub.services.epub_service import EpubService
+from mdtoepub.services.header_builder import HeaderBuilder
 from mdtoepub.services.markdown_service import MarkdownService
 from mdtoepub.models.project import Project
 from mdtoepub.models.component import Component, ComponentType
 
 
 class TestChapterAutoTitle:
+    def _make_header_builder(self, project):
+        svc = EpubService(project)
+        labels = svc.resolve_labels()
+        return HeaderBuilder(project, labels)
+
     def test_disabled_none(self):
         p = Project(auto_chapter_title="none")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="")
-        num, title_part, display = svc._get_component_header(c, 1)
+        num, title_part, display = hb.get_component_header(c, 1)
         assert num == ""
         assert title_part == "Capitulo"
 
     def test_applies_even_with_title(self):
         p = Project(auto_chapter_title="chapter_number")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="Mi Capitulo")
-        num, title_part, display = svc._get_component_header(c, 1)
-        assert num == "Capítulo 1"
+        num, title_part, display = hb.get_component_header(c, 1)
+        assert num == "Capitulo 1"
         assert title_part == ""
 
     def test_chapter_number_format(self):
         p = Project(auto_chapter_title="chapter_number")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="")
-        num1, _, _ = svc._get_component_header(c, 1)
-        assert num1 == "Capítulo 1"
-        num5, _, _ = svc._get_component_header(c, 5)
-        assert num5 == "Capítulo 5"
+        num1, _, _ = hb.get_component_header(c, 1)
+        assert num1 == "Capitulo 1"
+        num5, _, _ = hb.get_component_header(c, 5)
+        assert num5 == "Capitulo 5"
 
     def test_number_format(self):
         p = Project(auto_chapter_title="number")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="")
-        num1, _, _ = svc._get_component_header(c, 1)
+        num1, _, _ = hb.get_component_header(c, 1)
         assert num1 == "1"
-        num42, _, _ = svc._get_component_header(c, 42)
+        num42, _, _ = hb.get_component_header(c, 42)
         assert num42 == "42"
 
     def test_non_chapter_type_ignored(self):
         p = Project(auto_chapter_title="chapter_number")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         for ctype in (ComponentType.FOREWORD, ComponentType.TOC):
             c = Component(type=ctype, title="")
-            num, _, _ = svc._get_component_header(c, 1)
+            num, _, _ = hb.get_component_header(c, 1)
             assert num == "", f"should not auto-title {ctype}"
 
     def test_with_title_mode(self):
         p = Project(auto_chapter_title="chapter_number_with_title")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="Mi Titulo")
-        num, title_part, _ = svc._get_component_header(c, 1)
-        assert num == "Capítulo 1"
+        num, title_part, _ = hb.get_component_header(c, 1)
+        assert num == "Capitulo 1"
         assert title_part == "Mi Titulo"
 
     def test_number_with_title_mode(self):
         p = Project(auto_chapter_title="number_with_title")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="Mi Titulo")
-        num, title_part, _ = svc._get_component_header(c, 1)
+        num, title_part, _ = hb.get_component_header(c, 1)
         assert num == "1"
         assert title_part == "Mi Titulo"
 
     def test_show_title_false(self):
         p = Project(auto_chapter_title="chapter_number_with_title")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="Mi Titulo")
         c.frontmatter = {"show_title": False}
-        num, title_part, _ = svc._get_component_header(c, 1)
+        num, title_part, _ = hb.get_component_header(c, 1)
         assert num == ""  # show_title=false disables auto-title too
         assert title_part == ""
 
     def test_show_title_false_no_auto(self):
         p = Project(auto_chapter_title="none")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="Mi Titulo")
         c.frontmatter = {"show_title": False}
-        num, title_part, _ = svc._get_component_header(c, 1)
+        num, title_part, _ = hb.get_component_header(c, 1)
         assert num == ""
         assert title_part == ""
 
@@ -91,24 +97,21 @@ class TestTocClassForType:
         svc = EpubService(p)
         all_types = list(ComponentType)
         for ct in all_types:
-            assert svc._toc_class_for_type(ct) == "toc-entry", f"{ct} should be toc-entry"
+            assert svc.toc_class_for_type(ct) == "toc-entry", f"{ct} should be toc-entry"
 
 
 class TestEmbedImages:
     def test_embed_images_from_chapter(self):
         import tempfile, uuid
         with tempfile.TemporaryDirectory() as tmp:
-            # Create project structure
             from mdtoepub.services.file_service import FileService
             proj = FileService.create_project_structure(tmp, "testimg")
             proj.path = str(Path(proj.path))
 
-            # Create an image file
             img_dir = Path(proj.path) / "images" / "illustrations"
             img_dir.mkdir(parents=True, exist_ok=True)
             (img_dir / "foto.png").write_bytes(b"fake-png-data")
 
-            # Add component with image reference
             comp = Component(
                 id=str(uuid.uuid4()),
                 type=ComponentType.CHAPTER,
@@ -121,13 +124,11 @@ class TestEmbedImages:
             FileService.save_component(proj.path, comp, md)
             FileService.save_project(proj)
 
-            # Generate EPUB
             svc = EpubService(proj)
             with tempfile.NamedTemporaryFile(suffix=".epub", delete=False) as f:
                 output = f.name
             svc.generate(output, "epub3")
 
-            # Verify image is inside EPUB
             import zipfile
             with zipfile.ZipFile(output) as z:
                 namelist = z.namelist()
@@ -156,7 +157,7 @@ class TestEmbedImages:
             svc = EpubService(proj)
             embedded: set = set()
             html = '<img alt="Web" src="https://example.com/img.png"/>'
-            svc._embed_images(epub.EpubBook(), html, comp.id, embedded)
+            svc.embed_images(epub.EpubBook(), html, comp.id, embedded)
             assert len(embedded) == 0
             Path(proj.path)
 
@@ -170,7 +171,7 @@ class TestEmbedImages:
             svc = EpubService(proj)
             embedded: set = set()
             html = '<img alt="Missing" src="images/illustrations/noexist.png"/>'
-            svc._embed_images(epub.EpubBook(), html, "comp1", embedded)
+            svc.embed_images(epub.EpubBook(), html, "comp1", embedded)
             assert len(embedded) == 0
 
     def test_embed_deduplicates_images(self):
@@ -188,9 +189,9 @@ class TestEmbedImages:
             embedded: set = set()
             html1 = '<img src="images/illustrations/same.png"/>'
             html2 = '<img src="images/illustrations/same.png"/>'
-            svc._embed_images(epub.EpubBook(), html1, "c1", embedded)
+            svc.embed_images(epub.EpubBook(), html1, "c1", embedded)
             assert len(embedded) == 1
-            svc._embed_images(epub.EpubBook(), html2, "c2", embedded)
+            svc.embed_images(epub.EpubBook(), html2, "c2", embedded)
             assert len(embedded) == 1
 
 
@@ -200,7 +201,7 @@ class TestFootnotes:
         svc = EpubService(Project())
         html = '<section class="component-chapter"><p>Hello world.</p></section>'
         comp = Component(type=ComponentType.CHAPTER, filename="test.md")
-        cleaned, fn_data = svc._strip_footnotes_from_html(html, comp)
+        cleaned, fn_data = svc.strip_footnotes_from_html(html, comp)
         assert cleaned == html
         assert fn_data == []
 
@@ -208,7 +209,7 @@ class TestFootnotes:
         """Extracts a single footnote from rendered HTML."""
         svc = EpubService(Project())
         comp = Component(type=ComponentType.CHAPTER, filename="test.md")
-        svc._get_footnotes_component = lambda: Component(
+        svc.get_footnotes_component = lambda: Component(
             type=ComponentType.FOOTNOTES, filename="notas.md"
         )
         html = (
@@ -225,7 +226,7 @@ class TestFootnotes:
             '</section>'
         )
 
-        cleaned, fn_data = svc._strip_footnotes_from_html(html, comp)
+        cleaned, fn_data = svc.strip_footnotes_from_html(html, comp)
 
         assert len(fn_data) == 1
         fn_id, fn_inner = fn_data[0]
@@ -236,7 +237,7 @@ class TestFootnotes:
     def test_strip_footnotes_multiple(self):
         """Extracts multiple footnotes from one chapter."""
         svc = EpubService(Project())
-        svc._get_footnotes_component = lambda: Component(
+        svc.get_footnotes_component = lambda: Component(
             type=ComponentType.FOOTNOTES, filename="notas.md"
         )
         comp = Component(type=ComponentType.CHAPTER, filename="cap1.md")
@@ -252,7 +253,7 @@ class TestFootnotes:
             '</div>'
             '</section>'
         )
-        cleaned, fn_data = svc._strip_footnotes_from_html(html, comp)
+        cleaned, fn_data = svc.strip_footnotes_from_html(html, comp)
 
         assert len(fn_data) == 2
         assert fn_data[0][0] == "fn:cap1-1"
@@ -452,76 +453,86 @@ class TestFootnotes:
 
 
 class TestAppendixAutoTitle:
+    def _make_header_builder(self, project):
+        svc = EpubService(project)
+        labels = svc.resolve_labels()
+        return HeaderBuilder(project, labels)
+
     def test_appendix_chapter_number_format(self):
         p = Project(auto_appendix_title="chapter_number")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.APPENDIX, title="")
-        num1, _, _ = svc._get_component_header(c, 1)
-        assert num1 == "Apéndice 1"
+        num1, _, _ = hb.get_component_header(c, 1)
+        assert num1 == "Apendice 1"
 
     def test_appendix_number_format(self):
         p = Project(auto_appendix_title="number")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.APPENDIX, title="")
-        num1, _, _ = svc._get_component_header(c, 42)
+        num1, _, _ = hb.get_component_header(c, 42)
         assert num1 == "42"
 
     def test_appendix_with_title_mode(self):
         p = Project(auto_appendix_title="chapter_number_with_title")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.APPENDIX, title="Datos")
-        num, title_part, _ = svc._get_component_header(c, 3)
-        assert num == "Apéndice 3"
+        num, title_part, _ = hb.get_component_header(c, 3)
+        assert num == "Apendice 3"
         assert title_part == "Datos"
 
 
 class TestPartAutoTitle:
+    def _make_header_builder(self, project):
+        svc = EpubService(project)
+        labels = svc.resolve_labels()
+        return HeaderBuilder(project, labels)
+
     def test_disabled_none(self):
         p = Project(auto_part_title="none")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.PART, title="Introduccion")
-        num, title_part, display = svc._get_part_header(c, 1)
+        num, title_part, display = hb.get_part_header(c, 1)
         assert num == ""
         assert title_part == "Introduccion"
 
     def test_part_number_format(self):
         p = Project(auto_part_title="part_number")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.PART, title="")
-        num1, _, _ = svc._get_part_header(c, 1)
+        num1, _, _ = hb.get_part_header(c, 1)
         assert num1 == "Parte 1"
-        num5, _, _ = svc._get_part_header(c, 5)
+        num5, _, _ = hb.get_part_header(c, 5)
         assert num5 == "Parte 5"
 
     def test_number_format(self):
         p = Project(auto_part_title="number")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.PART, title="")
-        num1, _, _ = svc._get_part_header(c, 1)
+        num1, _, _ = hb.get_part_header(c, 1)
         assert num1 == "1"
 
     def test_with_title_mode(self):
         p = Project(auto_part_title="part_number_with_title")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.PART, title="Mi Parte")
-        num, title_part, _ = svc._get_part_header(c, 2)
+        num, title_part, _ = hb.get_part_header(c, 2)
         assert num == "Parte 2"
         assert title_part == "Mi Parte"
 
     def test_number_with_title_mode(self):
         p = Project(auto_part_title="number_with_title")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.PART, title="Mi Parte")
-        num, title_part, _ = svc._get_part_header(c, 3)
+        num, title_part, _ = hb.get_part_header(c, 3)
         assert num == "3"
         assert title_part == "Mi Parte"
 
     def test_show_title_false(self):
         p = Project(auto_part_title="part_number_with_title")
-        svc = EpubService(p)
+        hb = self._make_header_builder(p)
         c = Component(type=ComponentType.PART, title="Mi Parte")
         c.frontmatter = {"show_title": False}
-        num, title_part, _ = svc._get_part_header(c, 1)
+        num, title_part, _ = hb.get_part_header(c, 1)
         assert num == ""
         assert title_part == ""
 
@@ -531,9 +542,10 @@ class TestLocalizedLabels:
         p = Project(auto_chapter_title="chapter_number", language="en",
                      labels={"chapter": "Chapter"})
         svc = EpubService(p)
-        svc._resolve_labels()
+        labels = svc.resolve_labels()
+        hb = HeaderBuilder(p, labels)
         c = Component(type=ComponentType.CHAPTER, title="")
-        num, _, _ = svc._get_component_header(c, 1)
+        num, _, _ = hb.get_component_header(c, 1)
         assert num == "Chapter 1"
 
     def test_english_figure_label(self):

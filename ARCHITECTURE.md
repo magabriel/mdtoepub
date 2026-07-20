@@ -30,9 +30,10 @@ MDToEPUB is a GTK3 desktop application with a modular architecture. The UI is sp
 │  dialogs.py   show_error / show_info / confirm helpers   │
 ├──────────────────────────────────────────────────────────┤
 │                      services/                           │
-│  MarkdownService   EpubService   FileService             │
-│  YamlService       ImageService  SpellCheckService       │
-│  StyleDocService   ThemeService  LabelsService           │
+│  MarkdownService   EpubService   HeaderBuilder            │
+│  FileService       YamlService   ImageService             │
+│  SpellCheckService StyleDocService  ThemeService          │
+│  LabelsService                                          │
 ├──────────────────────────────────────────────────────────┤
 │                      models/                             │
 │  Project    Component    ComponentType    Theme          │
@@ -65,6 +66,7 @@ mdtoepub/
 ├── services/
 │   ├── markdown_service.py      # Markdown → HTML rendering
 │   ├── epub_service.py          # EPUB generation pipeline
+│   ├── header_builder.py        # Component/part header building with auto-numbering
 │   ├── file_service.py          # File I/O, project structure management
 │   ├── yaml_service.py          # YAML load/save/frontmatter parsing
 │   ├── image_service.py         # Image validation and optimization
@@ -144,41 +146,76 @@ Key methods:
 - `render(text, component_type, component_id)` — strips `{lang=xx}` markers, renders Markdown, wraps in `<section class="component-{type}">`.
 - `get_code_css()` — static, returns Pygments-friendly CSS for code syntax highlighting.
 
+### HeaderBuilder
+
+`services/header_builder.py:1`
+
+Builds component and part headers with auto-numbering support. Extracted from EpubService to follow the single responsibility principle.
+
+```
+HeaderBuilder(project, labels)
+  ├── get_component_header(component, chapter_number)
+  │     Returns (number_part, title_part, display_title) for chapters/appendices
+  ├── get_part_header(component, part_number)
+  │     Returns (number_part, title_part, display_title) for parts
+  ├── build_header_html(number_part, subtitle_part, title_part)
+  │     Builds <h1 class="component-header"> HTML
+  └── split_title(title, frontmatter)
+        Static. Splits title into (subtitle, title) on ` - `
+```
+
+Key implementation details:
+- Title auto-splitting: `re.split(r' +[—–-]+ +', title, maxsplit=1)` produces `(subtitle, title)`.
+- Chapter numbering: counted sequentially through CHAPTER-type components.
+- Supports multiple numbering styles: arabic, roman, word (ordinal).
+
 ### EpubService
 
-`services/epub_service.py:56`
+`services/epub_service.py:1`
 
 Full EPUB generation pipeline using `ebooklib`.
 
 ```
 EpubService.generate(output_path, epub_version)
-  ├── Create EpubBook
-  ├── Set metadata (title, author, language, etc.)
-  ├── Load stylesheet (_load_stylesheet)
-  │   ├── Theme base CSS (style.css)
-  │   ├── Theme per-component CSS
-  │   ├── Book-level custom CSS
-  │   └── Pygments code CSS
-  ├── Create style items
-  ├── Create part chapters (_create_part_chapter)
-  ├── Create component chapters (_create_chapter)
-  │   ├── Load Markdown, parse frontmatter
-  │   ├── Split title on ` - ` → subtitle
-  │   ├── Build header HTML (h1.component-header)
-  │   ├── Render Markdown via MarkdownService
-  │   ├── Apply drop cap
-  │   └── Attach styles
-  ├── Build TOC (groups chapters under parts)
-  ├── Build spine
-  └── Write EPUB file
+  ├── resolve_labels()
+  ├── _create_book()
+  ├── _build_variables()
+  ├── _create_style_items(book)
+  ├── _create_css_override_items(book)
+  ├── _prescan_footnote_numbers()
+  ├── _prescan_figures()
+  ├── _prescan_tables()
+  ├── _create_part_chapters(book, style_items)
+  ├── _create_component_chapters(book, ...)
+  │     └── _create_chapter(component, ...)
+  │           ├── _create_cover_image_chapter()  (cover with single image)
+  │           ├── _generate_toc_component_html() (TOC component)
+  │           ├── _generate_lof_component_html() (List of Figures)
+  │           ├── _generate_lot_component_html() (List of Tables)
+  │           └── _generate_standard_chapter_html() (standard chapters)
+  ├── _create_footnotes_chapter_if_needed(book, ...)
+  ├── _build_ordered_chapters(chapter_map, part_chapters)
+  ├── _build_reader_toc(book, chapter_map, part_chapters)
+  ├── _build_spine(book, ordered_chapters, epub_version)
+  └── _write_epub(book, output_path)
 ```
 
+Public methods:
+- `generate(output_path, epub_version, global_config)` — full EPUB generation pipeline.
+- `resolve_labels(global_config)` — resolve component labels for the project language.
+- `is_cover_only_image(md_content)` — static, check if content is a single image.
+- `extract_cover_image(md_content)` — static, extract alt/src from image markdown.
+- `apply_drop_cap(html)` — wrap first alphanumeric chars in `<span class="drop-cap">`.
+- `embed_images(book, html_content, comp_id, embedded)` — embed local images into EPUB.
+- `strip_footnotes_from_html(html, component)` — extract footnotes from rendered HTML.
+- `get_footnotes_component()` — find the FOOTNOTES component in the project.
+- `toc_class_for_type(comp_type)` — return CSS class for TOC entries.
+
 Key implementation details:
-- Title auto-splitting: `re.split(r' +[—–-]+ +', title, maxsplit=1)` produces `(subtitle, title)`.
 - Drop cap: replaces the first alphanumeric character(s) with `<span class="drop-cap">`.
-- Chapter numbering: counted sequentially through CHAPTER-type components.
 - `toc_include` / `toc_deep`: read from the TOC component's frontmatter to filter heading depth.
 - Images: embedded by scanning HTML for `<img src="...">`, skipping URLs.
+- Header building is delegated to `HeaderBuilder`.
 
 ### FileService
 
@@ -447,28 +484,33 @@ When no marker is present, the project's default `spell_lang` is used.
 ```
 EpubService.generate()
   │
-  ├── 1. Create EpubBook
+  ├── 1. Resolve labels (resolve_labels)
   │
-  ├── 2. Set metadata (title, author, language, etc.)
+  ├── 2. Create EpubBook + metadata (_create_book, _build_variables)
   │
-  ├── 3. Load & create stylesheet
+  ├── 3. Load stylesheet + CSS overrides (_create_style_items, _create_css_override_items)
   │
-  ├── 4. Create component chapters
-  │   ├── Parse frontmatter
-  │   ├── Auto-number (if enabled)
-  │   ├── Split title (subtitle on ` - `)
-  │   ├── Build header HTML
-  │   ├── Render Markdown → HTML (with code highlighting)
-  │   ├── Apply drop cap
-  │   └── Attach CSS
+  ├── 4. Pre-scan numbering (_prescan_footnote_numbers, _prescan_figures, _prescan_tables)
   │
-  ├── 5. Create part chapters
+  ├── 5. Create part chapters (_create_part_chapters)
+  │     └── HeaderBuilder.get_part_header → build header HTML
   │
-  ├── 6. Generate TOC (heading hierarchy, toc_deep)
+  ├── 6. Create component chapters (_create_component_chapters)
+  │     └── _create_chapter (dispatcher)
+  │           ├── _create_cover_image_chapter (cover with single image)
+  │           ├── _generate_toc_component_html (TOC)
+  │           ├── _generate_lof_component_html (List of Figures)
+  │           ├── _generate_lot_component_html (List of Tables)
+  │           └── _generate_standard_chapter_html (standard chapters)
+  │           └── HeaderBuilder.get_component_header → build header HTML
   │
-  ├── 7. Build navigation (NCX for epub2, Nav for epub3)
+  ├── 7. Create footnotes chapter (_create_footnotes_chapter_if_needed)
   │
-  └── 8. Write EPUB
+  ├── 8. Build reader TOC (_build_reader_toc)
+  │
+  ├── 9. Build spine + navigation (_build_spine)
+  │
+  └── 10. Write EPUB (_write_epub)
 ```
 
 ## Extension points
