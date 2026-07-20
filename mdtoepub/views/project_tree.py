@@ -122,7 +122,7 @@ class ProjectTree:
 
         return self.project_tree
 
-    def _refresh_project_tree(self):
+    def refresh_project_tree(self):
         self.project_store.clear()
         if not self.app.project:
             return
@@ -150,9 +150,9 @@ class ProjectTree:
         self.project_tree.expand_all()
 
     def _on_tree_cursor_changed(self, tree):
-        if self.app._in_cursor_change:
+        if self.app.in_cursor_change:
             return
-        self.app._in_cursor_change = True
+        self.app.in_cursor_change = True
         try:
             path, column = tree.get_cursor()
             if path is None:
@@ -165,18 +165,18 @@ class ProjectTree:
                 title_changed = self.app.project_manager.save_component_content()
                 self.app.current_component = obj
                 self.app.current_part = None
-                self.app._styles_current_component = obj
+                self.app.styles_current_component = obj
                 if title_changed:
                     self._refresh_project_tree()
                     self.project_tree.expand_all()
                 content = self.app.project_manager.load_component_content(obj)
                 buffer = self.app.text_view.get_buffer()
                 buffer.set_text(content)
-                self.app._update_status(_("Editing: {name}").format(name=obj.get_display_name(self.app.project_manager.resolve_labels())))
-                self.app._styles_panel.update(obj.type)
-                self.app.editor_view._update_preview()
+                self.app.update_status(_("Editing: {name}").format(name=obj.get_display_name(self.app.project_manager.resolve_labels())))
+                self.app.styles_panel.update(obj.type)
+                self.app.editor_view.update_preview()
         finally:
-            self.app._in_cursor_change = False
+            self.app.in_cursor_change = False
 
     def _on_tree_button_press(self, tree, event):
         if event.button != 3:
@@ -258,10 +258,10 @@ class ProjectTree:
             styles_menu = Gtk.Menu()
             type_label = self.app.project_manager.resolve_labels().get(obj.type.value, COMPONENT_TYPE_LABELS.get(obj.type, obj.type.value))
             s1 = Gtk.MenuItem(label=_("Of type '{label}'").format(label=type_label))
-            s1.connect("activate", self.app._styles_panel._on_edit_type_css, obj)
+            s1.connect("activate", self.app.styles_panel.on_edit_type_css, obj)
             styles_menu.append(s1)
             s2 = Gtk.MenuItem(label=_("Of component '{name}'").format(name=obj.get_display_name(self.app.project_manager.resolve_labels())))
-            s2.connect("activate", self.app._styles_panel._on_edit_component_css, obj)
+            s2.connect("activate", self.app.styles_panel.on_edit_component_css, obj)
             styles_menu.append(s2)
             item_styles.set_submenu(styles_menu)
             menu.append(item_styles)
@@ -272,50 +272,50 @@ class ProjectTree:
         else:
             return False
 
-        if self.app._read_only:
+        if self.app.read_only:
             menu.foreach(lambda item: item.set_sensitive(False))
 
         menu.show_all()
         menu.popup_at_pointer(event)
         return True
 
-    def _on_close_project(self, widget):
+    def on_close_project(self, widget):
         if self.app.project is None:
             return
         if not confirm(self.app.window, _("Close the current project?")):
             return
-        if self.app.current_component and not self.app._read_only:
+        if self.app.current_component and not self.app.read_only:
             self.app.project_manager.save_component_content()
         self.app.project = None
         self.app.main_window.update_project_sensitivity(False)
         self.project_store.clear()
         self.app.current_component = None
-        self.app._styles_current_component = None
-        self.app._styles_current_comp_type = None
+        self.app.styles_current_component = None
+        self.app.styles_current_comp_type = None
         self.app.text_view.get_buffer().set_text("")
-        self.app.webview.load_html(self.app.default_html, self.app.editor_view._get_base_uri())
+        self.app.webview.load_html(self.app.default_html, self.app.editor_view.get_base_uri())
         self._set_read_only_mode(False)
-        self.app._update_status(_("Project closed"))
+        self.app.update_status(_("Project closed"))
 
-    def _update_window_title(self):
+    def update_window_title(self):
         base = "MDToEPUB"
         if self.app.project and self.app.project.title:
             base = f"MDToEPUB \u2014 {self.app.project.title}"
-        if self.app._read_only and "[READ ONLY]" not in base:
+        if self.app.read_only and "[READ ONLY]" not in base:
             base += " [READ ONLY]"
         self.app.window.set_title(base)
 
-    def _set_read_only_mode(self, enabled: bool):
-        self.app._read_only = enabled
-        if self.app._toolbar_save_btn:
-            self.app._toolbar_save_btn.set_sensitive(not enabled)
+    def set_read_only_mode(self, enabled: bool):
+        self.app.read_only = enabled
+        if self.app.toolbar_save_btn:
+            self.app.toolbar_save_btn.set_sensitive(not enabled)
         self._update_window_title()
 
-    def _on_add_component(self, button, part=None):
+    def on_add_component(self, button, part=None):
         if not self.app.project:
             show_info(self.app.window, _("Create or open a project first"))
             return
-        if self.app._read_only:
+        if self.app.read_only:
             show_info(self.app.window, _("Cannot modify a read-only project"))
             return
 
@@ -376,7 +376,7 @@ class ProjectTree:
                 FileService.save_component(self.app.project.path, component, initial_content)
                 FileService.save_project(self.app.project)
                 self._refresh_project_tree()
-                self.app._update_status(_("Component added: {name}").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
+                self.app.update_status(_("Component added: {name}").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -386,7 +386,7 @@ class ProjectTree:
         if not self.app.project:
             show_info(self.app.window, _("Create or open a project first"))
             return
-        if self.app._read_only:
+        if self.app.read_only:
             show_info(self.app.window, _("Cannot modify a read-only project"))
             return
 
@@ -433,7 +433,7 @@ class ProjectTree:
                 FileService.save_component(self.app.project.path, part, initial_content)
                 FileService.save_project(self.app.project)
                 self._refresh_project_tree()
-                self.app._update_status(_("Part added: {title}").format(title=title))
+                self.app.update_status(_("Part added: {title}").format(title=title))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -469,7 +469,7 @@ class ProjectTree:
                 part.title = new_title
                 self.project_store.set_value(iter_, 0, part.get_display_name(self.app.project_manager.resolve_labels()))
                 FileService.save_project(self.app.project)
-                self.app._update_status(_("Part renamed: {title}").format(title=new_title))
+                self.app.update_status(_("Part renamed: {title}").format(title=new_title))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -493,7 +493,7 @@ class ProjectTree:
                 self.app.project.remove_component(part.id)
                 FileService.save_project(self.app.project)
                 self._refresh_project_tree()
-                self.app._update_status(_("Part deleted: {name}").format(name=part.get_display_name(self.app.project_manager.resolve_labels())))
+                self.app.update_status(_("Part deleted: {name}").format(name=part.get_display_name(self.app.project_manager.resolve_labels())))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -527,7 +527,7 @@ class ProjectTree:
                     component.title = new_title
                     self.project_store.set_value(iter_, 0, component.get_display_name(self.app.project_manager.resolve_labels()))
                     FileService.save_project(self.app.project)
-                    self.app._update_status(_("Component renamed: {title}").format(title=new_title))
+                    self.app.update_status(_("Component renamed: {title}").format(title=new_title))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -553,7 +553,7 @@ class ProjectTree:
         FileService.save_component(self.app.project.path, new_comp, content or "")
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(_("Component duplicated: {name}").format(name=new_comp.get_display_name(self.app.project_manager.resolve_labels())))
+        self.app.update_status(_("Component duplicated: {name}").format(name=new_comp.get_display_name(self.app.project_manager.resolve_labels())))
 
     def _on_move_to_part(self, menu_item, component, part):
         if component.part_id == part.id:
@@ -561,7 +561,7 @@ class ProjectTree:
         component.part_id = part.id
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(_("{name} moved to {part}").format(name=component.get_display_name(self.app.project_manager.resolve_labels()), part=part.get_display_name(self.app.project_manager.resolve_labels())))
+        self.app.update_status(_("{name} moved to {part}").format(name=component.get_display_name(self.app.project_manager.resolve_labels()), part=part.get_display_name(self.app.project_manager.resolve_labels())))
 
     def _on_detach_from_part(self, menu_item, component):
         if not component.part_id:
@@ -571,7 +571,7 @@ class ProjectTree:
         component.part_id = None
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(_("{name} detached from part").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
+        self.app.update_status(_("{name} detached from part").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
 
     def _on_delete_component(self, menu_item, component):
         dialog = Gtk.MessageDialog(
@@ -587,12 +587,12 @@ class ProjectTree:
             if response == Gtk.ResponseType.YES:
                 if self.app.current_component and self.app.current_component.id == component.id:
                     self.app.text_view.get_buffer().set_text("")
-                    self.app.webview.load_html(self.app.default_html, self.app.editor_view._get_base_uri())
+                    self.app.webview.load_html(self.app.default_html, self.app.editor_view.get_base_uri())
                     self.app.current_component = None
                 self.app.project.remove_component(component.id)
                 FileService.save_project(self.app.project)
                 self._refresh_project_tree()
-                self.app._update_status(_("Component deleted: {name}").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
+                self.app.update_status(_("Component deleted: {name}").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -624,13 +624,13 @@ class ProjectTree:
                 ids = {c.id for c in components}
                 if self.app.current_component and self.app.current_component.id in ids:
                     self.app.text_view.get_buffer().set_text("")
-                    self.app.webview.load_html(self.app.default_html, self.app.editor_view._get_base_uri())
+                    self.app.webview.load_html(self.app.default_html, self.app.editor_view.get_base_uri())
                     self.app.current_component = None
                 for comp in components:
                     self.app.project.remove_component(comp.id)
                 FileService.save_project(self.app.project)
                 self._refresh_project_tree()
-                self.app._update_status(_("Deleted {n} components").format(n=len(components)))
+                self.app.update_status(_("Deleted {n} components").format(n=len(components)))
             d.destroy()
 
         dialog.connect("response", on_response)
@@ -642,10 +642,10 @@ class ProjectTree:
             component.title = ""
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(_("Type changed to: {type}").format(type=self.app.project_manager.resolve_labels().get(new_type.value, COMPONENT_TYPE_LABELS[new_type])))
-        self.app.editor_view._update_preview()
+        self.app.update_status(_("Type changed to: {type}").format(type=self.app.project_manager.resolve_labels().get(new_type.value, COMPONENT_TYPE_LABELS[new_type])))
+        self.app.editor_view.update_preview()
 
-    def _on_menu_rename_component(self, widget):
+    def on_menu_rename_component(self, widget):
         if not self.app.current_component:
             show_info(self.app.window, _("Select a component first"))
             return
@@ -655,7 +655,7 @@ class ProjectTree:
         iter_ = self.project_store.get_iter(path)
         self._on_rename_component(None, self.app.current_component, iter_)
 
-    def _on_menu_delete_component(self, widget):
+    def on_menu_delete_component(self, widget):
         selection = self.project_tree.get_selection()
         model, paths = selection.get_selected_rows()
         comps = []
@@ -673,7 +673,7 @@ class ProjectTree:
             self._on_delete_multiple_components(None, comps)
 
     def _on_drag_begin(self, treeview, context):
-        if self.app._read_only:
+        if self.app.read_only:
             self._drag_component_ids = []
             return
         selection = treeview.get_selection()
@@ -688,7 +688,7 @@ class ProjectTree:
                         self._drag_component_ids.append(obj.id)
 
     def _on_drag_motion(self, treeview, context, x, y, time):
-        if self.app._read_only:
+        if self.app.read_only:
             return False
         dest = treeview.get_dest_row_at_pos(int(x), int(y))
         if dest:
@@ -697,14 +697,14 @@ class ProjectTree:
         return False
 
     def _on_drag_data_get(self, treeview, drag_context, data, info, time_):
-        if self.app._read_only:
+        if self.app.read_only:
             return
         if not self._drag_component_ids:
             return
         data.set(Gdk.atom_intern("MOVE_ROW", False), 8, b"x")
 
     def _on_drag_data_received(self, treeview, context, x, y, selection_data, info, time_):
-        if not self.app.project or self.app._read_only:
+        if not self.app.project or self.app.read_only:
             context.finish(False, False, time_)
             return
 
@@ -774,7 +774,7 @@ class ProjectTree:
         self.app.project.components = new_components
         FileService.save_project(self.app.project)
         self._refresh_project_tree()
-        self.app._update_status(_("Component(s) reordered"))
+        self.app.update_status(_("Component(s) reordered"))
         context.finish(True, False, time_)
 
     def _collect_tree_components(self, treeview, result):

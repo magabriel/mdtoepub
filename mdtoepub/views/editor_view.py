@@ -101,7 +101,7 @@ class EditorView:
         self.app.main_stack = Gtk.Stack()
         self.app.main_stack.set_vexpand(True)
         self.app.main_stack.add_titled(self.app.content_notebook, "content", _("Content"))
-        self.app.main_stack.add_titled(self.app._styles_scrolled, "styles", _("Styles"))
+        self.app.main_stack.add_titled(self.app.styles_scrolled, "styles", _("Styles"))
         self.app.main_stack.add_titled(help_notebook, "help", _("Help"))
 
         sidebar = Gtk.StackSidebar()
@@ -278,7 +278,7 @@ hr { border: none; border-top: 1px solid #ccc; }
         ]
         buf.set_text("\n".join(lines))
 
-    def _update_spell_lang(self):
+    def update_spell_lang(self):
         if self.app.project:
             self.app.spell_service.default_lang = self.app.project.spell_lang
         self._run_spell_check()
@@ -521,13 +521,13 @@ hr { border: none; border-top: 1px solid #ccc; }
 
         dialog.destroy()
 
-    def _get_base_uri(self) -> str:
+    def get_base_uri(self) -> str:
         if self.app.project and self.app.project.path:
             return f"file://{self.app.project.path}/"
         return "file:///"
 
     def _build_preview_html(self, html_content: str, component_type=None, component=None) -> str:
-        css = self.app._styles_panel._load_theme_css(component_type)
+        css = self.app.styles_panel.load_theme_css(component_type)
         if self.app.project and self.app.project.custom_css:
             css += "\n" + self.app.project.custom_css
         if (self.app.project and component_type is not None
@@ -555,15 +555,15 @@ hr { border: none; border-top: 1px solid #ccc; }
 {html_content}
 </body></html>"""
 
-    def _focus_editor(self):
+    def focus_editor(self):
         self.app.main_stack.set_visible_child(self.app.content_notebook)
         self.app.content_notebook.set_current_page(0)
 
-    def _focus_preview(self):
+    def focus_preview(self):
         self.app.main_stack.set_visible_child(self.app.content_notebook)
         self.app.content_notebook.set_current_page(1)
 
-    def _update_preview(self):
+    def update_preview(self):
         if not self.app.webview:
             return
 
@@ -605,7 +605,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                 from ..services.epub_service import EpubService
                 from ..services.header_builder import HeaderBuilder
                 epub_svc = EpubService(self.app.project)
-                __, config_file = self.app._get_config_path()
+                __, config_file = self.app.get_config_path()
                 global_config = YamlService.load(config_file)
                 labels = epub_svc.resolve_labels(global_config)
                 header_builder = HeaderBuilder(self.app.project, labels)
@@ -739,7 +739,7 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
         else:
             self.app.webview.load_html(self.app.default_html, self._get_base_uri())
 
-    def _get_editor_text(self) -> str:
+    def get_editor_text(self) -> str:
         buffer = self.app.text_view.get_buffer()
         start = buffer.get_start_iter()
         end = buffer.get_end_iter()

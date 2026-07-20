@@ -14,6 +14,7 @@ from ...services.spell_service import SpellCheckService
 from ...services.image_service import ImageService
 from ...models.component import ComponentType, COMPONENT_TYPE_LABELS
 from ...services.labels_service import DEFAULT_LABELS
+from .image_manager import import_image, build_image_manager_widget
 
 from ...i18n import _
 
@@ -52,363 +53,17 @@ def _confirm(parent, msg):
     return response == Gtk.ResponseType.YES
 
 
-def _import_image(app, parent_window, on_imported=None):
-    parent = parent_window or app.window
+def _build_book_info_tab(app, interactive_widgets):
+    """Build the Book info tab with title, author, metadata fields.
 
-    dialog = Gtk.FileChooserDialog(
-        title=_("Select image"),
-        transient_for=parent,
-        action=Gtk.FileChooserAction.OPEN,
-    )
-    dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
-    dialog.add_button(_("Import"), Gtk.ResponseType.ACCEPT)
-    dialog.set_position(Gtk.WindowPosition.CENTER_ON_PARENT)
+    Args:
+        app: The application instance.
+        interactive_widgets: List to append widgets that need read-only toggling.
 
-    img_filter = Gtk.FileFilter()
-    img_filter.set_name(_("Images (JPEG, PNG, GIF)"))
-    for ext in ImageService.get_supported_formats():
-        img_filter.add_pattern(f"*{ext}")
-        img_filter.add_pattern(f"*{ext.upper()}")
-    dialog.add_filter(img_filter)
-
-    dialog.show_all()
-    dialog.present()
-    response = dialog.run()
-
-    if response == Gtk.ResponseType.ACCEPT:
-        src_path = dialog.get_filename()
-        dialog.destroy()
-        if src_path:
-            category_dialog = Gtk.Dialog(
-                title=_("Image type"),
-                transient_for=parent,
-                modal=True,
-            )
-            category_dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
-            category_dialog.add_button(_("Import"), Gtk.ResponseType.ACCEPT)
-
-            cat_content = category_dialog.get_content_area()
-            cat_content.set_spacing(12)
-            cat_content.set_margin_top(12)
-            cat_content.set_margin_bottom(12)
-            cat_content.set_margin_start(12)
-            cat_content.set_margin_end(12)
-
-            cat_label = Gtk.Label(label=_("Select the image type:"))
-            cat_content.add(cat_label)
-
-            combo_cat = Gtk.ComboBoxText()
-            combo_cat.append_text(_("Illustration (figures, diagrams)"))
-            combo_cat.append_text(_("Decorative (separators, ornaments)"))
-            combo_cat.set_active(0)
-            cat_content.add(combo_cat)
-
-            category_dialog.show_all()
-            cat_response = category_dialog.run()
-
-            if cat_response == Gtk.ResponseType.ACCEPT:
-                category = "illustrations" if combo_cat.get_active() == 0 else "decorative"
-                images_dir = os.path.join(app.project.path, "images")
-                result = ImageService.copy_to_project(src_path, images_dir, category)
-                if result:
-                    app._update_status(_("Image imported: {name}").format(name=os.path.basename(src_path)))
-                    if on_imported:
-                        on_imported()
-                else:
-                    _show_error(parent, _("Error importing image"))
-            category_dialog.destroy()
-    else:
-        dialog.destroy()
-
-
-def _build_image_manager_widget(app, parent_window):
-    images_dir = Path(app.project.path) / "images"
-
-    hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-    hbox.set_margin_top(12)
-    hbox.set_margin_bottom(12)
-    hbox.set_margin_start(12)
-    hbox.set_margin_end(12)
-
-    left_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    hbox.pack_start(left_box, True, True, 0)
-
-    scrolled = Gtk.ScrolledWindow()
-    scrolled.set_vexpand(True)
-    left_box.pack_start(scrolled, True, True, 0)
-
-    IMG_COL_NAME = 0
-    IMG_COL_CAT = 1
-    IMG_COL_SIZE = 2
-    IMG_COL_PATH = 3
-
-    store = Gtk.ListStore(str, str, str, str)
-    tree_view = Gtk.TreeView(model=store)
-    tree_view.set_headers_visible(True)
-    tree_view.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
-
-    r_name = Gtk.CellRendererText()
-    col_name = Gtk.TreeViewColumn(_("Name"), r_name, text=IMG_COL_NAME)
-    col_name.set_resizable(True)
-    col_name.set_expand(True)
-    tree_view.append_column(col_name)
-
-    r_cat = Gtk.CellRendererText()
-    col_cat = Gtk.TreeViewColumn(_("Category"), r_cat, text=IMG_COL_CAT)
-    col_cat.set_resizable(True)
-    tree_view.append_column(col_cat)
-
-    r_size = Gtk.CellRendererText()
-    col_size = Gtk.TreeViewColumn(_("Size"), r_size, text=IMG_COL_SIZE)
-    col_size.set_resizable(True)
-    tree_view.append_column(col_size)
-
-    def populate_store():
-        store.clear()
-        for cat_name, cat_label in [("illustrations", _("Illustration")), ("decorative", _("Decorative"))]:
-            cat_dir = images_dir / cat_name
-            if cat_dir.exists():
-                for f in sorted(cat_dir.iterdir()):
-                    if not f.is_file() or f.suffix.lower() not in ImageService.get_supported_formats():
-                        continue
-                    size = f.stat().st_size
-                    size_str = f"{size / 1024:.1f} KB"
-                    store.append([f.name, cat_label, size_str, str(f)])
-
-    populate_store()
-
-    scrolled.add(tree_view)
-
-    btn_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-    left_box.pack_start(btn_box, False, False, 0)
-
-    btn_import = Gtk.Button(label=_("Import"))
-    btn_import.connect("clicked", lambda b: _import_image(app, parent_window=parent_window, on_imported=populate_store))
-    btn_box.pack_start(btn_import, False, False, 0)
-
-    btn_delete = Gtk.Button(label=_("Delete"))
-    btn_box.pack_start(btn_delete, False, False, 0)
-
-    btn_rename = Gtk.Button(label=_("Rename"))
-    btn_box.pack_start(btn_rename, False, False, 0)
-
-    btn_change_type = Gtk.Button(label=_("Change Type"))
-    btn_box.pack_start(btn_change_type, False, False, 0)
-
-    right_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
-    right_box.set_size_request(280, -1)
-    hbox.pack_start(right_box, False, False, 0)
-
-    preview_img = Gtk.Image()
-    preview_frame = Gtk.Frame(label=_("Preview"))
-    preview_frame.set_size_request(260, 300)
-    preview_frame.add(preview_img)
-    right_box.pack_start(preview_frame, True, True, 0)
-
-    def update_preview():
-        sel = tree_view.get_selection()
-        model, paths = sel.get_selected_rows()
-        if len(paths) != 1:
-            preview_img.clear()
-            return
-        iter_ = model.get_iter(paths[0])
-        fpath = model.get_value(iter_, IMG_COL_PATH)
-        try:
-            pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_size(fpath, 240, 260)
-            preview_img.set_from_pixbuf(pixbuf)
-        except Exception:
-            preview_img.clear()
-
-    tree_view.get_selection().connect("changed", lambda *a: update_preview())
-
-    def on_delete(_btn):
-        sel = tree_view.get_selection()
-        model, paths = sel.get_selected_rows()
-        if not paths:
-            _show_info(parent_window, _("Select one or more images"))
-            return
-        names = []
-        for p in paths:
-            iter_ = model.get_iter(p)
-            names.append(model.get_value(iter_, IMG_COL_NAME))
-        confirm_dlg = Gtk.MessageDialog(
-            transient_for=parent_window, modal=True,
-            message_type=Gtk.MessageType.QUESTION,
-            buttons=Gtk.ButtonsType.YES_NO,
-            text=_("Delete {n} images").format(n=len(names)),
-        )
-        confirm_dlg.format_secondary_text("\n".join(f"  - {n}" for n in names))
-        if confirm_dlg.run() == Gtk.ResponseType.YES:
-            confirm_dlg.destroy()
-            for p in reversed(sorted(paths)):
-                iter_ = model.get_iter(p)
-                fpath = model.get_value(iter_, IMG_COL_PATH)
-                ImageService.delete_image(fpath)
-            populate_store()
-            update_preview()
-        else:
-            confirm_dlg.destroy()
-
-    btn_delete.connect("clicked", on_delete)
-
-    def on_rename(_btn):
-        sel = tree_view.get_selection()
-        model, paths = sel.get_selected_rows()
-        if len(paths) != 1:
-            _show_info(parent_window, _("Select a single image to rename"))
-            return
-        iter_ = model.get_iter(paths[0])
-        old_name = model.get_value(iter_, IMG_COL_NAME)
-        fpath = model.get_value(iter_, IMG_COL_PATH)
-        cat_label = model.get_value(iter_, IMG_COL_CAT)
-        cat_name = "illustrations" if cat_label == _("Illustration") else "decorative"
-
-        rename_dialog = Gtk.Dialog(
-            title=_("Rename image"),
-            transient_for=parent_window, modal=True,
-        )
-        rename_dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
-        rename_dialog.add_button(_("Rename"), Gtk.ResponseType.ACCEPT)
-
-        r_content = rename_dialog.get_content_area()
-        r_content.set_spacing(12)
-        r_content.set_margin_top(12)
-        r_content.set_margin_bottom(12)
-        r_content.set_margin_start(12)
-        r_content.set_margin_end(12)
-
-        r_content.add(Gtk.Label(label=_("New name:")))
-        entry = Gtk.Entry()
-        entry.set_text(old_name)
-        entry.set_hexpand(True)
-        entry.connect("activate", lambda *a: rename_dialog.response(Gtk.ResponseType.ACCEPT))
-        r_content.add(entry)
-
-        rename_dialog.show_all()
-
-        if rename_dialog.run() == Gtk.ResponseType.ACCEPT:
-            new_name = entry.get_text().strip()
-            rename_dialog.destroy()
-            if not new_name or new_name == old_name:
-                return
-            old_path = f"images/{cat_name}/{old_name}"
-            new_path = f"images/{cat_name}/{new_name}"
-
-            src_suffix = Path(old_name).suffix.lower()
-            new_suffix = Path(new_name).suffix.lower()
-            if new_suffix != src_suffix:
-                _show_error(parent_window, _("The extension must be the same"))
-                return
-
-            result = ImageService.rename_image(fpath, new_name)
-            if result is None:
-                _show_error(parent_window, _("Could not rename (does '{name}' already exist?)").format(name=new_name))
-                return
-
-            updated = FileService.rename_image_references(
-                app.project.path, old_path, new_path, app.project
-            )
-
-            if app.current_component:
-                content = FileService.load_component(app.project.path, app.current_component)
-                if content:
-                    buf = app.text_view.get_buffer()
-                    buf.set_text(content)
-                    app.editor_view._update_preview()
-
-            populate_store()
-            app._update_status(_("Image renamed to '{name}' ({n} component(s) updated)").format(name=new_name, n=updated))
-        else:
-            rename_dialog.destroy()
-
-    btn_rename.connect("clicked", on_rename)
-
-    def on_change_type(_btn):
-        sel = tree_view.get_selection()
-        model, paths = sel.get_selected_rows()
-        if len(paths) != 1:
-            _show_info(parent_window, _("Select a single image to change type"))
-            return
-        iter_ = model.get_iter(paths[0])
-        name = model.get_value(iter_, IMG_COL_NAME)
-        fpath = model.get_value(iter_, IMG_COL_PATH)
-        current_cat_label = model.get_value(iter_, IMG_COL_CAT)
-        current_cat = "illustrations" if current_cat_label == _("Illustration") else "decorative"
-        new_cat = "decorative" if current_cat == "illustrations" else "illustrations"
-        new_cat_label = _("Decorative") if new_cat == "decorative" else _("Illustration")
-
-        new_dir = images_dir / new_cat
-        new_dir.mkdir(parents=True, exist_ok=True)
-        new_path = new_dir / name
-
-        if new_path.exists():
-            _show_error(parent_window, _("An image with that name already exists in '{category}'").format(category=new_cat_label))
-            return
-
-        try:
-            shutil.move(str(fpath), str(new_path))
-        except OSError:
-            _show_error(parent_window, _("Could not move the image"))
-            return
-
-        old_rel = f"images/{current_cat}/{name}"
-        new_rel = f"images/{new_cat}/{name}"
-        updated = FileService.rename_image_references(
-            app.project.path, old_rel, new_rel, app.project
-        )
-
-        if app.current_component:
-            content = FileService.load_component(app.project.path, app.current_component)
-            if content:
-                buf = app.text_view.get_buffer()
-                buf.set_text(content)
-                app.editor_view._update_preview()
-
-        populate_store()
-        update_preview()
-        app._update_status(_("Image moved to '{category}' ({n} component(s) updated)").format(category=new_cat_label, n=updated))
-
-    btn_change_type.connect("clicked", on_change_type)
-
-    return hbox
-
-
-def show_project_config(app):
-    if not app.project:
-        _show_info(app.window, _("No project open"))
-        return
-
-    read_only = app._read_only
-
-    dialog = Gtk.Dialog(
-        title=_("Project Settings") + (" [READ ONLY]" if read_only else ""),
-        transient_for=app.window,
-        modal=True,
-    )
-    dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
-    if not read_only:
-        dialog.add_button(_("Save"), Gtk.ResponseType.ACCEPT)
-    dialog.set_default_size(520, 420)
-
-    content = dialog.get_content_area()
-    content.set_spacing(12)
-    content.set_margin_top(12)
-    content.set_margin_bottom(12)
-    content.set_margin_start(12)
-    content.set_margin_end(12)
-
-    if read_only:
-        note_rw = Gtk.Label()
-        note_rw.set_markup(f'<span foreground="#c00"><b>{_("This project is read-only. Changes cannot be saved.")}</b></span>')
-        note_rw.set_xalign(0)
-        content.pack_start(note_rw, False, False, 0)
-
-    interactive_widgets = []
-
-    notebook = Gtk.Notebook()
-    content.add(notebook)
-
-    # ── Tab 1: Book info ──
+    Returns:
+        Tuple of (grid_widget, entry_title, entry_subtitle, entry_export, entry_author,
+        entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial).
+    """
     grid_book = Gtk.Grid()
     grid_book.set_row_spacing(8)
     grid_book.set_column_spacing(12)
@@ -418,7 +73,6 @@ def show_project_config(app):
     grid_book.set_margin_start(12)
     grid_book.set_margin_end(12)
     grid_book.set_vexpand(False)
-    notebook.append_page(grid_book, Gtk.Label(label=_("Book")))
 
     row = 0
 
@@ -596,9 +250,22 @@ def show_project_config(app):
     note.set_xalign(0)
     note.set_line_wrap(True)
     grid_book.attach(note, 0, row, 2, 1)
-    row += 1
 
-    # ── Tab 2: Appearance ──
+    return (grid_book, entry_title, entry_subtitle, entry_export, entry_author,
+            entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial)
+
+
+def _build_appearance_tab(app, interactive_widgets):
+    """Build the Appearance tab with theme, drop cap, and spell check settings.
+
+    Args:
+        app: The application instance.
+        interactive_widgets: List to append widgets that need read-only toggling.
+
+    Returns:
+        Tuple of (grid_widget, combo_theme, available_themes, check_drop_cap,
+        drop_cap_checkbuttons, combo_lang, langs).
+    """
     grid_app = Gtk.Grid()
     grid_app.set_row_spacing(8)
     grid_app.set_column_spacing(12)
@@ -607,7 +274,6 @@ def show_project_config(app):
     grid_app.set_margin_bottom(12)
     grid_app.set_margin_start(12)
     grid_app.set_margin_end(12)
-    notebook.append_page(grid_app, Gtk.Label(label=_("Appearance")))
 
     row = 0
 
@@ -673,12 +339,10 @@ def show_project_config(app):
     sw.add(type_list)
     right_vbox.pack_start(sw, True, True, 0)
 
-    # Separator
     sep2 = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
     grid_app.attach(sep2, 0, row, 2, 1)
     row += 1
 
-    # ── Spell check language ──
     label_lang = Gtk.Label(label=_("Spell checker:"))
     label_lang.set_xalign(1)
     grid_app.attach(label_lang, 0, row, 1, 1)
@@ -694,9 +358,25 @@ def show_project_config(app):
     combo_lang.set_active(lang_index)
     combo_lang.set_hexpand(True)
     grid_app.attach(combo_lang, 1, row, 1, 1)
-    row += 1
 
-    # ── Tab 3: Numbering ──
+    return (grid_app, combo_theme, available_themes, check_drop_cap,
+            drop_cap_checkbuttons, combo_lang, langs)
+
+
+def _build_numbering_tab(app, interactive_widgets):
+    """Build the Numbering tab with auto-title and figure/table numbering settings.
+
+    Args:
+        app: The application instance.
+        interactive_widgets: List to append widgets that need read-only toggling.
+
+    Returns:
+        Tuple of (grid_widget, combo_auto_title, auto_title_values, combo_chapter_style,
+        chapter_style_values, combo_auto_appendix, auto_appendix_values, combo_appendix_style,
+        appendix_style_values, combo_auto_part, auto_part_values, combo_part_style,
+        part_style_values, check_figure_numbering, combo_fig_style, fig_style_values,
+        check_table_numbering, combo_tab_style, tab_style_values).
+    """
     grid_num = Gtk.Grid()
     grid_num.set_row_spacing(8)
     grid_num.set_column_spacing(12)
@@ -705,7 +385,6 @@ def show_project_config(app):
     grid_num.set_margin_bottom(12)
     grid_num.set_margin_start(12)
     grid_num.set_margin_end(12)
-    notebook.append_page(grid_num, Gtk.Label(label=_("Numbering")))
 
     num_row = 0
 
@@ -845,7 +524,6 @@ def show_project_config(app):
     grid_num.attach(sep_num1, 0, num_row, 2, 1)
     num_row += 1
 
-    # ── Figure numbering ──
     label_fig = Gtk.Label(label=_("Figure numbering:"))
     label_fig.set_xalign(1)
     label_fig.set_valign(Gtk.Align.START)
@@ -887,7 +565,6 @@ def show_project_config(app):
     grid_num.attach(sep_num2, 0, num_row, 2, 1)
     num_row += 1
 
-    # ── Table numbering ──
     label_tab = Gtk.Label(label=_("Table numbering:"))
     label_tab.set_xalign(1)
     label_tab.set_valign(Gtk.Align.START)
@@ -925,15 +602,32 @@ def show_project_config(app):
     check_table_numbering.connect("toggled", _on_tab_numbering_toggle)
     _on_tab_numbering_toggle(check_table_numbering)
 
-    # ── Tab 4: Labels ──
+    return (grid_num, combo_auto_title, auto_title_values, combo_chapter_style,
+            chapter_style_values, combo_auto_appendix, auto_appendix_values,
+            combo_appendix_style, appendix_style_values, combo_auto_part,
+            auto_part_values, combo_part_style, part_style_values,
+            check_figure_numbering, combo_fig_style, fig_style_values,
+            check_table_numbering, combo_tab_style, tab_style_values)
+
+
+def _build_labels_tab(app, interactive_widgets, dialog):
+    """Build the Labels tab with per-language label editing.
+
+    Args:
+        app: The application instance.
+        interactive_widgets: List to append widgets that need read-only toggling.
+        dialog: Parent dialog for sub-dialogs.
+
+    Returns:
+        Tuple of (labels_page_widget, global_labels, config_file).
+    """
     labels_page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
     labels_page.set_margin_top(12)
     labels_page.set_margin_bottom(12)
     labels_page.set_margin_start(12)
     labels_page.set_margin_end(12)
-    notebook.append_page(labels_page, Gtk.Label(label=_("Labels")))
 
-    __, config_file = app._get_config_path()
+    __, config_file = app.get_config_path()
     global_cfg = YamlService.load(config_file) or {}
     global_labels = global_cfg.get("labels", {})
     label_keys = [k for k in DEFAULT_LABELS.get("es", {})]
@@ -1070,71 +764,176 @@ def show_project_config(app):
 
     _build_labels_page(app.project.language)
 
-    images_page = _build_image_manager_widget(app, dialog)
+    return labels_page, global_labels, config_file
+
+
+def _save_project_config(app, dialog, widgets):
+    """Save all project configuration from the dialog widgets.
+
+    Args:
+        app: The application instance.
+        dialog: The config dialog.
+        widgets: Dict of all widget references needed for saving.
+    """
+    (entry_title, entry_subtitle, entry_export, entry_author, entry_lang,
+     combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial,
+     combo_theme, available_themes, check_drop_cap, drop_cap_checkbuttons,
+     combo_lang, langs, combo_auto_title, auto_title_values,
+     combo_chapter_style, chapter_style_values, combo_auto_appendix,
+     auto_appendix_values, combo_appendix_style, appendix_style_values,
+     combo_auto_part, auto_part_values, combo_part_style, part_style_values,
+     check_figure_numbering, combo_fig_style, fig_style_values,
+     check_table_numbering, combo_tab_style, tab_style_values,
+     global_labels, config_file) = widgets
+
+    app.project.title = entry_title.get_text().strip()
+    app.project.author = entry_author.get_text().strip()
+    app.project.language = entry_lang.get_text().strip() or "es"
+    epub_idx = combo_epub.get_active()
+    app.project.epub_version = ["epub2", "epub3"][epub_idx]
+    auto_idx = combo_auto_title.get_active()
+    if 0 <= auto_idx < len(auto_title_values):
+        app.project.auto_chapter_title = auto_title_values[auto_idx]
+    chapter_style_idx = combo_chapter_style.get_active()
+    if 0 <= chapter_style_idx < len(chapter_style_values):
+        app.project.chapter_numbering_style = chapter_style_values[chapter_style_idx]
+    auto_appendix_idx = combo_auto_appendix.get_active()
+    if 0 <= auto_appendix_idx < len(auto_appendix_values):
+        app.project.auto_appendix_title = auto_appendix_values[auto_appendix_idx]
+    appendix_style_idx = combo_appendix_style.get_active()
+    if 0 <= appendix_style_idx < len(appendix_style_values):
+        app.project.appendix_numbering_style = appendix_style_values[appendix_style_idx]
+    auto_part_idx = combo_auto_part.get_active()
+    if 0 <= auto_part_idx < len(auto_part_values):
+        app.project.auto_part_title = auto_part_values[auto_part_idx]
+    part_style_idx = combo_part_style.get_active()
+    if 0 <= part_style_idx < len(part_style_values):
+        app.project.part_numbering_style = part_style_values[part_style_idx]
+    theme_idx = combo_theme.get_active()
+    if theme_idx >= 0 and theme_idx < len(available_themes):
+        app.project.theme_id = available_themes[theme_idx][0]
+    app.project.drop_cap_enabled = check_drop_cap.get_active()
+    app.project.drop_cap_types = [
+        t for t, cb in drop_cap_checkbuttons.items() if cb.get_active()
+    ] or ["chapter"]
+    app.project.figure_numbering = check_figure_numbering.get_active()
+    fig_style_idx = combo_fig_style.get_active()
+    if 0 <= fig_style_idx < len(fig_style_values):
+        app.project.figure_numbering_style = fig_style_values[fig_style_idx]
+    app.project.table_numbering = check_table_numbering.get_active()
+    tab_style_idx = combo_tab_style.get_active()
+    if 0 <= tab_style_idx < len(tab_style_values):
+        app.project.table_numbering_style = tab_style_values[tab_style_idx]
+    app.project.export_filename = entry_export.get_text().strip()
+    app.project.edition = entry_edicion.get_text().strip()
+    app.project.publication_date = entry_fecha.get_text().strip()
+    app.project.isbn = entry_isbn.get_text().strip()
+    app.project.publisher = entry_editorial.get_text().strip()
+    app.project.subtitle = entry_subtitle.get_text().strip()
+    lang_idx = combo_lang.get_active()
+    if lang_idx >= 0 and lang_idx < len(langs):
+        app.project.spell_lang = langs[lang_idx]
+    FileService.save_project(app.project)
+    global_cfg = YamlService.load(config_file) or {}
+    global_cfg["labels"] = global_labels
+    YamlService.save(global_cfg, config_file)
+    app.editor_view.update_spell_lang()
+    app.project_tree_view.update_window_title()
+    app.project_tree_view.refresh_project_tree()
+    if app.current_component:
+        app.styles_panel.update(app.current_component.type)
+    elif app.current_part:
+        app.styles_panel.update(app.current_part.type)
+    app.update_status(_("Project settings saved"))
+    app.editor_view.update_preview()
+
+
+def show_project_config(app):
+    """Show the project configuration dialog.
+
+    Args:
+        app: The application instance.
+    """
+    if not app.project:
+        _show_info(app.window, _("No project open"))
+        return
+
+    read_only = app.read_only
+
+    dialog = Gtk.Dialog(
+        title=_("Project Settings") + (" [READ ONLY]" if read_only else ""),
+        transient_for=app.window,
+        modal=True,
+    )
+    dialog.add_button(_("Cancel"), Gtk.ResponseType.CANCEL)
+    if not read_only:
+        dialog.add_button(_("Save"), Gtk.ResponseType.ACCEPT)
+    dialog.set_default_size(520, 420)
+
+    content = dialog.get_content_area()
+    content.set_spacing(12)
+    content.set_margin_top(12)
+    content.set_margin_bottom(12)
+    content.set_margin_start(12)
+    content.set_margin_end(12)
+
+    if read_only:
+        note_rw = Gtk.Label()
+        note_rw.set_markup(f'<span foreground="#c00"><b>{_("This project is read-only. Changes cannot be saved.")}</b></span>')
+        note_rw.set_xalign(0)
+        content.pack_start(note_rw, False, False, 0)
+
+    interactive_widgets = []
+
+    notebook = Gtk.Notebook()
+    content.add(notebook)
+
+    # Tab 1: Book info
+    (grid_book, entry_title, entry_subtitle, entry_export, entry_author,
+     entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn,
+     entry_editorial) = _build_book_info_tab(app, interactive_widgets)
+    notebook.append_page(grid_book, Gtk.Label(label=_("Book")))
+
+    # Tab 2: Appearance
+    (grid_app, combo_theme, available_themes, check_drop_cap,
+     drop_cap_checkbuttons, combo_lang, langs) = _build_appearance_tab(app, interactive_widgets)
+    notebook.append_page(grid_app, Gtk.Label(label=_("Appearance")))
+
+    # Tab 3: Numbering
+    (grid_num, combo_auto_title, auto_title_values, combo_chapter_style,
+     chapter_style_values, combo_auto_appendix, auto_appendix_values,
+     combo_appendix_style, appendix_style_values, combo_auto_part,
+     auto_part_values, combo_part_style, part_style_values,
+     check_figure_numbering, combo_fig_style, fig_style_values,
+     check_table_numbering, combo_tab_style,
+     tab_style_values) = _build_numbering_tab(app, interactive_widgets)
+    notebook.append_page(grid_num, Gtk.Label(label=_("Numbering")))
+
+    # Tab 4: Labels
+    labels_page, global_labels, config_file = _build_labels_tab(app, interactive_widgets, dialog)
+    notebook.append_page(labels_page, Gtk.Label(label=_("Labels")))
+
+    # Tab 5: Images
+    images_page = build_image_manager_widget(app, dialog)
     if images_page:
         notebook.append_page(images_page, Gtk.Label(label=_("Images")))
 
     def on_config_response(d, response):
         if response == Gtk.ResponseType.ACCEPT:
-            app.project.title = entry_title.get_text().strip()
-            app.project.author = entry_author.get_text().strip()
-            app.project.language = entry_lang.get_text().strip() or "es"
-            epub_idx = combo_epub.get_active()
-            app.project.epub_version = ["epub2", "epub3"][epub_idx]
-            auto_idx = combo_auto_title.get_active()
-            if 0 <= auto_idx < len(auto_title_values):
-                app.project.auto_chapter_title = auto_title_values[auto_idx]
-            chapter_style_idx = combo_chapter_style.get_active()
-            if 0 <= chapter_style_idx < len(chapter_style_values):
-                app.project.chapter_numbering_style = chapter_style_values[chapter_style_idx]
-            auto_appendix_idx = combo_auto_appendix.get_active()
-            if 0 <= auto_appendix_idx < len(auto_appendix_values):
-                app.project.auto_appendix_title = auto_appendix_values[auto_appendix_idx]
-            appendix_style_idx = combo_appendix_style.get_active()
-            if 0 <= appendix_style_idx < len(appendix_style_values):
-                app.project.appendix_numbering_style = appendix_style_values[appendix_style_idx]
-            auto_part_idx = combo_auto_part.get_active()
-            if 0 <= auto_part_idx < len(auto_part_values):
-                app.project.auto_part_title = auto_part_values[auto_part_idx]
-            part_style_idx = combo_part_style.get_active()
-            if 0 <= part_style_idx < len(part_style_values):
-                app.project.part_numbering_style = part_style_values[part_style_idx]
-            theme_idx = combo_theme.get_active()
-            if theme_idx >= 0 and theme_idx < len(available_themes):
-                app.project.theme_id = available_themes[theme_idx][0]
-            app.project.drop_cap_enabled = check_drop_cap.get_active()
-            app.project.drop_cap_types = [
-                t for t, cb in drop_cap_checkbuttons.items() if cb.get_active()
-            ] or ["chapter"]
-            app.project.figure_numbering = check_figure_numbering.get_active()
-            fig_style_idx = combo_fig_style.get_active()
-            if 0 <= fig_style_idx < len(fig_style_values):
-                app.project.figure_numbering_style = fig_style_values[fig_style_idx]
-            app.project.table_numbering = check_table_numbering.get_active()
-            tab_style_idx = combo_tab_style.get_active()
-            if 0 <= tab_style_idx < len(tab_style_values):
-                app.project.table_numbering_style = tab_style_values[tab_style_idx]
-            app.project.export_filename = entry_export.get_text().strip()
-            app.project.edition = entry_edicion.get_text().strip()
-            app.project.publication_date = entry_fecha.get_text().strip()
-            app.project.isbn = entry_isbn.get_text().strip()
-            app.project.publisher = entry_editorial.get_text().strip()
-            app.project.subtitle = entry_subtitle.get_text().strip()
-            lang_idx = combo_lang.get_active()
-            if lang_idx >= 0 and lang_idx < len(langs):
-                app.project.spell_lang = langs[lang_idx]
-            FileService.save_project(app.project)
-            global_cfg["labels"] = global_labels
-            YamlService.save(global_cfg, config_file)
-            app.editor_view._update_spell_lang()
-            app.project_tree_view._update_window_title()
-            app.project_tree_view._refresh_project_tree()
-            if app.current_component:
-                app._styles_panel.update(app.current_component.type)
-            elif app.current_part:
-                app._styles_panel.update(app.current_part.type)
-            app._update_status(_("Project settings saved"))
-            app.editor_view._update_preview()
+            widgets = (
+                entry_title, entry_subtitle, entry_export, entry_author,
+                entry_lang, combo_epub, entry_edicion, entry_fecha,
+                entry_isbn, entry_editorial, combo_theme, available_themes,
+                check_drop_cap, drop_cap_checkbuttons, combo_lang, langs,
+                combo_auto_title, auto_title_values, combo_chapter_style,
+                chapter_style_values, combo_auto_appendix, auto_appendix_values,
+                combo_appendix_style, appendix_style_values, combo_auto_part,
+                auto_part_values, combo_part_style, part_style_values,
+                check_figure_numbering, combo_fig_style, fig_style_values,
+                check_table_numbering, combo_tab_style, tab_style_values,
+                global_labels, config_file,
+            )
+            _save_project_config(app, d, widgets)
         d.destroy()
 
     dialog.connect("response", on_config_response)

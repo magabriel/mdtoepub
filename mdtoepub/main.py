@@ -31,13 +31,13 @@ class MDToEPUBApp(Gtk.Application):
         self.current_part = None
         self.md_service = MarkdownService()
         self.webview = None
-        self._last_epub_path = None
-        self._in_cursor_change = False
-        self._read_only = False
+        self.last_epub_path = None
+        self.in_cursor_change = False
+        self.read_only = False
         self._dev_mode = os.environ.get("MDTOEPUB_DEV") == "1"
-        self._toolbar_save_btn = None
-        self._styles_current_component = None
-        self._styles_current_comp_type = None
+        self.toolbar_save_btn = None
+        self.styles_current_component = None
+        self.styles_current_comp_type = None
 
         config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
         config_file = os.path.join(config_dir, "config.yaml")
@@ -66,14 +66,14 @@ class MDToEPUBApp(Gtk.Application):
 
         self.project_manager = ProjectManager(self)
         self.project_tree_view = ProjectTree(self)
-        self._styles_panel = StylesPanel(self)
+        self.styles_panel = StylesPanel(self)
         self.editor_view = EditorView(self)
         self.export_import_ctrl = ExportImportController(self)
 
         self.main_window = MainWindow(self)
         left_box, right_box = self.main_window.build(main_box)
 
-        self._styles_scrolled = self._styles_panel.build()
+        self.styles_scrolled = self.styles_panel.build()
         self.editor_view.build(right_box)
         self.project_tree_view.build(left_box)
         self.project_tree = self.project_tree_view.project_tree
@@ -82,10 +82,20 @@ class MDToEPUBApp(Gtk.Application):
         self.window.show_all()
         self.main_window.load_recent_projects()
 
-    def _update_status(self, message):
+    def update_status(self, message):
+        """Update the status bar message.
+
+        Args:
+            message: Text to display in the status bar.
+        """
         self.status_label.set_text(message)
 
-    def _get_config_path(self) -> tuple:
+    def get_config_path(self) -> tuple:
+        """Return the user config directory and config file path.
+
+        Returns:
+            Tuple of (config_dir, config_file) paths.
+        """
         config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
         os.makedirs(config_dir, exist_ok=True)
         config_file = os.path.join(config_dir, "config.yaml")

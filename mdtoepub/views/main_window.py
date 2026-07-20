@@ -71,7 +71,7 @@ class MainWindow:
         archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label=_("Close Project"))
-        item.connect("activate", self.app.project_tree_view._on_close_project)
+        item.connect("activate", self.app.project_tree_view.on_close_project)
         item.set_sensitive(False)
         self._project_dependent_items.append(item)
         archivo_menu.append(item)
@@ -102,18 +102,18 @@ class MainWindow:
         componente_menu = Gtk.Menu()
         componente.set_submenu(componente_menu)
         item = Gtk.MenuItem(label=_("Add Component"))
-        item.connect("activate", self.app.project_tree_view._on_add_component)
+        item.connect("activate", self.app.project_tree_view.on_add_component)
         item.set_sensitive(False)
         self._project_dependent_items.append(item)
         componente_menu.append(item)
         componente_menu.append(Gtk.SeparatorMenuItem())
         item = Gtk.MenuItem(label=_("Rename Component"))
-        item.connect("activate", self.app.project_tree_view._on_menu_rename_component)
+        item.connect("activate", self.app.project_tree_view.on_menu_rename_component)
         item.set_sensitive(False)
         self._project_dependent_items.append(item)
         componente_menu.append(item)
         item = Gtk.MenuItem(label=_("Delete Component"))
-        item.connect("activate", self.app.project_tree_view._on_menu_delete_component)
+        item.connect("activate", self.app.project_tree_view.on_menu_delete_component)
         item.set_sensitive(False)
         self._project_dependent_items.append(item)
         componente_menu.append(item)
@@ -124,10 +124,10 @@ class MainWindow:
         ver_menu = Gtk.Menu()
         ver.set_submenu(ver_menu)
         item = Gtk.MenuItem(label=_("Editor"))
-        item.connect("activate", lambda w: self.app.editor_view._focus_editor())
+        item.connect("activate", lambda w: self.app.editor_view.focus_editor())
         ver_menu.append(item)
         item = Gtk.MenuItem(label=_("Preview"))
-        item.connect("activate", lambda w: self.app.editor_view._focus_preview())
+        item.connect("activate", lambda w: self.app.editor_view.focus_preview())
         ver_menu.append(item)
         menubar.append(ver)
 
@@ -222,11 +222,11 @@ class MainWindow:
         open_btn.connect("clicked", self._on_open_project)
         toolbar.insert(open_btn, -1)
 
-        self.app._toolbar_save_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-save-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
-        self.app._toolbar_save_btn.set_label(_("Save"))
-        self.app._toolbar_save_btn.set_tooltip_text(_("Save"))
-        self.app._toolbar_save_btn.connect("clicked", self._on_save_project)
-        toolbar.insert(self.app._toolbar_save_btn, -1)
+        self.app.toolbar_save_btn = Gtk.ToolButton(icon_widget=Gtk.Image.new_from_icon_name("document-save-symbolic", Gtk.IconSize.SMALL_TOOLBAR))
+        self.app.toolbar_save_btn.set_label(_("Save"))
+        self.app.toolbar_save_btn.set_tooltip_text(_("Save"))
+        self.app.toolbar_save_btn.connect("clicked", self._on_save_project)
+        toolbar.insert(self.app.toolbar_save_btn, -1)
 
         sep1 = Gtk.SeparatorToolItem()
         toolbar.insert(sep1, -1)
@@ -386,12 +386,12 @@ class MainWindow:
 
                 self.app.project = project_path
                 self.update_project_sensitivity(True)
-                self.app.editor_view._update_spell_lang()
+                self.app.editor_view.update_spell_lang()
                 self.app.current_component = None
-                self.app.project_tree_view._set_read_only_mode(False)
+                self.app.project_tree_view.set_read_only_mode(False)
                 self._add_recent_project(project_path.path)
-                self.app.project_tree_view._refresh_project_tree()
-                self.app._update_status(_("Project created: {name}").format(name=name))
+                self.app.project_tree_view.refresh_project_tree()
+                self.app.update_status(_("Project created: {name}").format(name=name))
 
             d.destroy()
 
@@ -417,13 +417,13 @@ class MainWindow:
                     if project:
                         self.app.project = project
                         self.update_project_sensitivity(True)
-                        self.app.editor_view._update_spell_lang()
+                        self.app.editor_view.update_spell_lang()
                         self.app.current_component = None
-                        self.app.project_tree_view._set_read_only_mode(False)
+                        self.app.project_tree_view.set_read_only_mode(False)
                         self._add_recent_project(project.path)
-                        self.app.project_tree_view._refresh_project_tree()
+                        self.app.project_tree_view.refresh_project_tree()
                         self.app.text_view.get_buffer().set_text("")
-                        self.app._update_status(_("Project opened: {name}").format(name=project.name))
+                        self.app.update_status(_("Project opened: {name}").format(name=project.name))
                     else:
                         show_error(self.app.window, _("Error loading project"))
                 else:
@@ -434,18 +434,18 @@ class MainWindow:
         if not self.app.project:
             show_info(self.app.window, _("No project open"))
             return
-        if self.app._read_only:
+        if self.app.read_only:
             return
         if self.app.current_component:
             self.app.project_manager.save_component_content()
         FileService.save_project(self.app.project)
-        self.app._update_status(_("Project saved"))
+        self.app.update_status(_("Project saved"))
 
     def _on_save_project_as(self, button):
         if not self.app.project:
             show_info(self.app.window, _("No project open"))
             return
-        if self.app._read_only:
+        if self.app.read_only:
             return
         dialog = Gtk.FileChooserNative(
             title=_("Save Project As"),
@@ -499,8 +499,8 @@ class MainWindow:
                 FileService.save_project(new_project)
                 self.app.project = new_project
                 self._add_recent_project(new_project.path)
-                self.app.project_tree_view._refresh_project_tree()
-                self.app._update_status(_("Project saved to: {path}").format(path=new_project.path))
+                self.app.project_tree_view.refresh_project_tree()
+                self.app.update_status(_("Project saved to: {path}").format(path=new_project.path))
         dialog.destroy()
 
     def _on_load_sample_book(self, widget, book_dir="sample_book"):
@@ -516,12 +516,12 @@ class MainWindow:
             self.app.project = project
             self.app.project.path = sample_dir
             self.update_project_sensitivity(True)
-            self.app.editor_view._update_spell_lang()
+            self.app.editor_view.update_spell_lang()
             self.app.current_component = None
-            self.app.project_tree_view._set_read_only_mode(True)
-            self.app.project_tree_view._refresh_project_tree()
+            self.app.project_tree_view.set_read_only_mode(True)
+            self.app.project_tree_view.refresh_project_tree()
             self.app.text_view.get_buffer().set_text("")
-            self.app._update_status(_("Sample book loaded: {name} [READ ONLY]").format(name=project.name))
+            self.app.update_status(_("Sample book loaded: {name} [READ ONLY]").format(name=project.name))
         else:
             show_error(self.app.window, _("Error loading sample book"))
 
@@ -719,7 +719,7 @@ class MainWindow:
         from .dialogs.project_config import show_project_config
         show_project_config(self.app)
 
-    def _on_theme_manager(self, widget):
+    def on_theme_manager(self, widget):
         from .dialogs.theme_manager import show_theme_manager
         show_theme_manager(self.app)
 
@@ -785,12 +785,12 @@ class MainWindow:
         if project:
             self.app.project = project
             self.update_project_sensitivity(True)
-            self.app.editor_view._update_spell_lang()
+            self.app.editor_view.update_spell_lang()
             self.app.current_component = None
-            self.app.project_tree_view._set_read_only_mode(False)
-            self.app.project_tree_view._refresh_project_tree()
+            self.app.project_tree_view.set_read_only_mode(False)
+            self.app.project_tree_view.refresh_project_tree()
             self.app.text_view.get_buffer().set_text("")
-            self.app._update_status(_("Project opened: {name}").format(name=project.name))
+            self.app.update_status(_("Project opened: {name}").format(name=project.name))
             self._add_recent_project(path)
         else:
             show_error(self.app.window, _("Error loading project"))

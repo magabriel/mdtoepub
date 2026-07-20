@@ -12,10 +12,19 @@ from ..i18n import _
 
 
 class ExportImportController:
+    """Handles EPUB export and Markdown/EPUB import operations."""
+
     def __init__(self, app):
         self.app = app
 
     def export_epub(self, button):
+        """Export the current project as an EPUB file.
+
+        Shows a file chooser dialog, generates the EPUB, and opens it.
+
+        Args:
+            button: GTK button that triggered the action (unused).
+        """
         if not self.app.project:
             show_info(self.app.window, _("No project open"))
             return
@@ -28,7 +37,7 @@ class ExportImportController:
         if not epub_name.endswith(".epub"):
             epub_name += ".epub"
 
-        if self.app._read_only:
+        if self.app.read_only:
             output_dir = "/tmp/mdtoepub_export"
             epub_path = os.path.join(output_dir, epub_name)
         else:
@@ -48,7 +57,7 @@ class ExportImportController:
         epub_filter.add_pattern("*.epub")
         save_dialog.add_filter(epub_filter)
 
-        if not self.app._read_only and os.path.isdir(output_dir):
+        if not self.app.read_only and os.path.isdir(output_dir):
             save_dialog.set_current_folder(output_dir)
         else:
             save_dialog.set_current_folder(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS) or os.path.expanduser("~"))
@@ -68,21 +77,28 @@ class ExportImportController:
             if not confirm(self.app.window, _("The file already exists:\n{path}\n\nOverwrite?").format(path=epub_path)):
                 return
         epub_service = EpubService(self.app.project)
-        __, config_file = self.app._get_config_path()
+        __, config_file = self.app.get_config_path()
         global_config = YamlService.load(config_file)
         result = epub_service.generate(epub_path, self.app.project.epub_version, global_config=global_config)
         if result:
-            self.app._last_epub_path = result
-            self.app._update_status(_("EPUB exported: {path}").format(path=result))
+            self.app.last_epub_path = result
+            self.app.update_status(_("EPUB exported: {path}").format(path=result))
             show_info(self.app.window, _("EPUB generated successfully:\n{path}").format(path=result))
         else:
             show_error(self.app.window, _("Error generating EPUB"))
 
     def import_book(self, button):
+        """Import a Markdown book file into the current project.
+
+        Shows a file chooser, parses the Markdown, and adds components.
+
+        Args:
+            button: GTK button that triggered the action (unused).
+        """
         if not self.app.project:
             show_info(self.app.window, _("No project open"))
             return
-        if self.app._read_only:
+        if self.app.read_only:
             show_info(self.app.window, _("Cannot import into the sample book"))
             return
 
@@ -141,9 +157,9 @@ class ExportImportController:
             if confirm_dlg.run() == Gtk.ResponseType.YES:
                 confirm_dlg.destroy()
                 count = FileService.import_book(self.app.project.path, self.app.project, content, file_path)
-                self.app._update_status(_("Imported {n} components").format(n=count))
-                self.app.project_tree_view._refresh_project_tree()
-                self.app.editor_view._update_preview()
+                self.app.update_status(_("Imported {n} components").format(n=count))
+                self.app.project_tree_view.refresh_project_tree()
+                self.app.editor_view.update_preview()
                 show_info(self.app.window, _("Successfully imported {n} components.").format(n=count))
             else:
                 confirm_dlg.destroy()
@@ -151,10 +167,17 @@ class ExportImportController:
             dialog.destroy()
 
     def import_epub(self, button):
+        """Import an EPUB file into the current project.
+
+        Shows a file chooser, parses the EPUB, and adds components and images.
+
+        Args:
+            button: GTK button that triggered the action (unused).
+        """
         if not self.app.project:
             show_info(self.app.window, _("No project open"))
             return
-        if self.app._read_only:
+        if self.app.read_only:
             show_info(self.app.window, _("Cannot import into the sample book"))
             return
 
@@ -212,9 +235,9 @@ class ExportImportController:
             if confirm_dlg.run() == Gtk.ResponseType.YES:
                 confirm_dlg.destroy()
                 count = FileService.import_epub(self.app.project.path, self.app.project, file_path)
-                self.app._update_status(_("Imported {n} components").format(n=count))
-                self.app.project_tree_view._refresh_project_tree()
-                self.app.editor_view._update_preview()
+                self.app.update_status(_("Imported {n} components").format(n=count))
+                self.app.project_tree_view.refresh_project_tree()
+                self.app.editor_view.update_preview()
                 show_info(self.app.window, _("Successfully imported {n} components.").format(n=count))
             else:
                 confirm_dlg.destroy()
@@ -222,7 +245,12 @@ class ExportImportController:
             dialog.destroy()
 
     def open_epub(self, button):
-        if not self.app._last_epub_path or not os.path.exists(self.app._last_epub_path):
+        """Open the last exported EPUB file with the system reader.
+
+        Args:
+            button: GTK button that triggered the action (unused).
+        """
+        if not self.app.last_epub_path or not os.path.exists(self.app.last_epub_path):
             show_info(self.app.window, _("No EPUB generated. Export first."))
             return
         try:
@@ -231,8 +259,8 @@ class ExportImportController:
             config = YamlService.load(config_file) or {}
             reader_path = config.get("epub_reader_path", "").strip()
             if reader_path and os.path.exists(reader_path):
-                subprocess.Popen([reader_path, self.app._last_epub_path])
+                subprocess.Popen([reader_path, self.app.last_epub_path])
             else:
-                subprocess.Popen(["xdg-open", self.app._last_epub_path])
+                subprocess.Popen(["xdg-open", self.app.last_epub_path])
         except Exception as e:
             show_error(self.app.window, _("Could not open EPUB: {error}").format(error=e))

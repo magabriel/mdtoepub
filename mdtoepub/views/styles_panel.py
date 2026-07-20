@@ -155,7 +155,7 @@ class StylesPanel:
         styles_vbox.pack_start(btn_box, False, False, 0)
 
         self._styles_scrolled.add(styles_vbox)
-        self.app._styles_scrolled = self._styles_scrolled
+        self.app.styles_scrolled = self._styles_scrolled
         return self._styles_scrolled
 
     def _get_theme_dir(self) -> str:
@@ -170,7 +170,7 @@ class StylesPanel:
             return YamlService.load(theme_yaml)
         return {}
 
-    def _load_theme_css(self, component_type=None) -> str:
+    def load_theme_css(self, component_type=None) -> str:
         css = ""
         if not self.app.project or not self.app.project.theme_id:
             return css
@@ -403,9 +403,9 @@ class StylesPanel:
         else:
             self.app.project.type_css_overrides.pop(type_key, None)
         FileService.save_project(self.app.project)
-        self.app.editor_view._update_preview()
+        self.app.editor_view.update_preview()
         self.update(ct)
-        self.app._update_status(_("Type styles '{label}' updated").format(label=label))
+        self.app.update_status(_("Type styles '{label}' updated").format(label=label))
 
     def _on_styles_reset_type_css(self, component_type):
         ct = component_type
@@ -417,9 +417,9 @@ class StylesPanel:
             return
         del self.app.project.type_css_overrides[type_key]
         FileService.save_project(self.app.project)
-        self.app.editor_view._update_preview()
+        self.app.editor_view.update_preview()
         self.update(ct)
-        self.app._update_status(_("Type styles '{label}' reset to theme").format(label=label))
+        self.app.update_status(_("Type styles '{label}' reset to theme").format(label=label))
 
     def _on_styles_edit_comp_css(self, btn):
         if not self._styles_current_component:
@@ -494,7 +494,7 @@ class StylesPanel:
                 with open(fpath, "w") as f:
                     f.write(new_text)
                 self.update(self._styles_current_comp_type)
-                self.app.editor_view._update_preview()
+                self.app.editor_view.update_preview()
             d.destroy()
 
         editor_dialog.connect("response", on_editor_response)
@@ -602,13 +602,13 @@ class StylesPanel:
             return
         self.app.project.custom_css = css
         FileService.save_project(self.app.project)
-        self.app.editor_view._update_preview()
+        self.app.editor_view.update_preview()
         self.update(
             self.app.current_component.type if self.app.current_component else None
         )
-        self.app._update_status(_("Book styles updated"))
+        self.app.update_status(_("Book styles updated"))
 
-    def _on_edit_type_css(self, widget, component):
+    def on_edit_type_css(self, widget, component):
         if not self.app.project:
             return
         type_key = component.type.value
@@ -622,11 +622,11 @@ class StylesPanel:
         else:
             self.app.project.type_css_overrides.pop(type_key, None)
         FileService.save_project(self.app.project)
-        self.app.editor_view._update_preview()
+        self.app.editor_view.update_preview()
         self.update(component.type)
-        self.app._update_status(_("Type styles '{label}' updated").format(label=label))
+        self.app.update_status(_("Type styles '{label}' updated").format(label=label))
 
-    def _on_edit_component_css(self, widget, component):
+    def on_edit_component_css(self, widget, component):
         if not self.app.project:
             return
         css = self._edit_css_dialog(
@@ -639,9 +639,9 @@ class StylesPanel:
             return
         component.custom_css = css
         FileService.save_project(self.app.project)
-        self.app.editor_view._update_preview()
+        self.app.editor_view.update_preview()
         self.update(component.type)
-        self.app._update_status(_("Component styles '{name}' updated").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
+        self.app.update_status(_("Component styles '{name}' updated").format(name=component.get_display_name(self.app.project_manager.resolve_labels())))
 
     def _on_manage_type_css(self, widget):
         if not self.app.project:
@@ -710,10 +710,10 @@ class StylesPanel:
             else:
                 self.app.project.type_css_overrides.pop(type_key, None)
             FileService.save_project(self.app.project)
-            self.app.editor_view._update_preview()
+            self.app.editor_view.update_preview()
             if self.app.current_component:
                 self.update(self.app.current_component.type)
-            self.app._update_status(_("Type styles '{label}' updated").format(label=label))
+            self.app.update_status(_("Type styles '{label}' updated").format(label=label))
             _refresh_list()
 
         def _on_reset(btn):
@@ -728,10 +728,10 @@ class StylesPanel:
                 return
             del self.app.project.type_css_overrides[type_key]
             FileService.save_project(self.app.project)
-            self.app.editor_view._update_preview()
+            self.app.editor_view.update_preview()
             if self.app.current_component:
                 self.update(self.app.current_component.type)
-            self.app._update_status(_("Type styles '{label}' reset to theme").format(label=label))
+            self.app.update_status(_("Type styles '{label}' reset to theme").format(label=label))
             _refresh_list()
 
         def _refresh_list():

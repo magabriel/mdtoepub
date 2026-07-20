@@ -6,18 +6,32 @@ from ..services.labels_service import resolve_labels
 
 
 class ProjectManager:
+    """Manages component content save/load and label resolution."""
+
     def __init__(self, app):
         self.app = app
 
-    def resolve_labels(self):
+    def resolve_labels(self) -> dict:
+        """Resolve component labels for the current project language.
+
+        Returns:
+            Dict of label key to localized label string.
+        """
         if self.app.project:
             return resolve_labels(self.app.project.language)
         return resolve_labels("es")
 
     def save_component_content(self) -> bool:
-        if self.app._read_only:
+        """Save the current editor content to the active component's file.
+
+        Updates the component title if an H1 heading is found.
+
+        Returns:
+            True if the title was updated, False otherwise.
+        """
+        if self.app.read_only:
             return False
-        text = self.app.editor_view._get_editor_text()
+        text = self.app.editor_view.get_editor_text()
         frontmatter, markdown_content = YamlService.parse_frontmatter(text)
 
         component = self.app.current_part or self.app.current_component
@@ -37,6 +51,14 @@ class ProjectManager:
         return False
 
     def load_component_content(self, component: Component) -> str:
+        """Load component content, prepending frontmatter if present.
+
+        Args:
+            component: Component to load.
+
+        Returns:
+            Markdown content string with frontmatter.
+        """
         content = FileService.load_component(self.app.project.path, component)
         if component.frontmatter and not content.startswith("---"):
             content = YamlService.join_content(component.frontmatter, content)
