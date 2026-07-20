@@ -15,6 +15,7 @@ from ..services.yaml_service import YamlService
 from ..services.image_service import ImageService
 from ..services.markdown_service import MarkdownService
 from ..services.spell_service import SpellCheckService
+from .spell_check_handler import SpellCheckHandler
 
 from ..i18n import _
 
@@ -22,10 +23,7 @@ from ..i18n import _
 class EditorView:
     def __init__(self, app):
         self.app = app
-        self._spell_timer_id = 0
-        self._misspelled_words = []
-        self._session_ignored_words = set()
-        self._spell_tag = None
+        self._spell_handler = SpellCheckHandler(app)
 
     def build(self, right_box):
         lang_dir = os.path.join(os.path.dirname(__file__), "..", "lang-specs")
@@ -49,22 +47,8 @@ class EditorView:
         editor_scrolled.add(self.app.text_view)
 
         self.app.spell_service = SpellCheckService()
-        self._spell_timer_id = 0
-        self._misspelled_words = []
-        self._session_ignored_words = set()
+        self._spell_handler.setup(self.app.text_view)
 
-        buf = self.app.text_view.get_buffer()
-        self._spell_tag = buf.create_tag("misspelled",
-                                         underline=Pango.Underline.ERROR)
-
-        def _on_buffer_changed(*_a):
-            if self._spell_timer_id:
-                GLib.source_remove(self._spell_timer_id)
-            self._spell_timer_id = GLib.timeout_add(600, self._run_spell_check)
-
-        buf.connect("changed", _on_buffer_changed)
-
-        self.app.text_view.connect("populate-popup", self._on_spell_popup)
         self.app.text_view.connect("populate-popup", self._on_editor_image_popup)
 
         self.app.webview = WebKit2.WebView()
@@ -279,112 +263,8 @@ hr { border: none; border-top: 1px solid #ccc; }
         buf.set_text("\n".join(lines))
 
     def update_spell_lang(self):
-        if self.app.project:
-            self.app.spell_service.default_lang = self.app.project.spell_lang
-        self._run_spell_check()
-
-    def _run_spell_check(self):
-        self._spell_timer_id = 0
-        buf = self.app.text_view.get_buffer()
-        if not self.app.project or not self.app.project.path:
-            return False
-
-        text = buf.get_text(buf.get_start_iter(), buf.get_end_iter(), True)
-        if not text:
-            return False
-
-        start = buf.get_start_iter()
-        end = buf.get_end_iter()
-        buf.remove_tag(self._spell_tag, start, end)
-
-        project_words = set(self.app.project.spell_words) if self.app.project else set()
-        all_ignored = project_words | self._session_ignored_words
-        self._misspelled_words = self.app.spell_service.check_text(text, all_ignored)
-
-        for w_start, w_end, word, lang in self._misspelled_words:
-            try:
-                it1 = buf.get_iter_at_offset(w_start)
-                it2 = buf.get_iter_at_offset(w_end)
-                buf.apply_tag(self._spell_tag, it1, it2)
-            except Exception:
-                pass
-
-        return False
-
-    def _on_spell_popup(self, textview, popup):
-        buf = textview.get_buffer()
-        cursor = buf.get_iter_at_mark(buf.get_insert())
-        offset = cursor.get_offset()
-
-        for w_start, w_end, word, lang in self._misspelled_words:
-            if w_start <= offset <= w_end:
-                suggestions = self.app.spell_service.get_suggestions(word, lang)
-                if suggestions:
-                    sep = Gtk.SeparatorMenuItem()
-                    sep.show()
-                    popup.append(sep)
-
-                    item = Gtk.MenuItem(label=_("Spelling Suggestions"))
-                    item.set_sensitive(False)
-                    item.show()
-                    popup.append(item)
-
-                    for sug in suggestions[:10]:
-                        def _replace(menu_item, s=sug, ws=w_start, we=w_end):
-                            it1 = buf.get_iter_at_offset(ws)
-                            it2 = buf.get_iter_at_offset(we)
-                            buf.delete(it1, it2)
-                            it = buf.get_iter_at_offset(ws)
-                            buf.insert(it, s)
-                        sug_item = Gtk.MenuItem(label=sug)
-                        sug_item.connect("activate", _replace)
-                        sug_item.show()
-                        popup.append(sug_item)
-
-                sep2 = Gtk.SeparatorMenuItem()
-                sep2.show()
-                popup.append(sep2)
-
-                def _ignore_word(*_a, w=word, ws=w_start, we=w_end):
-                    self._session_ignored_words.add(w.lower())
-                    it1 = buf.get_iter_at_offset(ws)
-                    it2 = buf.get_iter_at_offset(we)
-                    buf.remove_tag(self._spell_tag, it1, it2)
-                    self._run_spell_check()
-
-                item_ignore = Gtk.MenuItem(label=_("Ignore word"))
-                item_ignore.connect("activate", _ignore_word)
-                item_ignore.show()
-                popup.append(item_ignore)
-
-                def _add_book_word(*_a, w=word, ws=w_start, we=w_end):
-                    if self.app.project:
-                        self.app.project.spell_words.append(w.lower())
-                        FileService.save_project(self.app.project)
-                    it1 = buf.get_iter_at_offset(ws)
-                    it2 = buf.get_iter_at_offset(we)
-                    buf.remove_tag(self._spell_tag, it1, it2)
-                    self._update_preview()
-
-                item_book = Gtk.MenuItem(label=_("Add to book dictionary"))
-                item_book.connect("activate", _add_book_word)
-                item_book.show()
-                popup.append(item_book)
-
-                def _add_global_word(*_a, w=word, ws=w_start, we=w_end):
-                    self.app.spell_service.add_global_word(w)
-                    if self.app.project:
-                        self.app.project.spell_words.append(w.lower())
-                    it1 = buf.get_iter_at_offset(ws)
-                    it2 = buf.get_iter_at_offset(we)
-                    buf.remove_tag(self._spell_tag, it1, it2)
-                    self._update_preview()
-
-                item_global = Gtk.MenuItem(label=_("Add to global dictionary"))
-                item_global.connect("activate", _add_global_word)
-                item_global.show()
-                popup.append(item_global)
-                break
+        """Update the spell check language from project settings."""
+        self._spell_handler.update_spell_lang()
 
     def _on_editor_image_popup(self, textview, popup):
         if not self.app.project:
