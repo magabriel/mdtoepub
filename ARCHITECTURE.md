@@ -6,36 +6,36 @@ MDToEPUB is a GTK3 desktop application with a modular architecture. The UI is sp
 
 ```
 ┌──────────────────────────────────────────────────────────┐
-│                       main.py                             │
-│  MDToEPUBApp (Gtk.Application) — thin coordinator         │
+│                       main.py                            │
+│  MDToEPUBApp (Gtk.Application) — thin coordinator        │
 │    ├── Shared state (project, current_component, ...)    │
-│    ├── do_activate: wiring and build order                │
+│    ├── do_activate: wiring and build order               │
 │    └── Shared utils (_update_status, _get_config_path)   │
 ├──────────────────────────────────────────────────────────┤
-│                       views/                              │
-│  main_window.py   Menubar, toolbar, statusbar, paned      │
-│  editor_view.py   GtkSource editor + WebKit2 preview      │
-│  styles_panel.py  CSS cascade hierarchy panel             │
-│  project_tree.py  Tree navigator + component CRUD         │
+│                       views/                             │
+│  main_window.py   Menubar, toolbar, statusbar, paned     │
+│  editor_view.py   GtkSource editor + WebKit2 preview     │
+│  styles_panel.py  CSS cascade hierarchy panel            │
+│  project_tree.py  Tree navigator + component CRUD        │
 │  dialogs/                                                │
-│    project_config.py  Project settings dialog             │
-│    theme_manager.py   Theme lifecycle manager              │
-│    image_manager.py   Image import & categorization       │
+│    project_config.py  Project settings dialog            │
+│    theme_manager.py   Theme lifecycle manager            │
+│    image_manager.py   Image import & categorization      │
 ├──────────────────────────────────────────────────────────┤
-│                    controllers/                            │
-│  project_manager.py  Component save/load, labels          │
-│  export_import.py    EPUB export, Markdown/EPUB import    │
+│                    controllers/                          │
+│  project_manager.py  Component save/load, labels         │
+│  export_import.py    EPUB export, Markdown/EPUB import   │
 ├──────────────────────────────────────────────────────────┤
-│                       utils/                               │
-│  dialogs.py   show_error / show_info / confirm helpers    │
+│                       utils/                             │
+│  dialogs.py   show_error / show_info / confirm helpers   │
 ├──────────────────────────────────────────────────────────┤
-│                      services/                             │
-│  MarkdownService   EpubService   FileService              │
-│  YamlService       ImageService  SpellCheckService        │
-│  StyleDocService   ThemeService  LabelsService            │
+│                      services/                           │
+│  MarkdownService   EpubService   FileService             │
+│  YamlService       ImageService  SpellCheckService       │
+│  StyleDocService   ThemeService  LabelsService           │
 ├──────────────────────────────────────────────────────────┤
-│                      models/                               │
-│  Project    Component    ComponentType    Theme            │
+│                      models/                             │
+│  Project    Component    ComponentType    Theme          │
 └──────────────────────────────────────────────────────────┘
 ```
 
@@ -269,12 +269,12 @@ The UI is built programmatically (no Glade files) in `main.py`.
 ├───────────────────┬──────────────────────────────────┤
 │ StackSidebar      │ Gtk.Stack                        │
 │ [Contenido]       │   ├── Contenido (Notebook)       │
-│ [Tema]            │   │   ├── Editor                  │
-│ [Ayuda]           │   │   └── Preview                 │
-│                   │   ├── Tema (Notebook)             │
-│                   │   │   ├── Tipo de componente      │
-│                   │   │   └── Global                  │
-│                   │   └── Ayuda (direct)              │
+│ [Tema]            │   │   ├── Editor                 │
+│ [Ayuda]           │   │   └── Preview                │
+│                   │   ├── Tema (Notebook)            │
+│                   │   │   ├── Tipo de componente     │
+│                   │   │   └── Global                 │
+│                   │   └── Ayuda (direct)             │
 ├───────────────────┴──────────────────────────────────┤
 │ Status Bar                                           │
 └──────────────────────────────────────────────────────┘
