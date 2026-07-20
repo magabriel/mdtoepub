@@ -99,7 +99,7 @@ class FigureTableProcessor:
         lines = ['<div class="lof-list">', '<ul>']
         for fig_num, caption, filename in figure_info:
             href = f"{filename.replace('.md', '.xhtml')}#fig_{fig_num}"
-            num_str = MarkdownService._to_roman(fig_num) if use_roman else str(fig_num)
+            num_str = MarkdownService.to_roman(fig_num) if use_roman else str(fig_num)
             if caption:
                 text = f"{figure_label} {num_str} - {caption}"
             else:
@@ -125,7 +125,7 @@ class FigureTableProcessor:
         lines = ['<div class="lot-list">', '<ul>']
         for tab_num, caption, filename in table_info:
             href = f"{filename.replace('.md', '.xhtml')}#tab_{tab_num}"
-            num_str = MarkdownService._to_roman(tab_num) if use_roman else str(tab_num)
+            num_str = MarkdownService.to_roman(tab_num) if use_roman else str(tab_num)
             if caption:
                 text = f"{table_label} {num_str} - {caption}"
             else:

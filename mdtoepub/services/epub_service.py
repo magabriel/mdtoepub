@@ -263,7 +263,7 @@ class EpubService:
             content = FileService.load_component(self.project.path, component)
             if content:
                 _, md_text = YamlService.parse_frontmatter(content)
-                fn_count = MarkdownService._count_footnote_refs(md_text)
+                fn_count = MarkdownService.count_footnote_refs(md_text)
                 footnote_start[component.id] = running_total + 1
                 running_total += fn_count
         return footnote_start
@@ -533,9 +533,9 @@ class EpubService:
         md = markdown.Markdown(extensions=self.markdown_service.extensions,
                                extension_configs=self.markdown_service.get_extension_configs())
         title_html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content)) if markdown_content.strip() else ""
-        title_html = MarkdownService._add_image_captions(title_html, labels=self._labels)
+        title_html = MarkdownService.add_image_captions(title_html, labels=self._labels)
         combined = (title_html + "\n" + auto_toc) if title_html else auto_toc
-        return self.markdown_service._wrap_in_section(combined, component.type, component.id)
+        return MarkdownService.wrap_in_section(combined, component.type, component.id)
 
     def _generate_lof_component_html(
         self, component: Component, frontmatter: Dict,
@@ -547,9 +547,9 @@ class EpubService:
         md = markdown.Markdown(extensions=self.markdown_service.extensions,
                                extension_configs=self.markdown_service.get_extension_configs())
         title_html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content)) if markdown_content.strip() else ""
-        title_html = MarkdownService._add_image_captions(title_html, labels=self._labels)
+        title_html = MarkdownService.add_image_captions(title_html, labels=self._labels)
         combined = (title_html + "\n" + auto_lof) if title_html else auto_lof
-        return self.markdown_service._wrap_in_section(combined, component.type, component.id)
+        return MarkdownService.wrap_in_section(combined, component.type, component.id)
 
     def _generate_lot_component_html(
         self, component: Component, frontmatter: Dict,
@@ -561,10 +561,10 @@ class EpubService:
         md = markdown.Markdown(extensions=self.markdown_service.extensions,
                                extension_configs=self.markdown_service.get_extension_configs())
         title_html = md.convert(LANG_MARKER_STRIP_RE.sub('', markdown_content)) if markdown_content.strip() else ""
-        title_html = MarkdownService._add_image_captions(title_html, labels=self._labels)
-        title_html = MarkdownService._add_table_captions(title_html, labels=self._labels)
+        title_html = MarkdownService.add_image_captions(title_html, labels=self._labels)
+        title_html = MarkdownService.add_table_captions(title_html, labels=self._labels)
         combined = (title_html + "\n" + auto_lot) if title_html else auto_lot
-        return self.markdown_service._wrap_in_section(combined, component.type, component.id)
+        return MarkdownService.wrap_in_section(combined, component.type, component.id)
 
     def _generate_standard_chapter_html(
         self,

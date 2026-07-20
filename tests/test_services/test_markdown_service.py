@@ -43,7 +43,7 @@ class TestMarkdownService:
 
     def test_image_caption_with_alt(self):
         html = '<p><img alt="Mi Foto" src="foto.jpg" /></p>'
-        result = MarkdownService._add_image_captions(html)
+        result = MarkdownService.add_image_captions(html)
         assert '<figure>' in result
         assert '<figcaption>Mi Foto</figcaption>' in result
         assert '<img alt="Mi Foto" src="foto.jpg" />' in result
@@ -52,19 +52,19 @@ class TestMarkdownService:
 
     def test_image_caption_multiline(self):
         html = '<p><figure>\n<img alt="Multi" src="x.jpg" />\n<figcaption>Multi</figcaption>\n</figure></p>'
-        result = MarkdownService._add_image_captions(html)
+        result = MarkdownService.add_image_captions(html)
         assert '<figure>' in result
         assert not result.startswith('<p>')
 
     def test_image_caption_empty_alt(self):
         html = '<p><img alt="" src="foto.jpg" /></p>'
-        result = MarkdownService._add_image_captions(html)
+        result = MarkdownService.add_image_captions(html)
         assert '<figure>' not in result
         assert '<figcaption>' not in result
 
     def test_image_caption_no_alt(self):
         html = '<p><img src="foto.jpg" /></p>'
-        result = MarkdownService._add_image_captions(html)
+        result = MarkdownService.add_image_captions(html)
         assert '<figure>' not in result
         assert '<figcaption>' not in result
 
@@ -125,18 +125,18 @@ class TestMarkdownService:
 
     def test_count_footnote_refs(self):
         md = "First[^204]. Second[^1].\n\n[^204]: A.\n[^1]: B."
-        assert MarkdownService._count_footnote_refs(md) == 2
+        assert MarkdownService.count_footnote_refs(md) == 2
 
     def test_count_footnote_refs_empty(self):
-        assert MarkdownService._count_footnote_refs("No notes.") == 0
+        assert MarkdownService.count_footnote_refs("No notes.") == 0
 
     def test_count_footnote_refs_code_block_ignored(self):
         md = "Ref[^1].\n\n```\n[^2]\n```\n\n[^1]: A.\n[^2]: B.\n"
-        assert MarkdownService._count_footnote_refs(md) == 1
+        assert MarkdownService.count_footnote_refs(md) == 1
 
     def test_count_footnote_refs_undefined_ignored(self):
         md = "Ref[^99].\n\n[^1]: A.\n"
-        assert MarkdownService._count_footnote_refs(md) == 0
+        assert MarkdownService.count_footnote_refs(md) == 0
 
     def test_footnote_global_renumbering_offset(self):
         md = "Third[^5]. Fourth[^3].\n\n[^5]: C.\n[^3]: D."

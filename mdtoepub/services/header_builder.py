@@ -57,7 +57,7 @@ class HeaderBuilder:
                 label = self.labels.get("chapter", "Capítulo") if component.type == ComponentType.CHAPTER else self.labels.get("appendix", "Apéndice")
                 num_str = str(chapter_number)
                 if num_style == "roman":
-                    num_str = MarkdownService._to_roman(chapter_number)
+                    num_str = MarkdownService.to_roman(chapter_number)
                 if mode == "chapter_number":
                     number_part = f"{label} {num_str}"
                 elif mode == "number":
@@ -105,9 +105,9 @@ class HeaderBuilder:
                 label = self.labels.get("part", "Parte")
                 num_str = str(part_number)
                 if num_style == "roman":
-                    num_str = MarkdownService._to_roman(part_number)
+                    num_str = MarkdownService.to_roman(part_number)
                 elif num_style == "word":
-                    num_str = MarkdownService._to_word(part_number, self.project.language)
+                    num_str = MarkdownService.to_word(part_number, self.project.language)
                 if mode == "part_number":
                     number_part = f"{label} {num_str}" if num_style != "word" else num_str
                 elif mode == "number":
@@ -119,10 +119,10 @@ class HeaderBuilder:
                     number_part = num_str
                     title_part = self._component_label(component)
                 elif mode == "word_part":
-                    word = MarkdownService._to_word(part_number, self.project.language)
+                    word = MarkdownService.to_word(part_number, self.project.language)
                     number_part = f"{word} {label.lower()}"
                 elif mode == "word_part_with_title":
-                    word = MarkdownService._to_word(part_number, self.project.language)
+                    word = MarkdownService.to_word(part_number, self.project.language)
                     number_part = f"{word} {label.lower()}"
                     title_part = self._component_label(component)
 

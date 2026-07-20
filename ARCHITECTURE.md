@@ -33,9 +33,12 @@ MDToEPUB is a GTK3 desktop application with a modular architecture. The UI is sp
 │  MarkdownService   EpubService   HeaderBuilder            │
 │  TocBuilder        FootnotesProcessor                     │
 │  FigureTableProcessor  StyleManager                      │
-│  FileService       YamlService   ImageService             │
-│  SpellCheckService StyleDocService  ThemeService          │
-│  LabelsService                                          │
+│  FootnoteProcessor CaptionProcessor                      │
+│  VariableInterpolator                                    │
+│  ProjectService    ComponentService  ImportService        │
+│  FileService (facade)                                    │
+│  YamlService       ImageService    SpellCheckService      │
+│  StyleDocService   ThemeService    LabelsService          │
 ├──────────────────────────────────────────────────────────┤
 │                      models/                             │
 │  Project    Component    ComponentType    Theme          │
@@ -71,9 +74,15 @@ mdtoepub/
 │   ├── header_builder.py        # Component/part header building with auto-numbering
 │   ├── toc_builder.py           # TOC HTML + reader navigation generation
 │   ├── footnotes_processor.py   # Footnotes extraction + chapter building
+│   ├── footnote_processor.py    # Footnote renumbering + counting
+│   ├── caption_processor.py     # Figure/table caption generation
+│   ├── variable_interpolator.py # {{key}} placeholder replacement
 │   ├── figure_table_processor.py # Figure/table scanning + LOF/LOT generation
 │   ├── style_manager.py         # CSS loading + style item management
-│   ├── file_service.py          # File I/O, project structure management
+│   ├── project_service.py       # Project creation, loading, saving
+│   ├── component_service.py     # Component file I/O + filename generation
+│   ├── import_service.py        # Markdown/EPUB import
+│   ├── file_service.py          # Facade for Project/Component/ImportService
 │   ├── yaml_service.py          # YAML load/save/frontmatter parsing
 │   ├── image_service.py         # Image validation and optimization
 │   ├── spell_service.py         # Multi-language spell-check
@@ -143,14 +152,59 @@ Each component represents a section of the book.
 
 ### MarkdownService
 
-`services/markdown_service.py:7`
+`services/markdown_service.py:1`
 
 Converts Markdown to HTML using Python-Markdown with extensions:
 - `tables`, `fenced_code`, `codehilite`, `toc`, `meta`, `attr_list`
 
 Key methods:
-- `render(text, component_type, component_id)` — strips `{lang=xx}` markers, renders Markdown, wraps in `<section class="component-{type}">`.
-- `get_code_css()` — static, returns Pygments-friendly CSS for code syntax highlighting.
+- `render(text, component_type, component_id)` — full rendering pipeline.
+- `to_roman(num)` — static, convert integer to Roman numerals.
+- `to_word(num, language)` — static, convert integer to ordinal word.
+- `get_code_css()` — static, returns Pygments CSS for code highlighting.
+
+Delegates to:
+- `FootnoteProcessor` — footnote renumbering and counting.
+- `CaptionProcessor` — figure/table caption generation.
+- `VariableInterpolator` — `{{key}}` placeholder replacement.
+
+### FootnoteProcessor
+
+`services/footnote_processor.py:1`
+
+Handles footnote renumbering, counting, and display fixing.
+
+```
+FootnoteProcessor
+  ├── count_footnote_refs(text) — count unique footnote refs with definitions
+  ├── renumber_footnotes(text, start_number) — renumber footnotes sequentially
+  └── fix_footnote_display_numbers(html) — fix display numbers in rendered HTML
+```
+
+### CaptionProcessor
+
+`services/caption_processor.py:1`
+
+Handles figure and table caption generation in HTML.
+
+```
+CaptionProcessor
+  ├── add_image_captions(html, ...) — wrap <img> in <figure>/<figcaption>
+  ├── add_table_captions(html, ...) — wrap tables in <figure>/<figcaption>
+  ├── extract_figure_alts(md_text) — extract alt text from markdown images
+  └── extract_table_captions(md_text) — extract <!-- Table: --> captions
+```
+
+### VariableInterpolator
+
+`services/variable_interpolator.py:1`
+
+Replaces `{{key}}` and `{{key:format}}` placeholders with values.
+
+```
+VariableInterpolator
+  └── interpolate(text, variables) — replace placeholders with values
+```
 
 ### HeaderBuilder
 
@@ -286,22 +340,50 @@ StyleManager(project)
         — static, combine base + type + component style items
 ```
 
-### FileService
+### FileService (facade)
 
-`services/file_service.py:79`
+`services/file_service.py:1`
 
-Manages the filesystem representation of a project:
+Thin facade that re-exports from `ProjectService`, `ComponentService`, and `ImportService` for backward compatibility. New code should import from the specific service classes directly.
 
-- `create_project_structure(path, name)` — creates directory tree.
+### ProjectService
+
+`services/project_service.py:1`
+
+Manages project creation, loading, and saving.
+
+- `create_project_structure(path, name)` — creates directory tree with default config.
 - `load_project(path)` — reads `project.yaml`, loads CSS from `styles/`.
 - `save_project(project)` — writes CSS to files, saves `project.yaml`.
-- `import_book()` — parses a single large Markdown file into components.
 
 Project data is split across files:
 - `project.yaml` — metadata and component list.
 - `styles/book.css` — `project.custom_css`
 - `styles/types/<type>.css` — `project.type_css_overrides`
 - `styles/components/<id>.css` — `component.custom_css`
+
+### ComponentService
+
+`services/component_service.py:1`
+
+Manages component file I/O and filename generation.
+
+- `save_component(project_path, component, content)` — save markdown to file.
+- `load_component(project_path, component)` — load markdown from file.
+- `generate_filename(component_type, title)` — generate slug-based filename.
+- `rename_image_references(project_path, old_path, new_path, project)` — update image paths in components.
+
+### ImportService
+
+`services/import_service.py:1`
+
+Handles importing Markdown and EPUB files into a project.
+
+- `parse_imported_markdown(content)` — split a book into components by H1/H2 headings.
+- `import_book(project_path, project, content, source_md_path)` — import parsed components.
+- `parse_imported_epub(epub_path)` — parse EPUB into components and images.
+- `import_epub(project_path, project, epub_path)` — import EPUB into project.
+- `html_to_markdown(html_content)` — convert basic HTML to markdown.
 
 ### SpellCheckService
 

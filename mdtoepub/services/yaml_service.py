@@ -4,8 +4,18 @@ from pathlib import Path
 
 
 class YamlService:
+    """Utility for YAML file I/O and frontmatter parsing."""
+
     @staticmethod
     def load(file_path: str) -> Dict[str, Any]:
+        """Load a YAML file and return its contents as a dict.
+
+        Args:
+            file_path: Path to the YAML file.
+
+        Returns:
+            Dict with parsed YAML data, or empty dict if file doesn't exist or is empty.
+        """
         path = Path(file_path)
         if not path.exists():
             return {}
@@ -15,6 +25,15 @@ class YamlService:
 
     @staticmethod
     def save(data: Dict[str, Any], file_path: str) -> bool:
+        """Save a dict to a YAML file.
+
+        Args:
+            data: Data to serialize.
+            file_path: Destination file path.
+
+        Returns:
+            True on success, False on error.
+        """
         try:
             path = Path(file_path)
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -26,6 +45,17 @@ class YamlService:
 
     @staticmethod
     def parse_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
+        """Parse YAML frontmatter from a markdown string.
+
+        Frontmatter is delimited by ``---`` at the start of the content.
+
+        Args:
+            content: Markdown text potentially containing frontmatter.
+
+        Returns:
+            Tuple of (frontmatter_dict, markdown_content_without_frontmatter).
+            Returns ({}, original_content) if no valid frontmatter is found.
+        """
         if not content.startswith("---"):
             return {}, content
 
@@ -44,10 +74,27 @@ class YamlService:
 
     @staticmethod
     def extract_frontmatter(content: str) -> Tuple[Dict[str, Any], str]:
+        """Alias for parse_frontmatter.
+
+        Args:
+            content: Markdown text potentially containing frontmatter.
+
+        Returns:
+            Tuple of (frontmatter_dict, markdown_content).
+        """
         return YamlService.parse_frontmatter(content)
 
     @staticmethod
     def join_content(frontmatter: Dict[str, Any], markdown_content: str) -> str:
+        """Join frontmatter dict and markdown content into a single string.
+
+        Args:
+            frontmatter: Dict to serialize as YAML frontmatter.
+            markdown_content: Markdown text.
+
+        Returns:
+            Combined string with frontmatter and markdown.
+        """
         if not frontmatter:
             return markdown_content
         import yaml

@@ -555,23 +555,23 @@ class TestLocalizedLabels:
     def test_english_figure_label(self):
         html = '<p><img alt="Photo" src="img.jpg" /></p>'
         labels = {"figure": "Figure"}
-        result = MarkdownService._add_image_captions(html, figure_num_start=1,
+        result = MarkdownService.add_image_captions(html, figure_num_start=1,
                                                       labels=labels)
         assert '<figcaption>Figure 1 - Photo</figcaption>' in result
 
     def test_english_table_label(self):
         html = '<!-- Table: My Table --><table><tr><td>Data</td></tr></table>'
         labels = {"table": "Table"}
-        result = MarkdownService._add_table_captions(html, table_num_start=1,
+        result = MarkdownService.add_table_captions(html, table_num_start=1,
                                                       labels=labels)
         assert '<figcaption>Table 1 - My Table</figcaption>' in result
 
     def test_figure_fallback_spanish(self):
         html = '<p><img alt="Foto" src="img.jpg" /></p>'
-        result = MarkdownService._add_image_captions(html, figure_num_start=1)
+        result = MarkdownService.add_image_captions(html, figure_num_start=1)
         assert '<figcaption>Figura 1 - Foto</figcaption>' in result
 
     def test_table_fallback_spanish(self):
         html = '<!-- Table: Mi Tabla --><table><tr><td>Dato</td></tr></table>'
-        result = MarkdownService._add_table_captions(html, table_num_start=1)
+        result = MarkdownService.add_table_captions(html, table_num_start=1)
         assert '<figcaption>Tabla 1 - Mi Tabla</figcaption>' in result

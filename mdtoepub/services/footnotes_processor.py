@@ -5,7 +5,8 @@ from ebooklib import epub
 
 from ..models.project import Project
 from ..models.component import Component, ComponentType
-from .markdown_service import MarkdownService, ERROR_BASE_KEY
+from .markdown_service import MarkdownService
+from .footnote_processor import ERROR_BASE_KEY
 from .file_service import FileService
 from .yaml_service import YamlService
 from .header_builder import HeaderBuilder
