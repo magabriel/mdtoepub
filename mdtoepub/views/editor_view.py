@@ -456,7 +456,7 @@ hr { border: none; border-top: 1px solid #ccc; }
                         ComponentType.LOF, ComponentType.LOT, ComponentType.PART)):
                 text = '\u200b'
             else:
-        self.app.webview.load_html(self.app.default_html, self.get_base_uri())
+                self.app.webview.load_html(self.app.default_html, self.get_base_uri())
                 return
 
         if text.strip():
