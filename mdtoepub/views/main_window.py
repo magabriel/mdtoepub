@@ -8,6 +8,7 @@ from gi.repository import Gtk, GLib
 from ..models.component import Component
 from ..services.file_service import FileService
 from ..services.yaml_service import YamlService
+from .recent_projects_manager import RecentProjectsManager
 
 from ..i18n import _
 
@@ -16,7 +17,7 @@ class MainWindow:
     def __init__(self, app):
         self.app = app
         self._recent_menu = None
-        self._recent_projects = []
+        self._recent_projects_manager = None
         self.selected_folder = ""
         self.folder_chooser_btn = None
         self._project_config_btn = None
@@ -77,6 +78,7 @@ class MainWindow:
         archivo_menu.append(item)
         archivo_menu.append(Gtk.SeparatorMenuItem())
         self._recent_menu = Gtk.Menu()
+        self._recent_projects_manager = RecentProjectsManager(self.app, self._recent_menu)
         recent_item = Gtk.MenuItem(label=_("Recent Projects"))
         recent_item.set_submenu(self._recent_menu)
         archivo_menu.append(recent_item)
@@ -389,7 +391,7 @@ class MainWindow:
                 self.app.editor_view.update_spell_lang()
                 self.app.current_component = None
                 self.app.project_tree_view.set_read_only_mode(False)
-                self._add_recent_project(project_path.path)
+                self._recent_projects_manager.add(project_path.path)
                 self.app.project_tree_view.refresh_project_tree()
                 self.app.update_status(_("Project created: {name}").format(name=name))
 
@@ -420,7 +422,7 @@ class MainWindow:
                         self.app.editor_view.update_spell_lang()
                         self.app.current_component = None
                         self.app.project_tree_view.set_read_only_mode(False)
-                        self._add_recent_project(project.path)
+                        self._recent_projects_manager.add(project.path)
                         self.app.project_tree_view.refresh_project_tree()
                         self.app.text_view.get_buffer().set_text("")
                         self.app.update_status(_("Project opened: {name}").format(name=project.name))
@@ -498,7 +500,7 @@ class MainWindow:
 
                 FileService.save_project(new_project)
                 self.app.project = new_project
-                self._add_recent_project(new_project.path)
+                self._recent_projects_manager.add(new_project.path)
                 self.app.project_tree_view.refresh_project_tree()
                 self.app.update_status(_("Project saved to: {path}").format(path=new_project.path))
         dialog.destroy()
@@ -726,71 +728,5 @@ class MainWindow:
     # ─── Recent projects ──────────────────────────────────────────────
 
     def load_recent_projects(self):
-        config = None
-        try:
-            config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
-            config_file = os.path.join(config_dir, "config.yaml")
-            if os.path.exists(config_file):
-                config = YamlService.load(config_file)
-        except Exception:
-            config = None
-        if config:
-            self._recent_projects = config.get("recent_projects", [])
-        else:
-            self._recent_projects = []
-        self._rebuild_recent_menu()
-
-    def _save_recent_projects(self):
-        config_dir = os.path.join(GLib.get_user_config_dir(), "mdtoepub")
-        os.makedirs(config_dir, exist_ok=True)
-        config_file = os.path.join(config_dir, "config.yaml")
-        config = YamlService.load(config_file)
-        config["recent_projects"] = self._recent_projects
-        YamlService.save(config, config_file)
-
-    def _add_recent_project(self, project_path):
-        if project_path in self._recent_projects:
-            self._recent_projects.remove(project_path)
-        self._recent_projects.insert(0, project_path)
-        self._recent_projects = self._recent_projects[:10]
-        self._save_recent_projects()
-        self._rebuild_recent_menu()
-
-    def _rebuild_recent_menu(self):
-        for child in self._recent_menu.get_children():
-            self._recent_menu.remove(child)
-        if not self._recent_projects:
-            item = Gtk.MenuItem(label=_("(no recent projects)"))
-            item.set_sensitive(False)
-            self._recent_menu.append(item)
-        else:
-            for path in self._recent_projects:
-                name = os.path.basename(path)
-                item = Gtk.MenuItem(label=f"{name}  ({path})")
-                item.connect("activate", lambda w, p=path: self._open_recent_project(p))
-                self._recent_menu.append(item)
-        self._recent_menu.show_all()
-
-    def _open_recent_project(self, path):
-        if not self._confirm_discard_project():
-            return
-        yaml_file = os.path.join(path, "project.yaml")
-        if not os.path.exists(yaml_file):
-            show_error(self.app.window, _("Project no longer exists:\n{path}").format(path=path))
-            self._recent_projects = [p for p in self._recent_projects if p != path]
-            self._save_recent_projects()
-            self._rebuild_recent_menu()
-            return
-        project = FileService.load_project(path)
-        if project:
-            self.app.project = project
-            self.update_project_sensitivity(True)
-            self.app.editor_view.update_spell_lang()
-            self.app.current_component = None
-            self.app.project_tree_view.set_read_only_mode(False)
-            self.app.project_tree_view.refresh_project_tree()
-            self.app.text_view.get_buffer().set_text("")
-            self.app.update_status(_("Project opened: {name}").format(name=project.name))
-            self._add_recent_project(path)
-        else:
-            show_error(self.app.window, _("Error loading project"))
+        """Load recent projects from config."""
+        self._recent_projects_manager.load()
