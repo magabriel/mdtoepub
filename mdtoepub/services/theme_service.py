@@ -37,16 +37,29 @@ h1, h2, h3, h4, h5, h6 {
 
 
 class ThemeService:
+    """Manages theme discovery, creation, cloning, and lifecycle.
+
+    Themes are stored in two locations:
+    - Built-in: ``mdtoepub/themes/`` (read-only)
+    - Custom: ``~/.config/mdtoepub/themes/`` (full CRUD)
+    """
+
     BUILTIN_DIR = Path(__file__).parent.parent / "themes"
     CUSTOM_DIR = Path.home() / ".config" / "mdtoepub" / "themes"
 
     @classmethod
     def _ensure_custom_dir(cls) -> Path:
+        """Ensure the custom themes directory exists."""
         cls.CUSTOM_DIR.mkdir(parents=True, exist_ok=True)
         return cls.CUSTOM_DIR
 
     @classmethod
     def list_themes(cls) -> List[Theme]:
+        """List all available themes (built-in + custom).
+
+        Returns:
+            List of Theme instances.
+        """
         themes = []
 
         if cls.BUILTIN_DIR.exists():
@@ -91,6 +104,14 @@ class ThemeService:
 
     @classmethod
     def get_theme(cls, theme_id: str) -> Optional[Theme]:
+        """Get a theme by its ID.
+
+        Args:
+            theme_id: Unique theme identifier.
+
+        Returns:
+            Theme instance, or None if not found.
+        """
         for theme in cls.list_themes():
             if theme.id == theme_id:
                 return theme
@@ -98,20 +119,54 @@ class ThemeService:
 
     @classmethod
     def get_theme_path(cls, theme_id: str) -> Optional[str]:
+        """Get the filesystem path for a theme.
+
+        Args:
+            theme_id: Unique theme identifier.
+
+        Returns:
+            Path string, or None if theme not found.
+        """
         theme = cls.get_theme(theme_id)
         return theme.path if theme else None
 
     @classmethod
     def is_builtin(cls, theme_id: str) -> bool:
+        """Check if a theme is built-in (read-only).
+
+        Args:
+            theme_id: Unique theme identifier.
+
+        Returns:
+            True if the theme is built-in or not found.
+        """
         theme = cls.get_theme(theme_id)
         return theme.is_builtin if theme else True
 
     @classmethod
     def theme_exists(cls, theme_id: str) -> bool:
+        """Check if a theme exists.
+
+        Args:
+            theme_id: Unique theme identifier.
+
+        Returns:
+            True if the theme exists.
+        """
         return cls.get_theme(theme_id) is not None
 
     @classmethod
     def create_blank(cls, name: str, description: str = "", author: str = "") -> Optional[Theme]:
+        """Create a new blank custom theme.
+
+        Args:
+            name: Display name for the theme.
+            description: Optional description.
+            author: Optional author name.
+
+        Returns:
+            The created Theme, or None if ID collision or invalid name.
+        """
         theme_id = cls._slugify(name)
         if not theme_id:
             return None
@@ -140,6 +195,17 @@ class ThemeService:
     @classmethod
     def clone_theme(cls, source_id: str, new_name: str,
                     description: str = "", author: str = "") -> Optional[Theme]:
+        """Clone an existing theme to a new custom theme.
+
+        Args:
+            source_id: ID of the theme to clone.
+            new_name: Display name for the new theme.
+            description: Optional description override.
+            author: Optional author override.
+
+        Returns:
+            The cloned Theme, or None if source not found or ID collision.
+        """
         source = cls.get_theme(source_id)
         if not source:
             return None
@@ -169,6 +235,14 @@ class ThemeService:
 
     @classmethod
     def delete_theme(cls, theme_id: str) -> bool:
+        """Delete a custom theme. Built-in themes cannot be deleted.
+
+        Args:
+            theme_id: ID of the theme to delete.
+
+        Returns:
+            True on success, False if theme is built-in or not found.
+        """
         theme = cls.get_theme(theme_id)
         if not theme or theme.is_builtin:
             return False
@@ -177,6 +251,15 @@ class ThemeService:
 
     @classmethod
     def rename_theme(cls, theme_id: str, new_name: str) -> bool:
+        """Rename a custom theme. Built-in themes cannot be renamed.
+
+        Args:
+            theme_id: ID of the theme to rename.
+            new_name: New display name.
+
+        Returns:
+            True on success, False if theme is built-in or not found.
+        """
         theme = cls.get_theme(theme_id)
         if not theme or theme.is_builtin:
             return False
@@ -188,7 +271,15 @@ class ThemeService:
 
     @classmethod
     def export_theme(cls, theme_id: str, output_path: str) -> bool:
-        """Export a theme as a .mdtotheme ZIP file."""
+        """Export a theme as a .mdtotheme ZIP file.
+
+        Args:
+            theme_id: ID of the theme to export.
+            output_path: Destination path for the ZIP file.
+
+        Returns:
+            True on success, False on error.
+        """
         import tempfile
         import zipfile
 
@@ -214,7 +305,13 @@ class ThemeService:
     def import_theme(cls, archive_path: str) -> Optional[Theme]:
         """Import a theme from a .mdtotheme ZIP file.
 
-        Returns the imported Theme on success, None on failure.
+        If a theme with the same ID already exists, a numeric suffix is added.
+
+        Args:
+            archive_path: Path to the .mdtotheme ZIP file.
+
+        Returns:
+            The imported Theme on success, None on failure.
         """
         import tempfile
         import zipfile
@@ -240,7 +337,6 @@ class ThemeService:
                 if "name" not in data:
                     return None
 
-                # Check for ID collision
                 if cls.theme_exists(theme_id):
                     base_id = theme_id
                     counter = 1
@@ -249,19 +345,16 @@ class ThemeService:
                         counter += 1
                     data["id"] = theme_id
 
-                # Ensure custom dir exists
                 cls._ensure_custom_dir()
                 dest_dir = cls.CUSTOM_DIR / theme_id
                 dest_dir.mkdir(parents=True, exist_ok=True)
 
-                # Copy all files
                 for item in tmp_path.glob('*'):
                     src = tmp_path / item.name
                     dst = dest_dir / item.name
                     if src.is_file():
                         shutil.copy2(str(src), str(dst))
 
-                # Update theme.yaml for imported theme
                 dest_yaml = dest_dir / "theme.yaml"
                 imported = YamlService.load(str(dest_yaml))
                 imported["id"] = theme_id
@@ -274,6 +367,7 @@ class ThemeService:
 
     @staticmethod
     def _slugify(text: str) -> str:
+        """Convert text to a safe theme ID (lowercase, hyphens)."""
         s = text.lower().strip()
         s = re.sub(r'[^\w\s-]', '', s)
         s = re.sub(r'[-\s]+', '-', s)

@@ -72,7 +72,7 @@ class TestStyleDocService:
 /* @doc ISBN del libro — usar {.isbn} en markdown */
 .component-license .isbn { color: blue; }
 """
-        entries = self.svc._parse(css)
+        entries = self.svc.parse(css)
         assert len(entries) == 2
         assert entries[0]["label"] == "publisher"
         assert entries[0]["markdown_hint"] == "{.publisher}"

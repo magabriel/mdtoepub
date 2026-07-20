@@ -6,6 +6,50 @@ Use local <project_root>/tmp for temporary files and delete them after use.
 
 Always keep the README and ARCHITECTURE documents updated.
 
+## Code Quality Principles
+
+### Visibility
+
+- Respect the visibility of methods and variables.
+- Protected methods (prefixed with `_`) are NEVER called from outside their class.
+- If a protected method needs to be called from outside, convert it to public (remove `_` prefix).
+- Public methods must have a docstring explaining what they do.
+- Do not expose internal attributes publicly unless absolutely necessary. Prefer methods that return the needed data.
+
+### Single Responsibility Principle (SRP)
+
+- Each class should have one clear responsibility.
+- If a class does more than one thing, split it into separate classes.
+- When extracting a class, group cohesive methods that share the same domain concern.
+- Avoid delegation wrappers on the orchestrating class unless really needed.
+
+### Method Complexity
+
+- If a method is too complex or too long, split it into smaller methods.
+- Use dispatcher methods that delegate to type-specific methods when handling multiple cases.
+- Keep the orchestrating method short and readable; move details to helpers.
+
+### Extraction Criteria
+
+When deciding whether to extract a class from an existing one:
+
+1. **Cohesion**: Do the methods share a clear, distinct responsibility?
+2. **Size**: Is the group large enough to justify a separate class (typically 3+ methods or 100+ lines)?
+3. **Independence**: Can the group be tested independently?
+4. **Reusability**: Will the extracted class be useful beyond the original context?
+
+Do NOT extract:
+- Single small methods (not worth a class).
+- Methods that are tightly coupled to many dependencies from the original class.
+- Core orchestration logic that IS the class's primary responsibility.
+
+### Naming Conventions
+
+- Builder classes: `XxxBuilder` (e.g., `HeaderBuilder`, `TocBuilder`)
+- Processor classes: `XxxProcessor` (e.g., `FootnotesProcessor`)
+- Manager classes: `XxxManager` (e.g., `StyleManager`)
+- Static utility methods stay on the class if they're closely related to its responsibility.
+
 ## ⛔ CRITICAL RULE: NEVER MERGE TO MAIN WITHOUT APPROVAL
 
 After creating a branch and committing changes:

@@ -602,15 +602,17 @@ hr { border: none; border-top: 1px solid #ccc; }
                         variables[k] = v
 
             if self.app.project and component:
-                from ..services.epub_service import EpubService as _EpubService
-                epub_svc = _EpubService(self.app.project)
+                from ..services.epub_service import EpubService
+                from ..services.header_builder import HeaderBuilder
+                epub_svc = EpubService(self.app.project)
                 __, config_file = self.app._get_config_path()
                 global_config = YamlService.load(config_file)
-                epub_svc._resolve_labels(global_config)
+                labels = epub_svc.resolve_labels(global_config)
+                header_builder = HeaderBuilder(self.app.project, labels)
 
                 if (component.type == ComponentType.COVER
-                        and _EpubService._is_cover_only_image(md_text)):
-                    img_info = _EpubService._extract_cover_image(md_text)
+                        and EpubService.is_cover_only_image(md_text)):
+                    img_info = EpubService.extract_cover_image(md_text)
                     if img_info:
                         alt, src = img_info
                         preview_html = f"""<!DOCTYPE html>
@@ -651,12 +653,12 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                 show_title = editor_fm.get("show_title", True)
 
                 if component.type == ComponentType.PART:
-                    num_part, title_part, _dp = epub_svc._get_part_header(
+                    num_part, title_part, _dp = header_builder.get_part_header(
                         component, part_number
                     )
                     replaces = self.app.project.auto_part_title in ("part_number", "number", "word_part")
                 else:
-                    num_part, title_part, _dp = epub_svc._get_component_header(
+                    num_part, title_part, _dp = header_builder.get_component_header(
                         component, chapter_number
                     )
                     mode = self.app.project.auto_appendix_title if component.type == ComponentType.APPENDIX else self.app.project.auto_chapter_title
@@ -669,11 +671,11 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
 
                 subtitle_part = ""
                 if title_part:
-                    subtitle_part, title_part = _EpubService._split_title(
+                    subtitle_part, title_part = HeaderBuilder.split_title(
                         title_part, editor_fm
                     )
 
-                header_html = epub_svc._build_header_html(num_part, subtitle_part, title_part)
+                header_html = header_builder.build_header_html(num_part, subtitle_part, title_part)
                 if header_html:
                     if h1_match:
                         md_text = md_text[:h1_match.start()] + md_text[h1_match.end():]
@@ -684,16 +686,16 @@ img {{ max-width:100%; max-height:100%; object-fit:contain; }}
                         md_text = md_text[:h1_match.start()] + md_text[h1_match.end():]
                         md_text = md_text.strip()
                 elif not default_title:
-                    display = component.title or epub_svc._labels.get(component.type.value, component.get_display_name())
+                    display = component.title or labels.get(component.type.value, component.get_display_name())
                     md_text = f"# {display}\n\n{md_text}"
 
                 html = self.app.md_service.render(md_text, component_type, component_id,
                                                   variables=variables,
-                                                  labels=epub_svc._labels)
+                                                  labels=labels)
 
                 if (self.app.project.drop_cap_enabled
                         and component_type.value in self.app.project.drop_cap_types):
-                    html = epub_svc._apply_drop_cap(html)
+                    html = epub_svc.apply_drop_cap(html)
             else:
                 html = self.app.md_service.render(md_text, component_type, component_id,
                                                   variables=variables)

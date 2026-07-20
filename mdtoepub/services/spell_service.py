@@ -18,16 +18,34 @@ FENCE_RE = re.compile(r'^[ ]{0,3}```', re.MULTILINE)
 
 
 class SpellCheckService:
+    """Multi-language spell-check with inline {lang=xx} markers.
+
+    Manages GtkSpell checker instances per language and provides
+    word-level spell-checking with support for language regions,
+    code block exclusion, and custom dictionaries.
+    """
+
     def __init__(self, default_lang: str = "es_ES"):
+        """Initialize the spell-check service.
+
+        Args:
+            default_lang: Default language code (e.g. "es_ES").
+        """
         self.default_lang = default_lang
         self._checkers: Dict = {}
         self._global_words: Set[str] = set()
 
     @property
     def available(self) -> bool:
+        """Whether GtkSpell is available on this system."""
         return _HAS_GTKSPELL
 
     def get_language_list(self) -> List[str]:
+        """Return the list of available spell-check languages.
+
+        Returns:
+            List of language code strings.
+        """
         if not _HAS_GTKSPELL:
             return [self.default_lang]
         try:
@@ -37,6 +55,16 @@ class SpellCheckService:
             return [self.default_lang]
 
     def get_checker(self, lang: str):
+        """Get or create a GtkSpell checker for the given language.
+
+        Checkers are cached per language.
+
+        Args:
+            lang: Language code (e.g. "en_US").
+
+        Returns:
+            GtkSpell.Checker instance, or None if unavailable.
+        """
         if not _HAS_GTKSPELL:
             return None
         if lang not in self._checkers:
@@ -117,7 +145,14 @@ class SpellCheckService:
         return merged
 
     def get_excluded_ranges(self, text: str) -> List[Tuple[int, int]]:
-        """Return sorted, merged ranges to exclude from spell-check (code)."""
+        """Return sorted, merged ranges to exclude from spell-check (code).
+
+        Args:
+            text: Full text to scan for code blocks and inline code.
+
+        Returns:
+            List of (start, end) ranges to exclude.
+        """
         ranges = self._find_fenced_blocks(text) + self._find_inline_code(text)
         return self._merge_ranges(ranges)
 
@@ -143,6 +178,13 @@ class SpellCheckService:
         Markers themselves are excluded from regions.
         Markers inside excluded_ranges (code blocks/spans) are ignored.
         No marker -> default_lang for the whole text.
+
+        Args:
+            text: Full text with potential {lang=xx} markers.
+            excluded_ranges: Ranges to ignore markers within.
+
+        Returns:
+            List of (start, end, language_code) tuples covering the full text.
         """
         if excluded_ranges is None:
             excluded_ranges = []
@@ -162,6 +204,14 @@ class SpellCheckService:
         return regions
 
     def get_word_positions(self, text: str) -> List[Tuple[int, int, str]]:
+        """Find all word positions in text.
+
+        Args:
+            text: Text to scan.
+
+        Returns:
+            List of (start, end, word) tuples.
+        """
         return [(m.start(), m.end(), m.group(1)) for m in WORD_RE.finditer(text)]
 
     def check_text(self, text: str,
@@ -171,7 +221,13 @@ class SpellCheckService:
 
         Words in code blocks, inline code, ignore_words or global dictionary
         are skipped.
-        Returns list of (word_start, word_end, word, lang) for misspelled words.
+
+        Args:
+            text: Full text to check.
+            ignore_words: Set of lowercase words to skip.
+
+        Returns:
+            List of (word_start, word_end, word, lang) for misspelled words.
         """
         if not _HAS_GTKSPELL:
             return []
@@ -199,7 +255,11 @@ class SpellCheckService:
         return misspelled
 
     def add_global_word(self, word: str):
-        """Add word to the per-user global dictionary (system spell engine)."""
+        """Add word to the per-user global dictionary (system spell engine).
+
+        Args:
+            word: Word to add to the dictionary.
+        """
         self._global_words.add(word.lower())
         if _HAS_GTKSPELL:
             for lang, checker in self._checkers.items():
@@ -210,6 +270,15 @@ class SpellCheckService:
                         pass
 
     def get_suggestions(self, word: str, lang: str) -> List[str]:
+        """Get spelling suggestions for a word.
+
+        Args:
+            word: The misspelled word.
+            lang: Language code for the checker.
+
+        Returns:
+            List of suggested corrections.
+        """
         if not _HAS_GTKSPELL:
             return []
         checker = self.get_checker(lang)
