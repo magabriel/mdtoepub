@@ -95,4 +95,15 @@ Follow Semantic Versioning (SemVer): MAJOR.MINOR.PATCH (e.g., 1.2.0).
 
 Before bumping the version, propose the new version number to the user and wait for their approval before proceeding.
 
-After merging a version bump into main, create an annotated git tag: `git tag -a vX.Y.Z -m "vX.Y.Z"`.
+### Bump process
+
+Use the `bump_version.sh` script, which updates all three version locations
+(`pyproject.toml`, `data/com.github.mdtoepub.metainfo.xml`, `mdtoepub/_version.py`),
+runs tests, commits, and tags in one step:
+
+```bash
+./bump_version.sh 1.6.0
+```
+
+**Important:** always run `bump_version.sh` instead of manually editing `_version.py` alone,
+so all files stay in sync and the metainfo release date is updated.
