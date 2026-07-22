@@ -25,11 +25,11 @@ class SpellCheckService:
     code block exclusion, and custom dictionaries.
     """
 
-    def __init__(self, default_lang: str = "es_ES"):
+    def __init__(self, default_lang: str = "en_US"):
         """Initialize the spell-check service.
 
         Args:
-            default_lang: Default language code (e.g. "es_ES").
+            default_lang: Default language code (e.g. "en_US").
         """
         self.default_lang = default_lang
         self._checkers: Dict = {}

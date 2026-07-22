@@ -155,7 +155,7 @@ def _build_book_info_tab(app, interactive_widgets):
     interactive_widgets.append(entry_lang)
     entry_lang.set_text(app.project.language)
     entry_lang.set_hexpand(True)
-    entry_lang.set_placeholder_text("es")
+    entry_lang.set_placeholder_text("en")
     grid_book.attach(entry_lang, 1, row, 1, 1)
     row += 1
 
@@ -788,7 +788,7 @@ def _save_project_config(app, dialog, widgets):
 
     app.project.title = entry_title.get_text().strip()
     app.project.author = entry_author.get_text().strip()
-    app.project.language = entry_lang.get_text().strip() or "es"
+    app.project.language = entry_lang.get_text().strip() or "en"
     epub_idx = combo_epub.get_active()
     app.project.epub_version = ["epub2", "epub3"][epub_idx]
     auto_idx = combo_auto_title.get_active()

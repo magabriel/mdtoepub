@@ -13,7 +13,7 @@ class Project:
     name: str = ""
     title: str = ""
     author: str = ""
-    language: str = "es"
+    language: str = "en"
     theme_id: str = "classic"
     epub_version: str = "epub3"
     auto_chapter_title: str = "none"
@@ -28,7 +28,7 @@ class Project:
     drop_cap_types: List[str] = field(default_factory=lambda: ["chapter"])
     path: str = ""
     export_filename: str = ""
-    spell_lang: str = "es_ES"
+    spell_lang: str = "en_US"
     spell_words: List[str] = field(default_factory=list)
     edition: str = ""
     publication_date: str = ""

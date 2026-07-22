@@ -19,7 +19,7 @@ class ProjectManager:
         """
         if self.app.project:
             return resolve_labels(self.app.project.language)
-        return resolve_labels("es")
+        return resolve_labels("en")
 
     def save_component_content(self) -> bool:
         """Save the current editor content to the active component's file.

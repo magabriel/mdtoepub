@@ -64,9 +64,9 @@ def resolve_labels(
     """Resolve localized labels for a book.
 
     Priority: project > global_config[language] > built-in defaults[language]
-    Falls back to Spanish for unknown languages.
+    Falls back to English for unknown languages.
     """
-    defaults = DEFAULT_LABELS.get(language, DEFAULT_LABELS["es"])
+    defaults = DEFAULT_LABELS.get(language, DEFAULT_LABELS["en"])
 
     global_labels: Dict[str, str] = {}
     if global_config and "labels" in global_config:
