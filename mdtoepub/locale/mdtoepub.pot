@@ -1549,3 +1549,13 @@ msgstr ""
 
 msgid "Auto (system)"
 msgstr ""
+
+msgid "English"
+msgstr ""
+
+msgid "Other (defaults to English labels)"
+msgstr ""
+
+msgid "Spanish"
+msgstr ""
+

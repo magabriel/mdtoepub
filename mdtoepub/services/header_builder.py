@@ -102,7 +102,7 @@ class HeaderBuilder:
         num_style = self.project.part_numbering_style
         if mode != "none" and show_title:
             if part_number is not None:
-                label = self.labels.get("part", "Parte")
+                label = self.labels.get("part", "Part")
                 num_str = str(part_number)
                 if num_style == "roman":
                     num_str = MarkdownService.to_roman(part_number)

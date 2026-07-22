@@ -20,14 +20,14 @@ class TestChapterAutoTitle:
         c = Component(type=ComponentType.CHAPTER, title="")
         num, title_part, display = hb.get_component_header(c, 1)
         assert num == ""
-        assert title_part == "Capitulo"
+        assert title_part == "Chapter"
 
     def test_applies_even_with_title(self):
         p = Project(auto_chapter_title="chapter_number")
         hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="Mi Capitulo")
         num, title_part, display = hb.get_component_header(c, 1)
-        assert num == "Capitulo 1"
+        assert num == "Chapter 1"
         assert title_part == ""
 
     def test_chapter_number_format(self):
@@ -35,9 +35,9 @@ class TestChapterAutoTitle:
         hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="")
         num1, _, _ = hb.get_component_header(c, 1)
-        assert num1 == "Capitulo 1"
+        assert num1 == "Chapter 1"
         num5, _, _ = hb.get_component_header(c, 5)
-        assert num5 == "Capitulo 5"
+        assert num5 == "Chapter 5"
 
     def test_number_format(self):
         p = Project(auto_chapter_title="number")
@@ -61,7 +61,7 @@ class TestChapterAutoTitle:
         hb = self._make_header_builder(p)
         c = Component(type=ComponentType.CHAPTER, title="Mi Titulo")
         num, title_part, _ = hb.get_component_header(c, 1)
-        assert num == "Capitulo 1"
+        assert num == "Chapter 1"
         assert title_part == "Mi Titulo"
 
     def test_number_with_title_mode(self):
@@ -467,7 +467,7 @@ class TestAppendixAutoTitle:
         hb = self._make_header_builder(p)
         c = Component(type=ComponentType.APPENDIX, title="")
         num1, _, _ = hb.get_component_header(c, 1)
-        assert num1 == "Apendice 1"
+        assert num1 == "Appendix 1"
 
     def test_appendix_number_format(self):
         p = Project(auto_appendix_title="number")
@@ -481,7 +481,7 @@ class TestAppendixAutoTitle:
         hb = self._make_header_builder(p)
         c = Component(type=ComponentType.APPENDIX, title="Datos")
         num, title_part, _ = hb.get_component_header(c, 3)
-        assert num == "Apendice 3"
+        assert num == "Appendix 3"
         assert title_part == "Datos"
 
 
@@ -504,9 +504,9 @@ class TestPartAutoTitle:
         hb = self._make_header_builder(p)
         c = Component(type=ComponentType.PART, title="")
         num1, _, _ = hb.get_part_header(c, 1)
-        assert num1 == "Parte 1"
+        assert num1 == "Part 1"
         num5, _, _ = hb.get_part_header(c, 5)
-        assert num5 == "Parte 5"
+        assert num5 == "Part 5"
 
     def test_number_format(self):
         p = Project(auto_part_title="number")
@@ -520,7 +520,7 @@ class TestPartAutoTitle:
         hb = self._make_header_builder(p)
         c = Component(type=ComponentType.PART, title="Mi Parte")
         num, title_part, _ = hb.get_part_header(c, 2)
-        assert num == "Parte 2"
+        assert num == "Part 2"
         assert title_part == "Mi Parte"
 
     def test_number_with_title_mode(self):
@@ -566,12 +566,12 @@ class TestLocalizedLabels:
                                                       labels=labels)
         assert '<figcaption>Table 1 - My Table</figcaption>' in result
 
-    def test_figure_fallback_spanish(self):
+    def test_figure_fallback_english(self):
         html = '<p><img alt="Foto" src="img.jpg" /></p>'
         result = MarkdownService.add_image_captions(html, figure_num_start=1)
-        assert '<figcaption>Figura 1 - Foto</figcaption>' in result
+        assert '<figcaption>Figure 1 - Foto</figcaption>' in result
 
-    def test_table_fallback_spanish(self):
+    def test_table_fallback_english(self):
         html = '<!-- Table: Mi Tabla --><table><tr><td>Dato</td></tr></table>'
         result = MarkdownService.add_table_captions(html, table_num_start=1)
-        assert '<figcaption>Tabla 1 - Mi Tabla</figcaption>' in result
+        assert '<figcaption>Table 1 - Mi Tabla</figcaption>' in result

@@ -9,8 +9,8 @@ TABLE_CAPTION_HTML_RE = re.compile(
     r'(<table\b.*?</table>)',
     re.DOTALL | re.IGNORECASE,
 )
-DEFAULT_LABEL_FIGURE = "Figura"
-DEFAULT_LABEL_TABLE = "Tabla"
+DEFAULT_LABEL_FIGURE = "Figure"
+DEFAULT_LABEL_TABLE = "Table"
 
 
 class CaptionProcessor:

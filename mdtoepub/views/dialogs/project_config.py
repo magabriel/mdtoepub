@@ -151,12 +151,47 @@ def _build_book_info_tab(app, interactive_widgets):
     label = Gtk.Label(label=_("Language:"))
     label.set_xalign(1)
     grid_book.attach(label, 0, row, 1, 1)
+
+    lang_combo = Gtk.ComboBoxText()
+    interactive_widgets.append(lang_combo)
+    lang_combo.append("en", _("English"))
+    lang_combo.append("es", _("Spanish"))
+    lang_combo.append("__other__", _("Other (defaults to English labels)"))
+    lang_combo.set_hexpand(True)
+
     entry_lang = Gtk.Entry()
     interactive_widgets.append(entry_lang)
-    entry_lang.set_text(app.project.language)
     entry_lang.set_hexpand(True)
-    entry_lang.set_placeholder_text("es")
-    grid_book.attach(entry_lang, 1, row, 1, 1)
+    entry_lang.set_placeholder_text("fr")
+    entry_lang.set_no_show_all(True)
+
+    project_lang = app.project.language
+    if project_lang == "en":
+        lang_combo.set_active_id("en")
+    elif project_lang == "es":
+        lang_combo.set_active_id("es")
+    else:
+        lang_combo.set_active_id("__other__")
+        entry_lang.set_text(project_lang)
+
+    def _on_lang_combo_changed(combo):
+        if combo.get_active_id() == "__other__":
+            entry_lang.set_no_show_all(False)
+            entry_lang.show_all()
+        else:
+            entry_lang.hide()
+            entry_lang.set_no_show_all(True)
+
+    lang_combo.connect("changed", _on_lang_combo_changed)
+
+    if lang_combo.get_active_id() == "__other__":
+        entry_lang.set_no_show_all(False)
+        entry_lang.show_all()
+
+    lang_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    lang_box.pack_start(lang_combo, True, True, 0)
+    lang_box.pack_start(entry_lang, True, True, 0)
+    grid_book.attach(lang_box, 1, row, 1, 1)
     row += 1
 
     label = Gtk.Label(label=_("EPUB version:"))
@@ -252,7 +287,7 @@ def _build_book_info_tab(app, interactive_widgets):
     grid_book.attach(note, 0, row, 2, 1)
 
     return (grid_book, entry_title, entry_subtitle, entry_export, entry_author,
-            entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial)
+            lang_combo, entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial)
 
 
 def _build_appearance_tab(app, interactive_widgets):
@@ -775,7 +810,7 @@ def _save_project_config(app, dialog, widgets):
         dialog: The config dialog.
         widgets: Dict of all widget references needed for saving.
     """
-    (entry_title, entry_subtitle, entry_export, entry_author, entry_lang,
+    (entry_title, entry_subtitle, entry_export, entry_author, lang_combo, entry_lang,
      combo_epub, entry_edicion, entry_fecha, entry_isbn, entry_editorial,
      combo_theme, available_themes, check_drop_cap, drop_cap_checkbuttons,
      combo_lang, langs, combo_auto_title, auto_title_values,
@@ -788,7 +823,10 @@ def _save_project_config(app, dialog, widgets):
 
     app.project.title = entry_title.get_text().strip()
     app.project.author = entry_author.get_text().strip()
-    app.project.language = entry_lang.get_text().strip() or "es"
+    if lang_combo.get_active_id() == "__other__":
+        app.project.language = entry_lang.get_text().strip() or "en"
+    else:
+        app.project.language = lang_combo.get_active_id() or "en"
     epub_idx = combo_epub.get_active()
     app.project.epub_version = ["epub2", "epub3"][epub_idx]
     auto_idx = combo_auto_title.get_active()
@@ -890,7 +928,7 @@ def show_project_config(app):
 
     # Tab 1: Book info
     (grid_book, entry_title, entry_subtitle, entry_export, entry_author,
-     entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn,
+     lang_combo, entry_lang, combo_epub, entry_edicion, entry_fecha, entry_isbn,
      entry_editorial) = _build_book_info_tab(app, interactive_widgets)
     notebook.append_page(grid_book, Gtk.Label(label=_("Book")))
 
@@ -922,7 +960,7 @@ def show_project_config(app):
         if response == Gtk.ResponseType.ACCEPT:
             widgets = (
                 entry_title, entry_subtitle, entry_export, entry_author,
-                entry_lang, combo_epub, entry_edicion, entry_fecha,
+                lang_combo, entry_lang, combo_epub, entry_edicion, entry_fecha,
                 entry_isbn, entry_editorial, combo_theme, available_themes,
                 check_drop_cap, drop_cap_checkbuttons, combo_lang, langs,
                 combo_auto_title, auto_title_values, combo_chapter_style,

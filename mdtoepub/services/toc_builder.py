@@ -262,7 +262,7 @@ class TocBuilder:
                 )
                 children.append((link, []))
 
-        part_label = self.labels.get("part", "Parte")
+        part_label = self.labels.get("part", "Part")
 
         for comp in self.project.get_ordered_components():
             if comp.id not in chapter_map:

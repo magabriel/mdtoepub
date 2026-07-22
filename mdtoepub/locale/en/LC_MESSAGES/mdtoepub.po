@@ -1220,3 +1220,7 @@ msgstr "Spanish"
 
 msgid "English"
 msgstr "English"
+
+msgid "Other (defaults to English labels)"
+msgstr "Other (defaults to English labels)"
+

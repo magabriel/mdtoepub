@@ -95,7 +95,7 @@ class FigureTableProcessor:
         if not figure_info:
             return ""
         use_roman = self.project.figure_numbering_style == "roman"
-        figure_label = self.labels.get("figure", "Figura")
+        figure_label = self.labels.get("figure", "Figure")
         lines = ['<div class="lof-list">', '<ul>']
         for fig_num, caption, filename in figure_info:
             href = f"{filename.replace('.md', '.xhtml')}#fig_{fig_num}"
@@ -121,7 +121,7 @@ class FigureTableProcessor:
         if not table_info:
             return ""
         use_roman = self.project.table_numbering_style == "roman"
-        table_label = self.labels.get("table", "Tabla")
+        table_label = self.labels.get("table", "Table")
         lines = ['<div class="lot-list">', '<ul>']
         for tab_num, caption, filename in table_info:
             href = f"{filename.replace('.md', '.xhtml')}#tab_{tab_num}"

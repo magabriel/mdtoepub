@@ -19,9 +19,9 @@ class TestResolveLabels:
         assert labels["figure"] == "Figure"
         assert labels["table"] == "Table"
 
-    def test_unknown_language_falls_back_to_spanish(self):
+    def test_unknown_language_falls_back_to_english(self):
         labels = resolve_labels("fr")
-        assert labels["chapter"] == "Capitulo"
+        assert labels["chapter"] == "Chapter"
 
     def test_project_overrides(self):
         labels = resolve_labels("es", project_labels={"chapter": "MiCapítulo"})

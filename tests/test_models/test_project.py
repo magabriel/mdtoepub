@@ -9,7 +9,7 @@ class TestProject:
         assert project.name == ""
         assert project.title == ""
         assert project.author == ""
-        assert project.language == "es"
+        assert project.language == "en"
         assert project.theme_id == "classic"
         assert project.epub_version == "epub3"
         assert project.auto_chapter_title == "none"
