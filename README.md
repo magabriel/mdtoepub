@@ -45,7 +45,7 @@ Python packages (installed automatically via pip):
 
 #### Pre-made bundle
 
-Just download and install the latest flatpak bundle from the **Relesaes** section and install it. You may need to install flatpak support for your distribution.
+Download and install the latest flatpak bundle from the **Releases** section and install it. You may need to install flatpak support for your distribution.
 
 ```bash
 flatpak install --user -y "<flatpack bundle>"
