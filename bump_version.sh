@@ -147,5 +147,5 @@ else
 fi
 
 echo "Next steps:"
-echo "  ./build.sh all          # Build flatpak bundle"
-echo "  ./build.sh install-local # Install locally"
+echo "  ./build.sh all            # Build flatpak bundle"
+echo "  ./build.sh install-local  # Install locally"
