@@ -107,6 +107,7 @@ main() {
     case "${1:-all}" in
         all)
             check_deps
+            sync_metainfo_version
             install_runtime
             build_app
             create_bundle
@@ -125,43 +126,51 @@ main() {
             echo "Limpieza completada."
             ;;
         install-local)
-        if [ -f "$BUNDLE" ]; then
+            if [ ! -f "$BUNDLE" ]; then
+                echo "ERROR: $BUNDLE no encontrado. Ejecuta './build.sh' primero."
+                exit 1
+            fi
             echo "=== Instalando bundle: $BUNDLE ==="
             flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
-            flatpak install --user -y "$BUNDLE"
+            flatpak uninstall --system -y "$APP_ID" 2>/dev/null || true
+            flatpak install --user -y "$BUNDLE" || {
+                echo "ERROR: flatpak install falló."
+                exit 1
+            }
             installed_version=$(flatpak list --app --user 2>/dev/null | grep "$APP_ID" | awk -F'\t' '{print $3}')
             if [ "$installed_version" != "$VERSION" ]; then
                 echo ""
                 echo "ERROR: Se esperaba instalar v${VERSION} pero flatpak reporta v${installed_version}."
-                echo "       El bundle probablemente se generó con una versión anterior."
+                echo "       Puede haber una instalación conflictiva o el bundle está desactualizado."
                 echo "       Ejecuta './build.sh' para regenerar el bundle e inténtalo de nuevo."
+                echo "       Si el problema persiste: flatpak uninstall --user -y --all $APP_ID"
                 exit 1
             fi
             echo "=== v${VERSION} instalada correctamente ==="
-        else
-            echo "ERROR: $BUNDLE no encontrado. Ejecuta './build.sh' primero."
-            exit 1
-        fi
-        ;;
+            ;;
         reinstall)
-        echo "=== Reinstalando bundle: $BUNDLE ==="
-        flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
-        if [ -f "$BUNDLE" ]; then
-            flatpak install --user -y "$BUNDLE"
+            echo "=== Reinstalando bundle: $BUNDLE ==="
+            flatpak uninstall --user -y "$APP_ID" 2>/dev/null || true
+            flatpak uninstall --system -y "$APP_ID" 2>/dev/null || true
+            if [ ! -f "$BUNDLE" ]; then
+                echo "ERROR: $BUNDLE no encontrado. Ejecuta './build.sh' primero."
+                exit 1
+            fi
+            flatpak install --user -y "$BUNDLE" || {
+                echo "ERROR: flatpak install falló."
+                exit 1
+            }
             installed_version=$(flatpak list --app --user 2>/dev/null | grep "$APP_ID" | awk -F'\t' '{print $3}')
             if [ "$installed_version" != "$VERSION" ]; then
                 echo ""
                 echo "ERROR: Se esperaba instalar v${VERSION} pero flatpak reporta v${installed_version}."
-                echo "       El bundle probablemente se generó con una versión anterior."
+                echo "       Puede haber una instalación conflictiva o el bundle está desactualizado."
                 echo "       Ejecuta './build.sh' para regenerar el bundle e inténtalo de nuevo."
+                echo "       Si el problema persiste: flatpak uninstall --user -y --all $APP_ID"
                 exit 1
             fi
             echo "=== v${VERSION} instalada correctamente ==="
-        else
-            echo "ERROR: $BUNDLE no encontrado. Ejecuta './build.sh' primero."
-            exit 1
-        fi
-        ;;
+            ;;
         *)
             echo "Uso: $0 {all|build|bundle|clean|install-local|reinstall}"
             exit 1
