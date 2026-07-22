@@ -99,7 +99,7 @@ Before bumping the version, propose the new version number to the user and wait 
 
 Use the `bump_version.sh` script, which updates all three version locations
 (`pyproject.toml`, `data/com.github.mdtoepub.metainfo.xml`, `mdtoepub/_version.py`),
-runs tests, commits, and tags in one step:
+runs tests, commits, tags, and optionally pushes branch + tag to origin in one step:
 
 ```bash
 ./bump_version.sh 1.6.0

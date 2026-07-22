@@ -131,6 +131,21 @@ git tag -a "v$NEW_VERSION" -m "v$NEW_VERSION"
 echo ""
 echo "  ✓ Committed and tagged v$NEW_VERSION"
 echo ""
+
+read -rp "Push branch and tag to origin? [Y/n] " yn_push
+if [[ "$yn_push" != [nN] ]]; then
+    git push origin HEAD
+    git push origin "v$NEW_VERSION"
+    echo ""
+    echo "  ✓ Pushed branch and tag v$NEW_VERSION to origin"
+    echo ""
+else
+    echo "  Skipped push. To push manually later:"
+    echo "    git push origin HEAD"
+    echo "    git push origin v$NEW_VERSION"
+    echo ""
+fi
+
 echo "Next steps:"
 echo "  ./build.sh all          # Build flatpak bundle"
 echo "  ./build.sh install-local # Install locally"
