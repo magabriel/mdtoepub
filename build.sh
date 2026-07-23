@@ -93,14 +93,16 @@ cleanup() {
 }
 
 show_help() {
-    echo "Instalación:"
+    echo "Bundle generado: ${BUNDLE}"
+    echo ""
+    echo "Para instalar:"
+    echo "  ./build.sh install-local"
+    echo ""
+    echo "O manualmente:"
     echo "  flatpak install --user ${BUNDLE}"
     echo ""
-    echo "Ejecución:"
+    echo "Para ejecutar:"
     echo "  flatpak run ${APP_ID}"
-    echo ""
-    echo "Repo local (para .flatpakref):"
-    echo "  ${REPO_DIR}/"
 }
 
 main() {
