@@ -1,5 +1,9 @@
 # MDToEPUB
 
+[![Python](https://img.shields.io/badge/python-3.10+-blue)](https://www.python.org/downloads/)
+[![License](https://img.shields.io/badge/license-GPL--3.0-green)](https://www.gnu.org/licenses/gpl-3.0)
+[![Release](https://img.shields.io/github/v/release/magabriel/mdtoepub?color=orange)](https://github.com/magabriel/mdtoepub/releases)
+
 A desktop application for writing and publishing EPUB ebooks from Markdown. Built with GTK3 and Python.
 
 ## Features
